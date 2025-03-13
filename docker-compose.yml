@@ -1,0 +1,38 @@
+services:
+  apache-php:
+    image: apache-mysqli
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - D:/php_ws/lequocanh:/var/www/html
+    ports:
+      - "80:80"
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql
+    volumes:
+      - D:/php_ws/DB:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pw
+    networks:
+      - app-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "8888:80"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

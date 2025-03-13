@@ -1,0 +1,24 @@
+# Loại trừ thư mục dữ liệu MySQL
+DB/
+# Các tệp hệ thống
+.DS_Store
+Thumbs.db
+
+# PHP
+vendor/
+composer.lock
+.phpunit.result.cache
+
+# Các tệp tạm thời
+*.log
+*.tmp
+*.temp
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Docker
+.docker/
+docker-compose.override.yml 
