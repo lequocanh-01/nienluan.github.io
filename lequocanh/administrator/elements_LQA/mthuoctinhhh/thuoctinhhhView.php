@@ -84,11 +84,11 @@ $list_lh_thuoctinhhh = $thuocTinhHHObj->thuoctinhhhGetAll();
             <?php if (!empty($list_lh_thuoctinhhh)) {
                 foreach ($list_lh_thuoctinhhh as $u) { ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($u->idThuocTinhHH ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($u->idhanghoa ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($u->idThuocTinh ?? ''); ?></td>
-                        <td class="tenthuoctinhhh"><?php echo htmlspecialchars($u->tenThuocTinhHH ?? ''); ?></td>
-                        <td><?php echo htmlspecialchars($u->ghiChu ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($u->idThuocTinhHH); ?></td>
+                        <td><?php echo htmlspecialchars($u->idhanghoa); ?></td>
+                        <td><?php echo htmlspecialchars($u->idThuocTinh); ?></td>
+                        <td class="tenthuoctinhhh"><?php echo htmlspecialchars($u->tenThuocTinhHH); ?></td>
+                        <td><?php echo htmlspecialchars($u->ghiChu ?? ""); ?></td>
                         <td align="center">
                             <?php if (isset($_SESSION['ADMIN'])) { ?>
                                 <a href="./elements_LQA/mthuoctinhhh/thuoctinhhhAct.php?reqact=deletethuoctinhhh&idThuocTinhHH=<?php echo htmlspecialchars($u->idThuocTinhHH); ?>" onclick="return confirm('Bạn có chắc muốn xóa không?');">

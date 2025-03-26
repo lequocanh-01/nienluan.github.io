@@ -34,46 +34,105 @@ if (isset($_REQUEST['reqact'])) {
 
         case 'updatehanghoa':
             $idhanghoa = $_REQUEST['idhanghoa'];
-            $id_hinhanh = isset($_REQUEST['id_hinhanh']) ? $_REQUEST['id_hinhanh'] : null;
-            $current_image_id = isset($_REQUEST['current_image_id']) ? $_REQUEST['current_image_id'] : null;
             $tenhanghoa = $_REQUEST['tenhanghoa'];
             $mota = $_REQUEST['mota'];
             $giathamkhao = $_REQUEST['giathamkhao'];
+            $id_hinhanh = $_REQUEST['id_hinhanh'];
             $idloaihang = $_REQUEST['idloaihang'];
             $idThuongHieu = $_REQUEST['idThuongHieu'];
             $idDonViTinh = $_REQUEST['idDonViTinh'];
-            $idNhanVien = isset($_REQUEST['idNhanVien']) && !empty($_REQUEST['idNhanVien']) ? $_REQUEST['idNhanVien'] : null;
+            $idNhanVien = $_REQUEST['idNhanVien'];
 
-            if (!$idNhanVien) {
-                header('location: ../../index.php?req=hanghoaview&result=missing_employee');
-                exit();
-            }
-
-            // Debug information
-            error_log("Update Hanghoa - ID: $idhanghoa, New Image ID: " . ($id_hinhanh ? $id_hinhanh : "null") . ", Current Image ID: " . ($current_image_id ? $current_image_id : "null"));
-
-            // Lấy thông tin sản phẩm hiện tại nếu không có ID hình ảnh mới
-            if (empty($id_hinhanh) || $id_hinhanh === "") {
-                // Nếu không chọn hình ảnh mới, giữ nguyên hình ảnh hiện tại
-                $currentProduct = $hanghoa->HanghoaGetbyId($idhanghoa);
-                $id_hinhanh = $currentProduct->hinhanh;
-                error_log("Keeping current image ID: " . ($id_hinhanh ? $id_hinhanh : "null"));
-            } else {
-                // Kiểm tra xem ID hình ảnh mới có tồn tại trong CSDL không
-                $image = $hanghoa->GetHinhAnhById($id_hinhanh);
-                if (!$image) {
-                    error_log("Selected image ID $id_hinhanh not found in database!");
-                    $id_hinhanh = $current_image_id; // Sử dụng ID hình ảnh hiện tại nếu ID mới không hợp lệ
-                }
-            }
-
-            $result = $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
-
-            if ($result) {
+            $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
+            if ($hanghoa) {
                 header('location: ../../index.php?req=hanghoaview&result=ok');
             } else {
-                error_log("Failed to update product with ID: $idhanghoa, Image ID: $id_hinhanh");
                 header('location: ../../index.php?req=hanghoaview&result=notok');
+            }
+            break;
+
+        case 'applyimage':
+            if (isset($_GET['idhanghoa']) && isset($_GET['id_hinhanh'])) {
+                $idhanghoa = intval($_GET['idhanghoa']);
+                $id_hinhanh = intval($_GET['id_hinhanh']);
+
+                if ($hanghoa->ApplyImageToProduct($idhanghoa, $id_hinhanh)) {
+                    // Thành công
+                    header("location: ../../index.php?req=hanghoaview&result=ok&msg=image_applied");
+                } else {
+                    // Thất bại
+                    header("location: ../../index.php?req=hanghoaview&result=notok&msg=image_not_applied");
+                }
+            } else {
+                header("location: ../../index.php?req=hanghoaview&result=notok");
+            }
+            break;
+
+        case 'applyallimages':
+            if (isset($_GET['matches'])) {
+                $matches = json_decode(urldecode($_GET['matches']), true);
+
+                if (empty($matches)) {
+                    header("location: ../../index.php?req=hanghoaview&result=notok&msg=no_matches");
+                    break;
+                }
+
+                $successCount = 0;
+
+                foreach ($matches as $match) {
+                    if ($hanghoa->ApplyImageToProduct($match['product_id'], $match['image_id'])) {
+                        $successCount++;
+                    }
+                }
+
+                if ($successCount > 0) {
+                    if ($successCount == count($matches)) {
+                        // Tất cả đều thành công
+                        header("location: ../../index.php?req=hanghoaview&result=ok&msg=all_images_applied&count=" . $successCount);
+                    } else {
+                        // Một số thành công, một số thất bại
+                        header("location: ../../index.php?req=hanghoaview&result=notok&msg=some_images_not_applied");
+                    }
+                } else {
+                    // Tất cả đều thất bại
+                    header("location: ../../index.php?req=hanghoaview&result=notok&msg=no_images_applied");
+                }
+            } else {
+                header("location: ../../index.php?req=hanghoaview&result=notok");
+            }
+            break;
+
+        case "remove_mismatched_images":
+            // Gỡ bỏ tất cả hình ảnh không khớp tên sản phẩm
+            $count = $hanghoa->RemoveAllMismatchedImages();
+
+            if ($count === false) {
+                // Có lỗi xảy ra
+                header("location: ../../index.php?req=hanghoaview&result=notok&msg=remove_failed");
+            } else if ($count > 0) {
+                // Đã gỡ bỏ thành công một số hình ảnh
+                header("location: ../../index.php?req=hanghoaview&result=ok&msg=removed_mismatched&count=" . $count);
+            } else {
+                // Không có hình ảnh nào bị gỡ bỏ
+                header("location: ../../index.php?req=hanghoaview&result=notok&msg=no_images_removed");
+            }
+            break;
+
+        case "remove_image":
+            // Gỡ bỏ hình ảnh khỏi một sản phẩm cụ thể
+            if (isset($_GET['idhanghoa'])) {
+                $idhanghoa = intval($_GET['idhanghoa']);
+                $result = $hanghoa->RemoveImageFromProduct($idhanghoa);
+
+                if ($result) {
+                    // Gỡ bỏ thành công
+                    header("location: ../../index.php?req=hanghoaview&result=ok&msg=image_removed");
+                } else {
+                    // Gỡ bỏ thất bại
+                    header("location: ../../index.php?req=hanghoaview&result=notok&msg=image_removal_failed");
+                }
+            } else {
+                header("location: ../../index.php?req=hanghoaview&result=notok");
             }
             break;
 

@@ -21,8 +21,6 @@
   box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
   margin: 10px;
   padding: 10px;
-  position: relative;
-  overflow-y: auto;
 }
 #center_div {
   min-height: 500px;
@@ -31,7 +29,7 @@
   border: solid 1px #ccc;
   border-radius: 10px;
   box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
-  margin: 10px 10px 10px 270px;
+  margin: 10px;
   padding: 10px;
 }
 /* #right_div {
@@ -307,30 +305,12 @@ button:hover {
 
 /* Thay đổi màu sắc cho các mục trong menu */
 .left-menu {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  overflow-y: auto;
-  background-color: #2c3e50;
-  color: #ffffff;
-  padding: 15px;
-  width: 250px;
-  z-index: 1000;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-}
-
-.left-menu::-webkit-scrollbar {
-  width: 6px;
-}
-
-.left-menu::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.left-menu::-webkit-scrollbar-track {
-  background-color: rgba(0, 0, 0, 0.1);
+  background: linear-gradient(145deg, #2c3e50, #34495e);
+  color: #ecf0f1;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
 .left-menu ul {
@@ -450,134 +430,6 @@ button:hover {
   overflow: hidden; /* Ẩn phần nội dung tràn */
   text-overflow: ellipsis; /* Hiển thị dấu ... khi nội dung quá dài */
   max-width: 550px; /* Đặt độ rộng tối đa cho cột */
-}
-
-/* Style cho giỏ hàng */
-.cart-container {
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin: 20px 0;
-}
-
-.cart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #eee;
-  margin-bottom: 20px;
-}
-
-.cart-item {
-  display: flex;
-  align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid #eee;
-  transition: background-color 0.3s ease;
-}
-
-.cart-item:hover {
-  background-color: #f8f9fa;
-}
-
-.cart-item-image {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
-  margin-right: 20px;
-}
-
-.cart-item-details {
-  flex-grow: 1;
-}
-
-.cart-item-title {
-  font-size: 1.1em;
-  font-weight: 500;
-  color: #2c3e50;
-  margin-bottom: 5px;
-}
-
-.cart-item-price {
-  color: #e74c3c;
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-.cart-quantity {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.cart-quantity button {
-  background: #f8f9fa;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.cart-quantity button:hover {
-  background: #e9ecef;
-}
-
-.cart-quantity input {
-  width: 50px;
-  text-align: center;
-  border: 1px solid #dee2e6;
-  border-radius: 5px;
-  padding: 5px;
-}
-
-.cart-remove {
-  color: #dc3545;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px;
-  transition: color 0.3s ease;
-}
-
-.cart-remove:hover {
-  color: #c82333;
-}
-
-.cart-summary {
-  background: #f8f9fa;
-  border-radius: 10px;
-  padding: 20px;
-  margin-top: 20px;
-}
-
-.cart-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.2em;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-.checkout-button {
-  background: #2ecc71;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 15px 30px;
-  width: 100%;
-  font-size: 1.1em;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.checkout-button:hover {
-  background: #27ae60;
 }
 
 /* Style cho bảng loại hàng */
@@ -767,7 +619,8 @@ button:hover {
 }
 
 /* Auto-hide overflowing items */
-@media (max-width: 1200px), (min-width: 1201px) {
+@media (max-width: 1200px),
+  (min-width: 1201px) and (.menu-items: :-webkit-scrollbar-track) {
   .menu-items {
     display: none;
   }
@@ -877,14 +730,13 @@ button:hover {
 .nav-menu {
   position: relative;
   background: linear-gradient(135deg, #1a2a6c, #2a4858);
-  padding: 15px 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin: 15px 0;
+  padding: 10px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 10px 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: all 0.3s ease;
 }
 
 .menu-items {
@@ -897,15 +749,13 @@ button:hover {
 .menu-items a {
   color: white;
   text-decoration: none;
-  padding: 10px 20px;
-  border-radius: 25px;
+  padding: 8px 15px;
+  border-radius: 20px;
   transition: all 0.3s ease;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.1);
+  gap: 8px;
 }
 
 .dropdown-btn {

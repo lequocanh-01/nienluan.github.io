@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 require_once './administrator/elements_LQA/mod/hanghoaCls.php';
 require_once './administrator/elements_LQA/mod/thuoctinhhhCls.php';
 require_once './administrator/elements_LQA/mod/thuoctinhCls.php';
@@ -26,6 +28,7 @@ foreach ($productIds as $id) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,10 +36,11 @@ foreach ($productIds as $id) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="public_files/mycss.css">
 </head>
+
 <body>
     <div class="container mt-4">
         <h2 class="mb-4">So sánh sản phẩm</h2>
-        
+
         <?php if (empty($products)): ?>
             <div class="alert alert-info">
                 Vui lòng chọn sản phẩm để so sánh
@@ -47,38 +51,26 @@ foreach ($productIds as $id) {
                     <thead>
                         <tr>
                             <th>Thông tin</th>
-                            <?php foreach ($products as $product): ?>
+                            <?php foreach ($products as $product):
+                                // Get image from hinhanh table
+                                $hinhanh = $hanghoa->GetHinhAnhById($product->hinhanh);
+                            ?>
                                 <th class="text-center">
-                                    <?php
-                                    $image_src = $product->hinhanh;
-                                    // Check if it's a base64 image
-                                    if (strpos($image_src, 'data:image') === 0) {
-                                        // Keep base64 as is
-                                        echo '<img src="' . $image_src . '"';
-                                    } else {
-                                        // Try different path combinations
-                                        $possible_paths = [
-                                            "./administrator/uploads/" . basename($image_src),
-                                            "./uploads/" . basename($image_src),
-                                            "./administrator/img_LQA/" . basename($image_src),
-                                            "./img_LQA/" . basename($image_src),
-                                            $image_src
-                                        ];
-                                        
-                                        $display_src = "./administrator/img_LQA/no-image.png";
-                                        foreach ($possible_paths as $path) {
-                                            if (file_exists($path)) {
-                                                $display_src = $path;
-                                                break;
-                                            }
-                                        }
-                                        echo '<img src="' . $display_src . '"';
-                                    }
-                                    ?>
-                                         alt="<?php echo htmlspecialchars($product->tenhanghoa); ?>"
-                                         class="img-fluid product-image mb-2"
-                                         style="max-width: 150px;"
-                                         onerror="this.src='./administrator/img_LQA/no-image.png'">
+                                    <?php if ($hinhanh && !empty($hinhanh->duong_dan)): ?>
+                                        <img src="<?php echo $hinhanh->duong_dan; ?>"
+                                            alt="<?php echo htmlspecialchars($product->tenhanghoa); ?>"
+                                            class="img-fluid product-image mb-2"
+                                            style="max-width: 150px;"
+                                            onerror="this.src='img_LQA/updating-image.png'">
+                                    <?php else: ?>
+                                        <div class="updating-image-container text-center">
+                                            <img src="img_LQA/updating-image.png"
+                                                alt="Đang cập nhật ảnh"
+                                                class="img-fluid product-image mb-2"
+                                                style="max-width: 150px;">
+                                            <p class="updating-text small text-muted">Đang cập nhật ảnh</p>
+                                        </div>
+                                    <?php endif; ?>
                                     <div><?php echo htmlspecialchars($product->tenhanghoa); ?></div>
                                 </th>
                             <?php endforeach; ?>
@@ -99,7 +91,7 @@ foreach ($productIds as $id) {
                                 <td><?php echo htmlspecialchars($product->mota); ?></td>
                             <?php endforeach; ?>
                         </tr>
-                        
+
                         <!-- Hiển thị các thuộc tính -->
                         <?php
                         // Lấy tất cả các loại thuộc tính có trong các sản phẩm
@@ -111,7 +103,7 @@ foreach ($productIds as $id) {
                                 $allFeatureTypes[$feature->idThuocTinh] = $thuocTinh->tenThuocTinh;
                             }
                         }
-                        
+
                         // Hiển thị từng loại thuộc tính
                         foreach ($allFeatureTypes as $featureId => $featureName): ?>
                             <tr>
@@ -132,19 +124,19 @@ foreach ($productIds as $id) {
                                 <?php endforeach; ?>
                             </tr>
                         <?php endforeach; ?>
-                        
+
                         <!-- Nút thao tác -->
                         <tr>
                             <td>Thao tác</td>
                             <?php foreach ($products as $product): ?>
                                 <td class="text-center">
-                                    <a href="administrator/elements_LQA/mgiohang/giohangAct.php?action=add&productId=<?php echo $product->idhanghoa; ?>&quantity=1" 
-                                       class="btn btn-primary btn-sm mb-2">
+                                    <a href="administrator/elements_LQA/mgiohang/giohangAct.php?action=add&productId=<?php echo $product->idhanghoa; ?>&quantity=1"
+                                        class="btn btn-primary btn-sm mb-2">
                                         Thêm vào giỏ
                                     </a>
                                     <br>
-                                    <a href="./index.php?reqHanghoa=<?php echo $product->idhanghoa; ?>" 
-                                       class="btn btn-info btn-sm">
+                                    <a href="./index.php?reqHanghoa=<?php echo $product->idhanghoa; ?>"
+                                        class="btn btn-info btn-sm">
                                         Xem chi tiết
                                     </a>
                                 </td>
@@ -154,7 +146,7 @@ foreach ($productIds as $id) {
                 </table>
             </div>
         <?php endif; ?>
-        
+
         <div class="mt-4">
             <a href="index.php" class="btn btn-secondary">Quay lại</a>
         </div>
@@ -162,4 +154,5 @@ foreach ($productIds as $id) {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>

@@ -1,5 +1,11 @@
 <?php
 session_start();
+
+// Check if user is logged in
+if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
+    header('location:UserLogin.php');
+    exit(); // Add exit to prevent further execution
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,20 +23,15 @@ session_start();
 </head>
 
 <body>
-    <?php
-    if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
-        header('location:UserLogin.php');
-    }
-    ?>
     <div id="top_div">
         <?php
-        require './elements_LQA/top.php'
+        require './elements_LQA/top.php';
         ?>
     </div>
     <div class="row">
         <div id="left_div">
             <?php
-            require './elements_LQA/left.php'
+            require './elements_LQA/left.php';
             ?>
         </div>
         <div id="center_div">

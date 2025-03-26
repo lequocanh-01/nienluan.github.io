@@ -1,78 +1,4 @@
 $(document).ready(function () {
-  // Shopping Cart Functionality
-  $('.cart-quantity button').on('click', function() {
-    const input = $(this).siblings('input');
-    const currentValue = parseInt(input.val());
-    
-    if ($(this).hasClass('decrease')) {
-      if (currentValue > 1) {
-        input.val(currentValue - 1);
-        updateCartItem(input);
-      }
-    } else {
-      input.val(currentValue + 1);
-      updateCartItem(input);
-    }
-  });
-
-  $('.cart-quantity input').on('change', function() {
-    updateCartItem($(this));
-  });
-
-  $('.cart-remove').on('click', function() {
-    const cartItem = $(this).closest('.cart-item');
-    const itemId = cartItem.data('id');
-    
-    $.ajax({
-      url: './elements_LQA/mgiohang/giohangAct.php?reqact=remove',
-      type: 'POST',
-      data: { id: itemId },
-      success: function(response) {
-        cartItem.fadeOut(300, function() {
-          $(this).remove();
-          updateCartTotal();
-        });
-      },
-      error: function(error) {
-        console.error('Error removing item:', error);
-      }
-    });
-  });
-
-  function updateCartItem(input) {
-    const cartItem = input.closest('.cart-item');
-    const itemId = cartItem.data('id');
-    const quantity = parseInt(input.val());
-    
-    $.ajax({
-      url: './elements_LQA/mgiohang/giohangAct.php?reqact=update',
-      type: 'POST',
-      data: {
-        id: itemId,
-        quantity: quantity
-      },
-      success: function(response) {
-        updateCartTotal();
-      },
-      error: function(error) {
-        console.error('Error updating quantity:', error);
-      }
-    });
-  }
-
-  function updateCartTotal() {
-    $.ajax({
-      url: './elements_LQA/mgiohang/giohangAct.php?reqact=gettotal',
-      type: 'GET',
-      success: function(response) {
-        $('.cart-total-amount').text(response.total);
-      },
-      error: function(error) {
-        console.error('Error updating total:', error);
-      }
-    });
-  }
-
   // Menu interaction
   $(".itemOrder").hide();
   $(".cateOrder").click(function () {
@@ -301,34 +227,53 @@ $(document).ready(function () {
 
     if (query.length >= 2) {
       searchTimeout = setTimeout(() => {
+        console.log("Searching for:", query);
         $.ajax({
           url: window.location.origin + "/search_suggestions.php",
           method: "GET",
           data: { term: query },
           dataType: "json",
           success: function (data) {
+            console.log("Search results:", data);
             if (data && data.length > 0) {
               let html = "";
               data.forEach((item) => {
+                console.log("Processing item:", item);
                 html += `
-                                <a href="index.php?reqHanghoa=${item.id}" class="text-decoration-none text-dark">
+                                <a href="index.php?reqHanghoa=${
+                                  item.id
+                                }" class="text-decoration-none text-dark">
                                     <div class="search-suggestion">
-                                        <img src="data:image/png;base64,${item.image}" alt="${item.name}">
+                                        ${
+                                          item.isDefaultImage
+                                            ? `<div class="updating-image-container">
+                                            <img src="${item.image}" alt="${item.name}">
+                                            <p class="updating-text">Đang cập nhật ảnh</p>
+                                          </div>`
+                                            : `<img src="${item.image}" alt="${item.name}" onerror="this.src='img_LQA/updating-image.png'; this.parentNode.innerHTML += '<p class=\'updating-text\'>Đang cập nhật ảnh</p>';">`
+                                        }
                                         <div>
-                                            <div class="fw-bold">${item.name}</div>
-                                            <div class="text-muted">${item.price}</div>
+                                            <div class="fw-bold">${
+                                              item.name
+                                            }</div>
+                                            <div class="text-muted">${
+                                              item.price
+                                            }</div>
                                         </div>
                                     </div>
                                 </a>`;
               });
               searchResults.html(html).show();
+              console.log("Search results displayed");
             } else {
               searchResults
                 .html('<div class="p-3">Không tìm thấy sản phẩm nào</div>')
                 .show();
+              console.log("No search results found");
             }
           },
-          error: function () {
+          error: function (xhr, status, error) {
+            console.error("Search error:", error, xhr.responseText);
             searchResults
               .html('<div class="p-3">Có lỗi xảy ra khi tìm kiếm</div>')
               .show();
@@ -593,80 +538,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 // jscript userview
 $(document).ready(function () {
-  // Shopping Cart Functionality
-  $('.cart-quantity button').on('click', function() {
-    const input = $(this).siblings('input');
-    const currentValue = parseInt(input.val());
-    
-    if ($(this).hasClass('decrease')) {
-      if (currentValue > 1) {
-        input.val(currentValue - 1);
-        updateCartItem(input);
-      }
-    } else {
-      input.val(currentValue + 1);
-      updateCartItem(input);
-    }
-  });
-
-  $('.cart-quantity input').on('change', function() {
-    updateCartItem($(this));
-  });
-
-  $('.cart-remove').on('click', function() {
-    const cartItem = $(this).closest('.cart-item');
-    const itemId = cartItem.data('id');
-    
-    $.ajax({
-      url: './elements_LQA/mgiohang/giohangAct.php?reqact=remove',
-      type: 'POST',
-      data: { id: itemId },
-      success: function(response) {
-        cartItem.fadeOut(300, function() {
-          $(this).remove();
-          updateCartTotal();
-        });
-      },
-      error: function(error) {
-        console.error('Error removing item:', error);
-      }
-    });
-  });
-
-  function updateCartItem(input) {
-    const cartItem = input.closest('.cart-item');
-    const itemId = cartItem.data('id');
-    const quantity = parseInt(input.val());
-    
-    $.ajax({
-      url: './elements_LQA/mgiohang/giohangAct.php?reqact=update',
-      type: 'POST',
-      data: {
-        id: itemId,
-        quantity: quantity
-      },
-      success: function(response) {
-        updateCartTotal();
-      },
-      error: function(error) {
-        console.error('Error updating quantity:', error);
-      }
-    });
-  }
-
-  function updateCartTotal() {
-    $.ajax({
-      url: './elements_LQA/mgiohang/giohangAct.php?reqact=gettotal',
-      type: 'GET',
-      success: function(response) {
-        $('.cart-total-amount').text(response.total);
-      },
-      error: function(error) {
-        console.error('Error updating total:', error);
-      }
-    });
-  }
-
   // Xử lý xác nhận xóa người dùng
   function confirmDelete(username) {
     if (username === "admin") {

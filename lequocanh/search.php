@@ -4,6 +4,11 @@ $hanghoa = new hanghoa();
 
 $query = isset($_GET['query']) ? $_GET['query'] : '';
 $list_hanghoa = $hanghoa->searchHanghoa($query);
+
+// Lấy domain của trang web
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'];
+$baseUrl = $protocol . $host;
 ?>
 
 <!DOCTYPE html>
@@ -23,13 +28,42 @@ $list_hanghoa = $hanghoa->searchHanghoa($query);
         <div class="row row-cols-1 row-cols-md-3 g-4">
             <?php if (count($list_hanghoa) > 0): ?>
                 <?php foreach ($list_hanghoa as $v): ?>
+                    <?php
+                    // Lấy thông tin hình ảnh từ bảng hinhanh
+                    $hinhanh = $hanghoa->GetHinhAnhById($v->hinhanh);
+
+                    // Khởi tạo đường dẫn hình ảnh mặc định
+                    $imagePath = "img_LQA/updating-image.png";
+
+                    // Nếu có hình ảnh và có đường dẫn, sử dụng đường dẫn đó
+                    if ($hinhanh && !empty($hinhanh->duong_dan)) {
+                        $originalPath = $hinhanh->duong_dan;
+
+                        // Đảm bảo đường dẫn hình ảnh là tuyệt đối
+                        if (strpos($originalPath, 'http') === 0) {
+                            // Đường dẫn đã là URL đầy đủ
+                            $imagePath = $originalPath;
+                        } else {
+                            // Chuẩn hóa đường dẫn tương đối
+                            $relativePath = ltrim($originalPath, '/');
+
+                            // Sử dụng đường dẫn đã chuẩn hóa
+                            $imagePath = $relativePath;
+                        }
+                    }
+                    ?>
                     <div class="col">
                         <div class="card h-100 shadow-sm">
-                            <img src="data:image/png;base64,<?php echo $v->hinhanh; ?>" class="card-img-top" alt="<?php echo $v->tenhanghoa; ?>">
+                            <div class="updating-image-container">
+                                <img src="<?php echo $imagePath; ?>" alt="<?php echo $v->tenhanghoa; ?>" class="card-img-top" onerror="this.src='img_LQA/updating-image.png'">
+                                <?php if ($imagePath == "img_LQA/updating-image.png"): ?>
+                                    <p class="updating-text">Đang cập nhật ảnh</p>
+                                <?php endif; ?>
+                            </div>
                             <div class="card-body">
                                 <h5 class="card-title text-primary"><?php echo $v->tenhanghoa; ?></h5>
                                 <p class="card-text text-muted">
-                                    Giá bán: 
+                                    Giá bán:
                                     <span class="text-danger fw-bold">
                                         <?php echo number_format($v->giathamkhao, 0, ',', '.') . ' VNĐ'; ?>
                                     </span>

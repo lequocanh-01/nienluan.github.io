@@ -103,17 +103,7 @@ $cartItemCount = $giohang->getCartItemCount();
         <div class="row">
             <div class="col-12">
                 <?php
-                if (isset($_GET['req'])) {
-                    $req = $_GET['req'];
-                    switch ($req) {
-                        case 'hanghoaupdate':
-                            require './administrator/elements_LQA/mhanghoa/hanghoaUpdate.php?idhanghoa=' . $_GET['idhanghoa'];
-                            break;
-                        default:
-                            require './apart/viewListLoaihang.php';
-                            break;
-                    }
-                } elseif (!isset($_GET['reqHanghoa'])) {
+                if (!isset($_GET['reqHanghoa'])) {
                     require './apart/viewListLoaihang.php';
                 } else {
                     require './apart/viewHangHoa.php';
@@ -210,6 +200,7 @@ $cartItemCount = $giohang->getCartItemCount();
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

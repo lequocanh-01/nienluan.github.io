@@ -10,11 +10,12 @@ class Database
     $dbname = $init["dbname"];
     $username = $init["username"];
     $password = $init["password"];
+    $port = isset($init["port"]) ? $init["port"] : "3306";
     $opt = array(
       PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
       PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_OBJ
     );
-    $this->connect = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8", $username, $password, $opt);
+    $this->connect = new PDO("mysql:host=$servername;port=$port;dbname=$dbname;charset=utf8", $username, $password, $opt);
   }
 
   public function deleteAndUpdateID($userIdToDelete)

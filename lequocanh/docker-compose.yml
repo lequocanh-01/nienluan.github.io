@@ -1,0 +1,38 @@
+services:
+  web:
+    image: php:apache
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    restart: always
+    container_name: lequocanh_web
+
+  db:
+    image: mysql:latest
+    restart: always
+    container_name: lequocanh_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: lequocanh_db
+      MYSQL_USER: lequocanh
+      MYSQL_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: always
+    container_name: lequocanh_phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      - PMA_HOST=db
+      - PMA_PORT=3306
+    depends_on:
+      - db
+
+volumes:
+  db_data:

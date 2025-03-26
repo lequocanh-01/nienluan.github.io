@@ -10,8 +10,12 @@ if (file_exists($s)) {
 }
 require_once $f;
 
-class GioHang extends Database {
-    private function getUserId() {
+class GioHang extends Database
+{
+    private $cart_cache = null;
+
+    private function getUserId()
+    {
         if (isset($_SESSION['USER'])) {
             error_log("User logged in as: " . $_SESSION['USER']);
             return $_SESSION['USER'];
@@ -23,10 +27,11 @@ class GioHang extends Database {
         return null;
     }
 
-    public function addToCart($productId, $quantity = 1) {
+    public function addToCart($productId, $quantity = 1)
+    {
         $userId = $this->getUserId();
         error_log("Adding to cart - UserID: " . $userId . ", ProductID: " . $productId . ", Quantity: " . $quantity);
-        
+
         if (!$userId) {
             error_log("Failed to add to cart: No user ID");
             return false;
@@ -37,7 +42,7 @@ class GioHang extends Database {
             $checkProduct = "SELECT idhanghoa FROM hanghoa WHERE idhanghoa = ?";
             $stmtProduct = $this->connect->prepare($checkProduct);
             $stmtProduct->execute([$productId]);
-            
+
             if (!$stmtProduct->fetch()) {
                 error_log("Product does not exist: " . $productId);
                 return false;
@@ -61,31 +66,41 @@ class GioHang extends Database {
                 $stmt = $this->connect->prepare($sql);
                 $result = $stmt->execute([$userId, $productId, $quantity]);
             }
-            
+
             error_log("Cart operation result: " . ($result ? "success" : "failed"));
+
+            // Xóa cache khi thêm sản phẩm mới
+            $this->clearCartCache();
+
             return $result;
-            
         } catch (PDOException $e) {
             error_log("Error in cart operation: " . $e->getMessage());
             return false;
         }
     }
 
-    public function removeFromCart($productId) {
+    public function removeFromCart($productId)
+    {
         $userId = $this->getUserId();
         if (!$userId) return false;
 
         try {
             $sql = "DELETE FROM tbl_giohang WHERE user_id = ? AND product_id = ?";
             $stmt = $this->connect->prepare($sql);
-            return $stmt->execute([$userId, $productId]);
+            $result = $stmt->execute([$userId, $productId]);
+
+            // Xóa cache khi xóa sản phẩm
+            $this->clearCartCache();
+
+            return $result;
         } catch (PDOException $e) {
             error_log("Error removing from cart: " . $e->getMessage());
             return false;
         }
     }
 
-    public function updateCart($productId, $quantity) {
+    public function updateCart($productId, $quantity)
+    {
         $userId = $this->getUserId();
         if (!$userId) return false;
 
@@ -103,59 +118,77 @@ class GioHang extends Database {
         }
     }
 
-    public function getCart() {
+    public function getCart()
+    {
+        // Nếu đã có cache, trả về từ cache
+        if ($this->cart_cache !== null) {
+            return $this->cart_cache;
+        }
+
         $userId = $this->getUserId();
         error_log("Getting cart for user: " . $userId);
-        
+
         if (!$userId) {
             error_log("Failed to get cart: No user ID");
             return [];
         }
 
         try {
-            // Sửa câu SQL để lấy dữ liệu hình ảnh từ bảng hinhanh
-            $sql = "SELECT g.product_id, g.quantity, h.tenhanghoa, h.giathamkhao, i.duong_dan as hinhanh 
+            // Sửa câu SQL để lấy dữ liệu hình ảnh từ bảng hanghoa
+            $sql = "SELECT g.product_id, g.quantity, h.tenhanghoa, h.giathamkhao, h.hinhanh
                    FROM tbl_giohang g
-                   INNER JOIN hanghoa h ON g.product_id = h.idhanghoa 
-                   INNER JOIN hinhanh i ON h.hinhanh = i.id
+                   INNER JOIN hanghoa h ON g.product_id = h.idhanghoa
                    WHERE g.user_id = ?";
-            
+
             $stmt = $this->connect->prepare($sql);
             $stmt->execute([$userId]);
-            
+
             $cart = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                // Check if hinhanh is a numeric ID (reference to hinhanh table)
+                $hinhanh = $row['hinhanh'];
+
                 $cart[] = [
                     'product_id' => $row['product_id'],
                     'tenhanghoa' => $row['tenhanghoa'],
                     'giathamkhao' => $row['giathamkhao'],
                     'quantity' => $row['quantity'],
-                    'hinhanh' => $row['hinhanh']  // Đường dẫn hình ảnh từ bảng hinhanh
+                    'hinhanh' => $hinhanh  // Could be either an ID or base64 data
                 ];
             }
+
+            // Lưu vào cache
+            $this->cart_cache = $cart;
+
             return $cart;
-            
         } catch (PDOException $e) {
             error_log("Error getting cart: " . $e->getMessage());
             return [];
         }
     }
 
-    public function clearCart() {
+    public function clearCart()
+    {
         $userId = $this->getUserId();
         if (!$userId) return false;
 
         try {
             $sql = "DELETE FROM tbl_giohang WHERE user_id = ?";
             $stmt = $this->connect->prepare($sql);
-            return $stmt->execute([$userId]);
+            $result = $stmt->execute([$userId]);
+
+            // Xóa cache khi xóa giỏ hàng
+            $this->clearCartCache();
+
+            return $result;
         } catch (PDOException $e) {
             error_log("Error clearing cart: " . $e->getMessage());
             return false;
         }
     }
 
-    public function getCartItemCount() {
+    public function getCartItemCount()
+    {
         $userId = $this->getUserId();
         if (!$userId) return 0;
 
@@ -172,7 +205,8 @@ class GioHang extends Database {
     }
 
     // Phương thức mới để chuyển giỏ hàng từ session sang database khi đăng nhập
-    public function migrateSessionCartToDatabase($username) {
+    public function migrateSessionCartToDatabase($username)
+    {
         if (isset($_SESSION['cart']['guest_' . session_id()])) {
             $sessionCart = $_SESSION['cart']['guest_' . session_id()];
             foreach ($sessionCart as $productId => $quantity) {
@@ -182,31 +216,41 @@ class GioHang extends Database {
         }
     }
 
-    public function updateQuantity($productId, $quantity) {
+    public function updateQuantity($productId, $quantity)
+    {
         $userId = $this->getUserId();
         if (!$userId) return false;
 
         try {
-            $sql = "UPDATE tbl_giohang SET quantity = ? WHERE user_id = ? AND product_id = ?";
-            $stmt = $this->connect->prepare($sql);
-            return $stmt->execute([$quantity, $userId, $productId]);
+            if ($quantity > 0) {
+                $sql = "UPDATE tbl_giohang SET quantity = ? WHERE user_id = ? AND product_id = ?";
+                $stmt = $this->connect->prepare($sql);
+                $result = $stmt->execute([$quantity, $userId, $productId]);
+
+                // Xóa cache khi cập nhật số lượng
+                $this->clearCartCache();
+
+                return $result;
+            } else {
+                return $this->removeFromCart($productId);
+            }
         } catch (PDOException $e) {
-            error_log("Error updating quantity: " . $e->getMessage());
+            error_log("Error updating cart: " . $e->getMessage());
             return false;
         }
     }
 
-    public function getCartByUserId($userId) {
+    public function getCartByUserId($userId)
+    {
         try {
-            $sql = "SELECT g.product_id, g.quantity, h.tenhanghoa, h.giathamkhao, i.duong_dan as hinhanh 
+            $sql = "SELECT g.product_id, g.quantity, h.tenhanghoa, h.giathamkhao, h.hinhanh 
                    FROM tbl_giohang g
                    INNER JOIN hanghoa h ON g.product_id = h.idhanghoa 
-                   INNER JOIN hinhanh i ON h.hinhanh = i.id
                    WHERE g.user_id = ?";
-            
+
             $stmt = $this->connect->prepare($sql);
             $stmt->execute([$userId]);
-            
+
             $cart = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 $cart[] = [
@@ -214,15 +258,19 @@ class GioHang extends Database {
                     'tenhanghoa' => $row['tenhanghoa'],
                     'giathamkhao' => $row['giathamkhao'],
                     'quantity' => $row['quantity'],
-                    'hinhanh' => $row['hinhanh']  // Đường dẫn hình ảnh từ bảng hinhanh
+                    'hinhanh' => $row['hinhanh']
                 ];
             }
             return $cart;
-            
         } catch (PDOException $e) {
             error_log("Error getting cart for user $userId: " . $e->getMessage());
             return [];
         }
     }
+
+    // Thêm phương thức để xóa cache khi giỏ hàng thay đổi
+    private function clearCartCache()
+    {
+        $this->cart_cache = null;
+    }
 }
-?>
