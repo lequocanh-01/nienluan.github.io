@@ -1679,7 +1679,7 @@ button:hover {
   color: #777;
 }
 
-/* Thêm vào cu���i file */
+/* Thêm vào cuối file */
 span.required {
   color: red;
   margin-left: 3px;
@@ -1730,25 +1730,65 @@ span.required {
 
 .image-table {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 20px 0;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .image-table th,
 .image-table td {
-  padding: 12px;
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+}
+
+.image-table th {
+  background: linear-gradient(135deg, #1a2a6c, #2a4858);
+  color: white;
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+}
+
+.image-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.image-table tbody tr:hover {
+  background-color: #f5f8fa;
+}
+
+.image-table th:nth-child(1),
+.image-table td:nth-child(1) {
+  width: 50px;
+  text-align: center;
+}
+
+.image-table th:nth-child(2),
+.image-table td:nth-child(2) {
+  width: 120px;
+  text-align: center;
 }
 
 .preview-image {
   width: 100px;
   height: 100px;
   object-fit: contain;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid #ddd;
-  padding: 2px;
+  padding: 4px;
   background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.preview-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .badge {
@@ -1757,6 +1797,7 @@ span.required {
   font-size: 13px;
   display: inline-block;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .bg-success {
@@ -1770,7 +1811,7 @@ span.required {
 }
 
 .delete-btn {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: none;
   border-radius: 4px;
   background-color: #dc3545;
@@ -1781,6 +1822,7 @@ span.required {
 
 .delete-btn:hover {
   background-color: #c82333;
+  transform: translateY(-2px);
 }
 
 .delete-btn:disabled {
@@ -1822,41 +1864,49 @@ span.required {
 
 .upload-form {
   background: #fff;
-  padding: 20px;
+  padding: 25px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  margin-bottom: 25px;
+  border: 1px solid #eee;
 }
 
 .upload-form h3 {
-  margin-bottom: 15px;
-  color: #333;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  font-weight: 600;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
 }
 
 .upload-form .input-group {
   display: flex;
   gap: 10px;
+  align-items: center;
 }
 
 .upload-form input[type="file"] {
-  padding: 8px;
+  padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
   flex: 1;
+  background-color: #f9f9f9;
 }
 
 .upload-form button {
-  padding: 8px 20px;
+  padding: 10px 20px;
   background: #007bff;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  font-weight: 500;
 }
 
 .upload-form button:hover {
   background: #0056b3;
+  transform: translateY(-2px);
 }
 
 .list-header {

@@ -11,6 +11,10 @@ ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 ini_set('error_log', dirname(dirname(dirname(__FILE__))) . '/upload_errors.log');
 
+// Initialize database connection
+$db = new Database();
+$conn = $db->connect;
+
 // Đảm bảo gửi header JSON cho các action không phải upload
 if (!isset($_REQUEST["reqact"]) || $_REQUEST["reqact"] !== "addnew") {
     header('Content-Type: application/json; charset=utf-8');
@@ -96,127 +100,141 @@ try {
                             }
 
                             // Tự động khớp hình ảnh với sản phẩm nếu tìm thấy sản phẩm có tên giống với tên file
-                            // Hướng tiếp cận mới: So khớp chính xác tên file với tên sản phẩm
+                            // Hướng tiếp cận chính xác tuyệt đối: So khớp chính xác tên file với tên sản phẩm (phân biệt hoa thường)
                             $imageNameWithoutExt = pathinfo($fileName, PATHINFO_FILENAME);
 
-                            // Tìm sản phẩm có tên khớp chính xác với tên file hình ảnh
-                            $sqlMatchProduct = "SELECT idhanghoa, tenhanghoa FROM hanghoa WHERE LOWER(TRIM(tenhanghoa)) = LOWER(TRIM(?))";
+                            // Tìm sản phẩm có tên khớp chính xác với tên file hình ảnh (chỉ loại bỏ khoảng trắng đầu/cuối)
+                            // Vẫn giữ phân biệt chữ hoa/thường để so khớp chính xác tuyệt đối
+                            $sqlMatchProduct = "SELECT idhanghoa, tenhanghoa FROM hanghoa WHERE TRIM(tenhanghoa) = TRIM(?)";
                             $stmtMatchProduct = $conn->prepare($sqlMatchProduct);
                             $stmtMatchProduct->execute([$imageNameWithoutExt]);
                             $matchedProduct = $stmtMatchProduct->fetch(PDO::FETCH_ASSOC);
 
-                            if ($matchedProduct) {
-                                // Cập nhật hình ảnh cho sản phẩm
-                                $sqlUpdateProduct = "UPDATE hanghoa SET hinhanh = ? WHERE idhanghoa = ?";
-                                $stmtUpdateProduct = $conn->prepare($sqlUpdateProduct);
-                                $stmtUpdateProduct->execute([$imageNameWithoutExt, $matchedProduct['idhanghoa']]);
+                            // Kiểm tra thêm lần nữa để đảm bảo sự chính xác tuyệt đối
+                            if ($matchedProduct && trim($matchedProduct['tenhanghoa']) === trim($imageNameWithoutExt)) {
+                                // Kiểm tra xem ảnh có bị trùng lặp không (bằng hash MD5)
+                                $fileHash = md5_file($fileTmpName);
+                                $existingImageId = $hanghoa->CheckImageExistsByHash($fileHash);
 
-                                // Thêm quan hệ vào bảng hanghoa_hinhanh
-                                $sqlCheckRelation = "SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh = ?";
-                                $stmtCheckRelation = $conn->prepare($sqlCheckRelation);
-                                $stmtCheckRelation->execute([$matchedProduct['idhanghoa'], $imageNameWithoutExt]);
+                                if ($existingImageId) {
+                                    // Nếu ảnh đã tồn tại, sử dụng ảnh có sẵn
+                                    error_log("Ảnh trùng lặp đã được phát hiện, sử dụng ID: " . $existingImageId);
 
-                                if ($stmtCheckRelation->fetchColumn() == 0) {
-                                    $sqlInsertRelation = "INSERT INTO hanghoa_hinhanh (idhanghoa, idhinhanh) VALUES (?, ?)";
-                                    $stmtInsertRelation = $conn->prepare($sqlInsertRelation);
-                                    $stmtInsertRelation->execute([$matchedProduct['idhanghoa'], $imageNameWithoutExt]);
+                                    // Cập nhật hình ảnh cho sản phẩm với ID ảnh đã tồn tại
+                                    $sqlUpdateProduct = "UPDATE hanghoa SET hinhanh = ? WHERE idhanghoa = ?";
+                                    $stmtUpdateProduct = $conn->prepare($sqlUpdateProduct);
+                                    $stmtUpdateProduct->execute([(int)$existingImageId, $matchedProduct['idhanghoa']]);
+
+                                    // Thêm quan hệ vào bảng hanghoa_hinhanh nếu chưa tồn tại
+                                    $sqlCheckRelation = "SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh = ?";
+                                    $stmtCheckRelation = $conn->prepare($sqlCheckRelation);
+                                    $stmtCheckRelation->execute([$matchedProduct['idhanghoa'], (int)$existingImageId]);
+
+                                    if ($stmtCheckRelation->fetchColumn() == 0) {
+                                        $sqlInsertRelation = "INSERT INTO hanghoa_hinhanh (idhanghoa, idhinhanh) VALUES (?, ?)";
+                                        $stmtInsertRelation = $conn->prepare($sqlInsertRelation);
+                                        $stmtInsertRelation->execute([$matchedProduct['idhanghoa'], (int)$existingImageId]);
+                                    }
+
+                                    // Lưu thông tin vào session
+                                    if (!isset($_SESSION['matched_images'])) {
+                                        $_SESSION['matched_images'] = [];
+                                    }
+
+                                    $_SESSION['matched_images'][] = [
+                                        'product_id' => $matchedProduct['idhanghoa'],
+                                        'product_name' => $matchedProduct['tenhanghoa'],
+                                        'image_id' => (int)$existingImageId,
+                                        'image_name' => $fileName,
+                                        'duplicate' => true
+                                    ];
+
+                                    $successCount++;
+                                    continue; // Bỏ qua việc upload file mới
                                 }
 
-                                // Lưu thông tin vào session để hiển thị
-                                if (!isset($_SESSION['matched_images'])) {
-                                    $_SESSION['matched_images'] = [];
+                                // Tạo tên file mới để tránh trùng lặp
+                                $newFileName = uniqid() . '_' . basename($fileName);
+                                $targetPath = $uploadDirAbsolute . $newFileName;
+
+                                // Debug information
+                                error_log("Uploading file: " . $fileName);
+                                error_log("Target path: " . $targetPath);
+                                error_log("File hash: " . $fileHash);
+
+                                if (move_uploaded_file($fileTmpName, $targetPath)) {
+                                    // Lưu thông tin vào database với đường dẫn tương đối
+                                    $relativePath = "administrator/uploads/" . $newFileName;
+
+                                    if ($hanghoa->ThemHinhAnh($fileName, $fileType, $relativePath, $fileHash)) {
+                                        $successCount++;
+                                        $lastInsertId = $hanghoa->GetLastInsertId();
+
+                                        // Cập nhật hình ảnh cho sản phẩm - đảm bảo gán ID ảnh làm giá trị integer
+                                        $sqlUpdateProduct = "UPDATE hanghoa SET hinhanh = ? WHERE idhanghoa = ?";
+                                        $stmtUpdateProduct = $conn->prepare($sqlUpdateProduct);
+                                        $stmtUpdateProduct->execute([(int)$lastInsertId, $matchedProduct['idhanghoa']]);
+
+                                        // Thêm quan hệ vào bảng hanghoa_hinhanh
+                                        $sqlCheckRelation = "SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh = ?";
+                                        $stmtCheckRelation = $conn->prepare($sqlCheckRelation);
+                                        $stmtCheckRelation->execute([$matchedProduct['idhanghoa'], (int)$lastInsertId]);
+
+                                        if ($stmtCheckRelation->fetchColumn() == 0) {
+                                            $sqlInsertRelation = "INSERT INTO hanghoa_hinhanh (idhanghoa, idhinhanh) VALUES (?, ?)";
+                                            $stmtInsertRelation = $conn->prepare($sqlInsertRelation);
+                                            $stmtInsertRelation->execute([$matchedProduct['idhanghoa'], (int)$lastInsertId]);
+                                        }
+
+                                        // Lưu thông tin vào session để hiển thị
+                                        if (!isset($_SESSION['matched_images'])) {
+                                            $_SESSION['matched_images'] = [];
+                                        }
+
+                                        $_SESSION['matched_images'][] = [
+                                            'product_id' => $matchedProduct['idhanghoa'],
+                                            'product_name' => $matchedProduct['tenhanghoa'],
+                                            'image_id' => (int)$lastInsertId,
+                                            'image_name' => $fileName
+                                        ];
+
+                                        // Luôn tự động áp dụng hình ảnh cho sản phẩm
+                                        if ($hanghoa->ApplyImageToProduct($matchedProduct['idhanghoa'], (int)$lastInsertId)) {
+                                            $_SESSION['matched_images'][] = [
+                                                'image_name' => $fileName,
+                                                'product_name' => $matchedProduct['tenhanghoa'],
+                                                'product_id' => $matchedProduct['idhanghoa'],
+                                                'image_id' => (int)$lastInsertId,
+                                                'auto_applied' => true
+                                            ];
+                                        }
+                                    } else {
+                                        $failedCount++;
+                                        $errorMsg = "Không thể lưu thông tin ảnh '{$fileName}' vào cơ sở dữ liệu.";
+                                        $errorMessages[] = $errorMsg;
+                                        error_log($errorMsg);
+
+                                        if (file_exists($targetPath)) {
+                                            unlink($targetPath);
+                                        }
+                                    }
+                                } else {
+                                    $failedCount++;
+                                    $error = error_get_last();
+                                    $errorMsg = "Không thể tải lên file '" . $fileName . "'. ";
+                                    if ($error) {
+                                        $errorMsg .= "Lỗi PHP: " . $error['message'];
+                                    }
+                                    $errorMessages[] = $errorMsg;
+                                    error_log("Failed to move uploaded file: " . $fileName);
+                                    error_log("PHP Upload error: " . ($error ? $error['message'] : 'Unknown error'));
                                 }
-
-                                $_SESSION['matched_images'][] = [
-                                    'product_id' => $matchedProduct['idhanghoa'],
-                                    'product_name' => $matchedProduct['tenhanghoa'],
-                                    'image_id' => $imageNameWithoutExt,
-                                    'image_name' => $fileName
-                                ];
-
-                                $successCount++;
                             } else {
                                 $failedCount++;
                                 $errorMsg = "Không tìm thấy sản phẩm nào có tên trùng khớp với tên file '{$imageNameWithoutExt}'.";
                                 $errorMessages[] = $errorMsg;
                                 error_log($errorMsg);
                                 continue;
-                            }
-
-                            // Kiểm tra xem sản phẩm đã có hình ảnh chưa
-                            $existingImage = false;
-                            foreach ($matchedProduct as $product) {
-                                if (!empty($product['hinhanh'])) {
-                                    $existingImage = true;
-                                    break;
-                                }
-                            }
-
-                            // Tạo tên file mới để tránh trùng lặp
-                            $newFileName = uniqid() . '_' . basename($fileName);
-                            $targetPath = $uploadDirAbsolute . $newFileName;
-
-                            // Debug information
-                            error_log("Uploading file: " . $fileName);
-                            error_log("Target path: " . $targetPath);
-
-                            if (move_uploaded_file($fileTmpName, $targetPath)) {
-                                // Lưu thông tin vào database với đường dẫn tương đối
-                                $relativePath = "administrator/uploads/" . $newFileName;
-
-                                if ($hanghoa->ThemHinhAnh($fileName, $fileType, $relativePath)) {
-                                    $successCount++;
-                                    $lastInsertId = $hanghoa->GetLastInsertId();
-
-                                    if (!isset($_SESSION['matched_images'])) {
-                                        $_SESSION['matched_images'] = [];
-                                    }
-
-                                    // Kiểm tra xem tùy chọn tự động áp dụng được bật hay không
-                                    $autoApply = isset($_SESSION['auto_apply_images']) ? $_SESSION['auto_apply_images'] : true;
-                                    error_log("Auto apply setting: " . ($autoApply ? 'Enabled' : 'Disabled'));
-
-                                    if ($autoApply) {
-                                        // Tự động áp dụng hình ảnh cho sản phẩm
-                                        if ($hanghoa->ApplyImageToProduct($matchedProduct['idhanghoa'], $lastInsertId)) {
-                                            $_SESSION['matched_images'][] = [
-                                                'image_name' => $fileName,
-                                                'product_name' => $matchedProduct['tenhanghoa'],
-                                                'product_id' => $matchedProduct['idhanghoa'],
-                                                'image_id' => $lastInsertId,
-                                                'auto_applied' => true
-                                            ];
-                                        }
-                                    } else {
-                                        // Chỉ lưu thông tin để người dùng có thể áp dụng thủ công sau
-                                        $_SESSION['matched_images'][] = [
-                                            'image_name' => $fileName,
-                                            'product_name' => $matchedProduct['tenhanghoa'],
-                                            'product_id' => $matchedProduct['idhanghoa'],
-                                            'image_id' => $lastInsertId,
-                                            'auto_applied' => false
-                                        ];
-                                    }
-                                } else {
-                                    $failedCount++;
-                                    $errorMsg = "Không thể lưu thông tin ảnh '{$fileName}' vào cơ sở dữ liệu.";
-                                    $errorMessages[] = $errorMsg;
-                                    error_log($errorMsg);
-
-                                    if (file_exists($targetPath)) {
-                                        unlink($targetPath);
-                                    }
-                                }
-                            } else {
-                                $failedCount++;
-                                $error = error_get_last();
-                                $errorMsg = "Không thể tải lên file '" . $fileName . "'. ";
-                                if ($error) {
-                                    $errorMsg .= "Lỗi PHP: " . $error['message'];
-                                }
-                                $errorMessages[] = $errorMsg;
-                                error_log("Failed to move uploaded file: " . $fileName);
-                                error_log("PHP Upload error: " . ($error ? $error['message'] : 'Unknown error'));
                             }
                         } else {
                             $failedCount++;

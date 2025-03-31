@@ -105,6 +105,27 @@ if (!file_exists($uploadDirAbsolute)) {
         <?php endif; ?>
     <?php endif; ?>
 
+    <?php if (isset($_SESSION['matched_images']) && !empty($_SESSION['matched_images'])): ?>
+        <div class="alert alert-info">
+            <p><strong>Kết quả khớp hình ảnh:</strong></p>
+            <ul>
+                <?php foreach ($_SESSION['matched_images'] as $matched): ?>
+                    <li>
+                        <?php if (isset($matched['duplicate']) && $matched['duplicate']): ?>
+                            Hình ảnh <strong><?php echo htmlspecialchars($matched['image_name']); ?></strong>
+                            đã tồn tại trong hệ thống và được áp dụng cho sản phẩm
+                            <strong><?php echo htmlspecialchars($matched['product_name']); ?></strong>
+                        <?php else: ?>
+                            Hình ảnh <strong><?php echo htmlspecialchars($matched['image_name']); ?></strong>
+                            được khớp với sản phẩm <strong><?php echo htmlspecialchars($matched['product_name']); ?></strong>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php unset($_SESSION['matched_images']); ?>
+    <?php endif; ?>
+
     <?php if (isset($_SESSION['auto_applied_images']) && !empty($_SESSION['auto_applied_images'])): ?>
         <div class="alert alert-success">
             <p><strong>Đã tự động áp dụng hình ảnh cho các sản phẩm sau:</strong></p>
@@ -121,20 +142,6 @@ if (!file_exists($uploadDirAbsolute)) {
     <!-- Form upload hình ảnh -->
     <div class="admin-form">
         <h3>Upload hình ảnh</h3>
-
-        <!-- Tùy chọn hiển thị -->
-        <div class="option-panel">
-            <div class="option-title">Tùy chọn áp dụng hình ảnh</div>
-            <div class="option-item">
-                <input type="checkbox" id="auto_apply_images" name="auto_apply_images" <?php echo (isset($_SESSION['auto_apply_images']) && $_SESSION['auto_apply_images']) ? 'checked' : ''; ?>>
-                <label for="auto_apply_images">Tự động áp dụng hình ảnh cho sản phẩm khi tải lên</label>
-                <div class="option-description">
-                    <div>Khi bật: Hình ảnh sẽ tự động áp dụng cho sản phẩm có tên trùng khớp.</div>
-                    <div>Khi tắt: Bạn cần nhấn nút "Áp dụng" để liên kết hình ảnh với sản phẩm.</div>
-                </div>
-                <button id="save_options" class="btn btn-primary">Lưu tùy chọn</button>
-            </div>
-        </div>
 
         <form method="post" action="elements_LQA/mhinhanh/hinhanhAct.php?reqact=addnew" enctype="multipart/form-data" id="uploadForm">
             <div class="input-group">
@@ -170,6 +177,7 @@ if (!file_exists($uploadDirAbsolute)) {
                     <th>Tên file</th>
                     <th>Đường dẫn</th>
                     <th>Loại file</th>
+                    <th>Hash</th>
                     <th>Trạng thái</th>
                     <th>Ngày thêm</th>
                     <th>Thao tác</th>
@@ -200,6 +208,7 @@ if (!file_exists($uploadDirAbsolute)) {
                         <td><?php echo htmlspecialchars($img->ten_file); ?></td>
                         <td><?php echo htmlspecialchars($img->duong_dan); ?></td>
                         <td><?php echo htmlspecialchars($img->loai_file); ?></td>
+                        <td><?php echo htmlspecialchars($img->file_hash); ?></td>
                         <td>
                             <?php
                             $products = $hanghoa->GetProductsByImageId($img->id);
@@ -228,37 +237,3 @@ if (!file_exists($uploadDirAbsolute)) {
 </div>
 
 <script src="../../js_LQA/jscript.js"></script>
-
-<script>
-    // Xử lý lưu tùy chọn
-    document.addEventListener('DOMContentLoaded', function() {
-        // Xử lý sự kiện lưu tùy chọn
-        document.getElementById('save_options').addEventListener('click', function(e) {
-            e.preventDefault();
-            const autoApply = document.getElementById('auto_apply_images').checked;
-
-            // Gửi AJAX để lưu tùy chọn
-            fetch('elements_LQA/mhinhanh/saveOptions.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'auto_apply_images=' + (autoApply ? '1' : '0')
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Hiển thị thông báo thành công
-                        alert('Đã lưu tùy chọn thành công!');
-                    } else {
-                        // Hiển thị thông báo lỗi
-                        alert('Có lỗi xảy ra: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi lưu tùy chọn!');
-                });
-        });
-    });
-</script>

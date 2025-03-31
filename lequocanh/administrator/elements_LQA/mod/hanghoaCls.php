@@ -258,13 +258,31 @@ class hanghoa extends Database
         }
     }
 
-    public function ThemHinhAnh($ten_file, $loai_file, $duong_dan)
+    public function ThemHinhAnh($ten_file, $loai_file, $duong_dan, $file_hash = null)
     {
         try {
-            $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao) 
-                    VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)";
-            $stmt = $this->connect->prepare($sql);
-            return $stmt->execute([$ten_file, $loai_file, $duong_dan]);
+            // Kiểm tra xem đã có cột file_hash trong bảng hinhanh chưa
+            $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
+            $checkColumnStmt = $this->connect->prepare($checkColumnSql);
+            $checkColumnStmt->execute();
+
+            // Nếu chưa có cột file_hash, thêm cột này vào bảng
+            if ($checkColumnStmt->rowCount() == 0) {
+                $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
+                $this->connect->exec($addColumnSql);
+            }
+
+            if ($file_hash) {
+                $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao, file_hash) 
+                        VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP, ?)";
+                $stmt = $this->connect->prepare($sql);
+                return $stmt->execute([$ten_file, $loai_file, $duong_dan, $file_hash]);
+            } else {
+                $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao) 
+                        VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)";
+                $stmt = $this->connect->prepare($sql);
+                return $stmt->execute([$ten_file, $loai_file, $duong_dan]);
+            }
         } catch (PDOException $e) {
             error_log("Error in ThemHinhAnh: " . $e->getMessage());
             return false;
@@ -294,8 +312,34 @@ class hanghoa extends Database
     public function ApplyImageToProduct($idhanghoa, $id_hinhanh)
     {
         try {
-            // Bắt đầu giao dịch
-            $this->connect->beginTransaction();
+            // Đảm bảo kết nối đang hoạt động
+            if (!$this->connect || !($this->connect instanceof PDO)) {
+                error_log("Không có kết nối database hợp lệ");
+                return false;
+            }
+
+            // Kiểm tra trạng thái transaction hiện tại
+            try {
+                // Bắt đầu giao dịch mới
+                $this->connect->beginTransaction();
+            } catch (PDOException $e) {
+                // Nếu có lỗi "There is no active transaction", thử commit trước khi bắt đầu mới
+                if (strpos($e->getMessage(), 'There is no active transaction') !== false) {
+                    error_log("Đang thử phục hồi transaction: " . $e->getMessage());
+                    try {
+                        // Thử commit transaction hiện tại nếu có
+                        $this->connect->commit();
+                    } catch (Exception $ex) {
+                        // Bỏ qua lỗi nếu không có transaction để commit
+                    }
+                    // Bắt đầu transaction mới
+                    $this->connect->beginTransaction();
+                } else {
+                    // Lỗi khác, ghi log và trả về false
+                    error_log("Lỗi transaction: " . $e->getMessage());
+                    return false;
+                }
+            }
 
             // Đảm bảo bảng hanghoa_hinhanh đã được tạo
             $this->CreateHanghoaHinhanhTable();
@@ -334,7 +378,11 @@ class hanghoa extends Database
             return true;
         } catch (Exception $e) {
             // Rollback nếu có lỗi
-            $this->connect->rollBack();
+            try {
+                $this->connect->rollBack();
+            } catch (PDOException $rollbackException) {
+                error_log("Lỗi khi rollback: " . $rollbackException->getMessage());
+            }
             error_log("Error in ApplyImageToProduct: " . $e->getMessage());
             return false;
         }
@@ -420,6 +468,35 @@ class hanghoa extends Database
         }
     }
 
+    // Thêm phương thức kiểm tra trùng lặp ảnh bằng hash MD5
+    public function CheckImageExistsByHash($fileHash)
+    {
+        try {
+            // Kiểm tra xem đã có cột file_hash trong bảng hinhanh chưa
+            $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
+            $checkColumnStmt = $this->connect->prepare($checkColumnSql);
+            $checkColumnStmt->execute();
+
+            // Nếu chưa có cột file_hash, thêm cột này vào bảng
+            if ($checkColumnStmt->rowCount() == 0) {
+                $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
+                $this->connect->exec($addColumnSql);
+                return false; // Vì vừa thêm cột, chắc chắn chưa có dữ liệu
+            }
+
+            $sql = "SELECT id FROM hinhanh WHERE file_hash = :fileHash";
+            $cmd = $this->connect->prepare($sql);
+            $cmd->bindValue(":fileHash", $fileHash);
+            $cmd->execute();
+            $result = $cmd->fetch(PDO::FETCH_OBJ);
+
+            return $result ? $result->id : false;
+        } catch (PDOException $e) {
+            error_log("Error in CheckImageExistsByHash: " . $e->getMessage());
+            return false;
+        }
+    }
+
     // Đếm số lượng hình ảnh đã áp dụng cho từng sản phẩm
     public function CountImagesForProduct($idhanghoa)
     {
@@ -500,20 +577,6 @@ class hanghoa extends Database
         }
     }
 
-    // Kiểm tra xem tên file hình ảnh có khớp chính xác với tên sản phẩm không
-    public function IsExactImageNameMatch($tenhanghoa, $ten_file)
-    {
-        // Tách tên file không có phần mở rộng
-        $imageNameWithoutExt = pathinfo($ten_file, PATHINFO_FILENAME);
-
-        // So sánh chính xác giữa tên sản phẩm và tên file
-        if (strcasecmp(trim($tenhanghoa), trim($imageNameWithoutExt)) === 0) {
-            return true;
-        }
-
-        return false;
-    }
-
     // Tìm hình ảnh có tên khớp chính xác với tên sản phẩm
     public function FindExactMatchImage($idhanghoa)
     {
@@ -577,7 +640,7 @@ class hanghoa extends Database
                         $stmtUpdate->execute([$image->id, $product->idhanghoa]);
 
                         // Thêm liên kết vào bảng hanghoa_hinhanh
-                        $checkSql = "SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh = ?";
+                        $checkSql = "SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh =?";
                         $checkStmt = $this->connect->prepare($checkSql);
                         $checkStmt->execute([$product->idhanghoa, $image->id]);
                         $exists = $checkStmt->fetchColumn() > 0;
@@ -755,5 +818,20 @@ class hanghoa extends Database
             error_log("Unexpected error in RemoveAllMismatchedImages: " . $e->getMessage());
             return false;
         }
+    }
+
+    // Kiểm tra xem tên file hình ảnh có khớp chính xác với tên sản phẩm không (phân biệt hoa thường)
+    public function IsExactImageNameMatch($tenhanghoa, $ten_file)
+    {
+        // Tách tên file không có phần mở rộng
+        $imageNameWithoutExt = pathinfo($ten_file, PATHINFO_FILENAME);
+
+        // So sánh chính xác giữa tên sản phẩm và tên file, chỉ loại bỏ khoảng trắng đầu/cuối
+        // Giữ nguyên phân biệt chữ hoa/thường để so khớp tuyệt đối
+        if (trim($tenhanghoa) === trim($imageNameWithoutExt)) {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -233,32 +233,8 @@ $l = count($list_hanghoa);
         ?>
 
         <?php
-        // Kiểm tra xem có sản phẩm nào chưa có ảnh và có ảnh phù hợp không
-        $productsWithMatchingImages = [];
-        foreach ($list_hanghoa as $product) {
-            if (empty($product->hinhanh) || $product->hinhanh == 0) {
-                $matchFound = false;
-                foreach ($list_hinhanh as $img) {
-                    if ($hanghoaObj->IsExactImageNameMatch($product->tenhanghoa, $img->ten_file)) {
-                        $matchFound = true;
-                        $productsWithMatchingImages[] = [
-                            'product_id' => $product->idhanghoa,
-                            'image_id' => $img->id
-                        ];
-                        break; // Chỉ lấy ảnh đầu tiên khớp
-                    }
-                }
-            }
-        }
-
-        // Hiển thị nút áp dụng tất cả nếu có sản phẩm nào chưa có ảnh và có ảnh phù hợp
-        if (!empty($productsWithMatchingImages)) {
-            echo '<a href="./elements_LQA/mhanghoa/hanghoaAct.php?reqact=applyallimages&matches=' .
-                urlencode(json_encode($productsWithMatchingImages)) .
-                '" class="btn-apply-all">
-                 <i class="fas fa-images"></i> Áp dụng tất cả hình ảnh phù hợp
-                 </a>';
-        }
+        // Đoạn mã kiểm tra và hiển thị nút "Áp dụng tất cả hình ảnh phù hợp" đã được xóa
+        // vì chức năng này đã được thay thế bằng tự động áp dụng hình ảnh khi tải lên
         ?>
     </div>
 
@@ -268,18 +244,16 @@ $l = count($list_hanghoa);
         echo '<div class="alert alert-warning">';
         echo '<div class="alert-header">';
         echo '<h4><i class="fas fa-exclamation-triangle"></i> Lưu ý: Có ' . count($mismatched_images) . ' sản phẩm có hình ảnh không khớp với tên sản phẩm</h4>';
-        echo '<a href="javascript:void(0)" onclick="confirmRemoveAll()" class="btn btn-danger remove-mismatched-btn"><i class="fas fa-unlink"></i> Gỡ bỏ tất cả hình ảnh không khớp</a>';
         echo '</div>';
         echo '<ul class="mismatched-list">';
         foreach ($mismatched_images as $item) {
             echo '<li>';
             echo 'Sản phẩm "' . htmlspecialchars($item->tenhanghoa) . '" (ID: ' . $item->idhanghoa . ') ';
             echo 'đang sử dụng hình ảnh "' . htmlspecialchars($item->ten_file) . '" (ID: ' . $item->id . ') ';
-            echo '<a href="javascript:void(0)" onclick="confirmRemoveSingle(' . $item->idhanghoa . ', \'' . htmlspecialchars($item->tenhanghoa) . '\')" class="btn-remove-image" title="Gỡ bỏ hình ảnh này"><i class="fas fa-times-circle"></i></a>';
             echo '</li>';
         }
         echo '</ul>';
-        echo '<p><em>Lưu ý: Đây chỉ là thông báo, bạn có thể kiểm tra và sửa thủ công nếu cần hoặc sử dụng nút gỡ bỏ để loại bỏ hình ảnh không khớp.</em></p>';
+        echo '<p><em>Lưu ý: Đây chỉ là thông báo, bạn có thể kiểm tra và sửa thủ công nếu cần.</em></p>';
         echo '</div>';
     }
 
@@ -346,27 +320,6 @@ $l = count($list_hanghoa);
                             } else {
                                 echo '<img class="iconbutton" src="./img_LQA/no-image.png" alt="No image">';
 
-                                // Chỉ hiển thị nút áp dụng khi sản phẩm chưa có hình ảnh
-                                // Kiểm tra nếu có hình ảnh KHỚP CHÍNH XÁC (tên hình ảnh phải giống hệt tên sản phẩm)
-                                $matchingImages = [];
-                                foreach ($list_hinhanh as $img) {
-                                    if ($hanghoaObj->IsExactImageNameMatch($u->tenhanghoa, $img->ten_file)) {
-                                        $matchingImages[] = $img;
-                                    }
-                                }
-
-                                if (!empty($matchingImages)) {
-                                    echo '<div class="matching-images">';
-                                    foreach ($matchingImages as $img) {
-                                        echo '<a href="./elements_LQA/mhanghoa/hanghoaAct.php?reqact=applyimage&idhanghoa=' . $u->idhanghoa . '&id_hinhanh=' . $img->id . '" 
-                                                 class="btn btn-apply-image" 
-                                                 title="Áp dụng hình ảnh: ' . $img->ten_file . '">
-                                                 <i class="fas fa-check"></i> Áp dụng
-                                              </a>';
-                                    }
-                                    echo '</div>';
-                                }
-
                                 // Hiển thị số lượng hình ảnh nếu có
                                 $imageCount = $hanghoaObj->CountImagesForProduct($u->idhanghoa);
                                 if ($imageCount > 0) {
@@ -428,20 +381,6 @@ $l = count($list_hanghoa);
 <script src="../../js_LQA/jscript.js"></script>
 
 <script>
-    // Xác nhận gỡ bỏ một hình ảnh
-    function confirmRemoveSingle(idhanghoa, tenhanghoa) {
-        if (confirm('Bạn có chắc chắn muốn gỡ bỏ hình ảnh khỏi sản phẩm "' + tenhanghoa + '" không?')) {
-            window.location.href = './elements_LQA/mhanghoa/hanghoaAct.php?reqact=remove_image&idhanghoa=' + idhanghoa;
-        }
-    }
-
-    // Xác nhận gỡ bỏ tất cả hình ảnh không khớp
-    function confirmRemoveAll() {
-        if (confirm('Bạn có chắc chắn muốn gỡ bỏ TẤT CẢ hình ảnh không khớp tên ra khỏi sản phẩm không?\nHành động này không thể hoàn tác!')) {
-            window.location.href = './elements_LQA/mhanghoa/hanghoaAct.php?reqact=remove_mismatched_images';
-        }
-    }
-
     // Javascript xử lý chọn hình ảnh
     function selectImage(imageId) {
         // Lấy đối tượng select
