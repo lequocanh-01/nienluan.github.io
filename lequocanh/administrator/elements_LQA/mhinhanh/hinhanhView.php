@@ -102,6 +102,106 @@ if (!file_exists($uploadDirAbsolute)) {
                     <?php unset($_SESSION['upload_errors']); ?>
                 <?php endif; ?>
             </div>
+        <?php elseif ($_GET['result'] == 'duplicates'): ?>
+            <?php if (isset($_SESSION['duplicate_images']) && !empty($_SESSION['duplicate_images'])): ?>
+                <div class="alert alert-warning alert-with-icon">
+                    <i class="fas fa-exclamation-triangle alert-icon"></i>
+                    <div class="alert-content">
+                        <h4 class="alert-heading">Phát hiện ảnh trùng lặp!</h4>
+                        <p>Hệ thống đã phát hiện ảnh trùng lặp cho một số sản phẩm. Vui lòng chọn giữa việc sử dụng ảnh mới hoặc giữ nguyên ảnh hiện tại.</p>
+                    </div>
+                </div>
+
+                <div class="duplicate-images-container">
+                    <?php foreach ($_SESSION['duplicate_images'] as $index => $duplicate): ?>
+                        <?php
+                        // Lấy thông tin ảnh hiện có
+                        $existingImage = $hanghoa->GetHinhAnhById($duplicate['existing_image_id']);
+                        ?>
+                        <div class="duplicate-image-item" data-index="<?php echo $index; ?>">
+                            <h5>
+                                <i class="fas fa-image"></i>
+                                Ảnh cho sản phẩm: <span class="product-name"><?php echo htmlspecialchars($duplicate['product_name']); ?></span>
+                            </h5>
+
+                            <div class="image-comparison">
+                                <div class="existing-image">
+                                    <h6><i class="fas fa-history"></i> Ảnh hiện tại</h6>
+                                    <div class="image-wrapper">
+                                        <?php if (!empty($duplicate['existing_image_id'])): ?>
+                                            <img src="./elements_LQA/mhanghoa/displayImage.php?id=<?php echo $duplicate['existing_image_id']; ?>&t=<?php echo time(); ?>"
+                                                alt="Ảnh hiện tại"
+                                                class="preview-image"
+                                                onerror="this.onerror=null; this.src='./img_LQA/no-image.png';">
+                                        <?php else: ?>
+                                            <div class="no-image">Không có ảnh</div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <p><i class="fas fa-file"></i>
+                                        <?php
+                                        if (isset($duplicate['existing_image_info']) && $duplicate['existing_image_info']) {
+                                            echo htmlspecialchars($duplicate['existing_image_info']->ten_file);
+                                        } else if (isset($existingImage->ten_file)) {
+                                            echo htmlspecialchars($existingImage->ten_file);
+                                        } else {
+                                            echo "Không có thông tin";
+                                        }
+                                        ?>
+                                    </p>
+                                </div>
+
+                                <div class="new-image">
+                                    <h6><i class="fas fa-upload"></i> Ảnh mới tải lên</h6>
+                                    <div class="image-wrapper">
+                                        <?php if (!empty($duplicate['relative_path'])): ?>
+                                            <!-- Debug data -->
+                                            <div class="debug-info" style="display: none;">
+                                                <pre><?php print_r($duplicate); ?></pre>
+                                            </div>
+                                            <?php
+                                            // Thử nhiều cách khác nhau để định vị ảnh
+                                            $relativePath = $duplicate['relative_path'];
+                                            $ts = isset($duplicate['upload_timestamp']) ? $duplicate['upload_timestamp'] : time();
+                                            $imagePath1 = $duplicate['new_image_path'] . '?t=' . $ts;  // Đường dẫn gốc + timestamp
+                                            $imagePath2 = '../../' . $relativePath . '?t=' . $ts;      // Đường dẫn tương đối + timestamp
+                                            $imagePath3 = '../../../' . $relativePath . '?t=' . $ts;   // Thử đường dẫn khác
+                                            ?>
+                                            <img src="<?php echo $imagePath1; ?>"
+                                                data-alt-src1="<?php echo $imagePath2; ?>"
+                                                data-alt-src2="<?php echo $imagePath3; ?>"
+                                                alt="Ảnh mới"
+                                                class="preview-image dynamic-image"
+                                                onerror="this.onerror=null; handleImageError(this);">
+                                            <button type="button" class="btn btn-sm btn-info show-debug">
+                                                <i class="fas fa-bug"></i> Debug
+                                            </button>
+                                        <?php else: ?>
+                                            <div class="no-image">Không có ảnh</div>
+                                        <?php endif; ?>
+                                    </div>
+                                    <p><i class="fas fa-file"></i> <?php echo htmlspecialchars($duplicate['new_image_name']); ?></p>
+                                </div>
+                            </div>
+
+                            <div class="image-actions">
+                                <button class="btn btn-primary use-new-image" data-index="<?php echo $index; ?>">
+                                    <i class="fas fa-check"></i> Sử dụng ảnh mới
+                                </button>
+                                <button class="btn btn-secondary use-existing-image" data-index="<?php echo $index; ?>">
+                                    <i class="fas fa-undo"></i> Giữ ảnh hiện tại
+                                </button>
+                            </div>
+
+                            <div class="processing-overlay">
+                                <div class="spinner-container">
+                                    <div class="spinner"></div>
+                                    <p>Đang xử lý...</p>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     <?php endif; ?>
 
@@ -124,6 +224,26 @@ if (!file_exists($uploadDirAbsolute)) {
             </ul>
         </div>
         <?php unset($_SESSION['matched_images']); ?>
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['resolved_images']) && !empty($_SESSION['resolved_images'])): ?>
+        <div class="alert alert-success">
+            <p><strong>Đã xử lý ảnh trùng lặp:</strong></p>
+            <ul>
+                <?php foreach ($_SESSION['resolved_images'] as $resolved): ?>
+                    <li>
+                        <?php if ($resolved['action'] === 'used_new'): ?>
+                            Đã sử dụng ảnh mới <strong><?php echo htmlspecialchars($resolved['image_name']); ?></strong>
+                            cho sản phẩm <strong><?php echo htmlspecialchars($resolved['product_name']); ?></strong>
+                        <?php else: ?>
+                            Đã giữ nguyên ảnh hiện tại cho sản phẩm <strong><?php echo htmlspecialchars($resolved['product_name']); ?></strong>
+                            (bỏ qua ảnh mới <strong><?php echo htmlspecialchars($resolved['image_name']); ?></strong>)
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php unset($_SESSION['resolved_images']); ?>
     <?php endif; ?>
 
     <?php if (isset($_SESSION['auto_applied_images']) && !empty($_SESSION['auto_applied_images'])): ?>
@@ -237,3 +357,153 @@ if (!file_exists($uploadDirAbsolute)) {
 </div>
 
 <script src="../../js_LQA/jscript.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo tải ảnh động
+        document.querySelectorAll('.dynamic-image').forEach(function(img) {
+            // Thêm sự kiện để xử lý lỗi tải ảnh
+            img.addEventListener('error', function() {
+                if (!this.dataset.autoHandled) {
+                    this.dataset.autoHandled = 'true';
+                    handleImageError(this);
+                }
+            });
+
+            // Log khi ảnh tải thành công
+            img.addEventListener('load', function() {
+                console.log('Image successfully loaded: ' + this.src);
+            });
+        });
+
+        // Xử lý nút debug
+        document.querySelectorAll('.show-debug').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const debugInfo = this.closest('.image-wrapper').querySelector('.debug-info');
+                if (debugInfo.style.display === 'none') {
+                    debugInfo.style.display = 'block';
+                    this.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Debug';
+                } else {
+                    debugInfo.style.display = 'none';
+                    this.innerHTML = '<i class="fas fa-bug"></i> Debug';
+                }
+            });
+        });
+
+        // Xử lý nút sử dụng ảnh mới
+        document.querySelectorAll('.use-new-image').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                const item = this.closest('.duplicate-image-item');
+
+                // Hiển thị overlay loading
+                item.classList.add('processing');
+
+                processDuplicateImage('use_new', index, this);
+            });
+        });
+
+        // Xử lý nút giữ ảnh hiện tại
+        document.querySelectorAll('.use-existing-image').forEach(function(button) {
+            button.addEventListener('click', function() {
+                const index = this.getAttribute('data-index');
+                const item = this.closest('.duplicate-image-item');
+
+                // Hiển thị overlay loading
+                item.classList.add('processing');
+
+                processDuplicateImage('use_existing', index, this);
+            });
+        });
+
+        // Hàm xử lý ảnh trùng lặp
+        function processDuplicateImage(action, index, button) {
+            // Gửi yêu cầu AJAX để xử lý
+            fetch(`./elements_LQA/mhinhanh/hinhanhAct.php?reqact=resolve_duplicate&action=${action}&index=${index}`)
+                .then(response => response.json())
+                .then(data => {
+                    const item = button.closest('.duplicate-image-item');
+
+                    // Ẩn overlay loading
+                    item.classList.remove('processing');
+
+                    if (data.success) {
+                        // Nếu thành công, hiển thị kết quả
+                        item.classList.add('processed');
+
+                        // Thêm badge thông báo
+                        const badge = document.createElement('div');
+                        badge.className = 'result-badge ' + (action === 'use_new' ? 'success' : 'info');
+                        badge.innerHTML = `<i class="fas ${action === 'use_new' ? 'fa-check-circle' : 'fa-info-circle'}"></i> ${data.message}`;
+                        item.appendChild(badge);
+
+                        // Kiểm tra nếu không còn ảnh trùng lặp nào, tải lại trang
+                        const remainingItems = document.querySelectorAll('.duplicate-image-item:not(.processed)').length;
+
+                        if (remainingItems === 0) {
+                            setTimeout(() => {
+                                const processingComplete = document.createElement('div');
+                                processingComplete.className = 'alert alert-success mt-4';
+                                processingComplete.innerHTML = '<p><i class="fas fa-check-circle"></i> <strong>Đã xử lý tất cả ảnh trùng lặp!</strong> Đang chuyển hướng...</p>';
+                                document.querySelector('.duplicate-images-container').appendChild(processingComplete);
+
+                                setTimeout(() => {
+                                    window.location.href = '../../index.php?req=hinhanhview&result=ok';
+                                }, 1500);
+                            }, 500);
+                        }
+                    } else {
+                        // Nếu thất bại, hiển thị thông báo lỗi
+                        const errorMsg = document.createElement('div');
+                        errorMsg.className = 'alert alert-danger mt-2';
+                        errorMsg.innerHTML = `<i class="fas fa-exclamation-circle"></i> <strong>Lỗi:</strong> ${data.message}`;
+                        item.appendChild(errorMsg);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+
+                    const item = button.closest('.duplicate-image-item');
+
+                    // Ẩn overlay loading
+                    item.classList.remove('processing');
+
+                    // Hiển thị thông báo lỗi
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'alert alert-danger mt-2';
+                    errorMsg.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Lỗi kết nối:</strong> Vui lòng thử lại`;
+                    item.appendChild(errorMsg);
+                });
+        }
+
+        function handleImageError(img) {
+            console.error('Failed to load image: ' + img.src);
+
+            // Thử tải với đường dẫn thay thế 1
+            if (img.dataset.altSrc1 && !img.dataset.tried1) {
+                img.dataset.tried1 = 'true';
+                console.log('Trying alternative path 1: ' + img.dataset.altSrc1);
+                img.src = img.dataset.altSrc1;
+                return;
+            }
+
+            // Thử tải với đường dẫn thay thế 2
+            if (img.dataset.altSrc2 && !img.dataset.tried2) {
+                img.dataset.tried2 = 'true';
+                console.log('Trying alternative path 2: ' + img.dataset.altSrc2);
+                img.src = img.dataset.altSrc2;
+                return;
+            }
+
+            // Nếu tất cả các đường dẫn đều thất bại, hiển thị ảnh mặc định
+            console.log('All paths failed, showing default image');
+            img.src = './img_LQA/no-image.png';
+
+            // Hiển thị thông báo lỗi
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'image-error-message';
+            errorMsg.innerHTML = '<small class="text-danger">Không thể tải hình ảnh. Vui lòng kiểm tra đường dẫn.</small>';
+            img.parentNode.appendChild(errorMsg);
+        }
+    });
+</script>

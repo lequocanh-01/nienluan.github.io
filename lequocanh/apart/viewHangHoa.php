@@ -1,21 +1,21 @@
 <script>
-function goBack() {
-    window.history.back();
-}
-
-// Xử lý thông báo khi thêm giỏ hàng thành công
-document.addEventListener('DOMContentLoaded', function() {
-    // Kiểm tra xem URL có chứa tham số cartAdded không
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('cartAdded')) {
-        // Hiển thị thông báo
-        alert('Đã thêm sản phẩm vào giỏ hàng!');
-
-        // Xóa tham số cartAdded khỏi URL để tránh hiển thị lại thông báo khi refresh
-        const newUrl = window.location.href.replace(/[&?]cartAdded=1/, '');
-        window.history.replaceState({}, document.title, newUrl);
+    function goBack() {
+        window.history.back();
     }
-});
+
+    // Xử lý thông báo khi thêm giỏ hàng thành công
+    document.addEventListener('DOMContentLoaded', function() {
+        // Kiểm tra xem URL có chứa tham số cartAdded không
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('cartAdded')) {
+            // Hiển thị thông báo
+            alert('Đã thêm sản phẩm vào giỏ hàng!');
+
+            // Xóa tham số cartAdded khỏi URL để tránh hiển thị lại thông báo khi refresh
+            const newUrl = window.location.href.replace(/[&?]cartAdded=1/, '');
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    });
 </script>
 
 <?php
@@ -76,20 +76,22 @@ if (isset($_GET['reqHanghoa'])) {
                 </p>
                 <!-- Hiển thị thông tin thuộc tính hàng hóa -->
                 <?php if (!empty($listThuocTinh)): ?>
-                <h6>Thông số kỹ thuật:</h6>
-                <ul>
-                    <?php foreach ($listThuocTinh as $tt): ?>
-                    <?php
-                            // Lấy tên thuộc tính từ bảng thuoctinh
-                            $thuocTinhObj = new ThuocTinh();
-                            $thuocTinh = $thuocTinhObj->thuoctinhGetbyId($tt->idThuocTinh);
-                            ?>
-                    <li>
-                        <strong><?php echo htmlspecialchars($thuocTinh->tenThuocTinh); ?>:</strong>
-                        <?php echo htmlspecialchars($tt->tenThuocTinhHH); ?>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
+                    <div class="specs-container">
+                        <h6>Thông số kỹ thuật:</h6>
+                        <ul class="specs-list">
+                            <?php foreach ($listThuocTinh as $tt): ?>
+                                <?php
+                                // Lấy tên thuộc tính từ bảng thuoctinh
+                                $thuocTinhObj = new ThuocTinh();
+                                $thuocTinh = $thuocTinhObj->thuoctinhGetbyId($tt->idThuocTinh);
+                                ?>
+                                <li>
+                                    <strong><?php echo htmlspecialchars($thuocTinh->tenThuocTinh); ?>:</strong>
+                                    <span class="specs-value"><?php echo htmlspecialchars($tt->tenThuocTinhHH); ?></span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
                 <?php endif; ?>
 
                 <!-- Add the cart icon here -->
@@ -120,26 +122,26 @@ if (isset($_GET['reqHanghoa'])) {
 </style>
 
 <?php if (isset($_SESSION['USER'])): ?>
-<div class="dropdown">
-    <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown"
-        aria-expanded="false">
-        <i class="fas fa-user me-2"></i>
-        <?php echo $_SESSION['USER']; ?>
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="userDropdown">
-        <li><a class="dropdown-item" href="./administrator/elements_LQA/mUser/userAct.php?reqact=userlogout">
-                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
-            </a></li>
-    </ul>
-</div>
+    <div class="dropdown">
+        <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown"
+            aria-expanded="false">
+            <i class="fas fa-user me-2"></i>
+            <?php echo $_SESSION['USER']; ?>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="userDropdown">
+            <li><a class="dropdown-item" href="./administrator/elements_LQA/mUser/userAct.php?reqact=userlogout">
+                    <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                </a></li>
+        </ul>
+    </div>
 <?php elseif (isset($_SESSION['ADMIN'])): ?>
-<a href="./administrator/index.php" class="btn btn-light me-2">
-    <i class="fas fa-user-shield me-2"></i>
-    Quản trị viên
-</a>
+    <a href="./administrator/index.php" class="btn btn-light me-2">
+        <i class="fas fa-user-shield me-2"></i>
+        Quản trị viên
+    </a>
 <?php else: ?>
-<a href="./administrator/userLogin.php" class="btn btn-light me-2">
-    <i class="fas fa-user me-2"></i>
-    Đăng nhập
-</a>
+    <a href="./administrator/userLogin.php" class="btn btn-light me-2">
+        <i class="fas fa-user me-2"></i>
+        Đăng nhập
+    </a>
 <?php endif; ?>
