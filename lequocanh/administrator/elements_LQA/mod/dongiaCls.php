@@ -9,110 +9,112 @@ if (file_exists($s)) {
     }
 }
 require_once $f;
-class Dongia extends Database
+
+class Dongia
 {
-    public function DongiaGetAll()
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
+
+    // Lấy tất cả các đơn giá
+    public function dongiaGetAll()
     {
         $sql = 'SELECT * FROM dongia';
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
-        $getAll->execute();
+
+        if (!$getAll->execute()) {
+            error_log(print_r($getAll->errorInfo(), true));
+            return false;
+        }
+
         return $getAll->fetchAll();
     }
-    
-    public function DongiaAdd($idHangHoa, $tenHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu)
-    {
-        $apDung = 1;
-        $this->DongiaSetAllToFalse($idHangHoa);
 
-        $sql = "INSERT INTO dongia (idHangHoa, tenhanghoa, giaBan, ngayApDung, ngayKetThuc, dieuKien, ghiChu, apDung) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        $data = array($idHangHoa, $tenHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu, $apDung);
-        $add = $this->connect->prepare($sql);
-        $add->execute($data);
+    // Thêm đơn giá mới
+    public function dongiaAdd($idhanghoa, $ngaycapnhat, $dongia)
+    {
+        $sql = "INSERT INTO dongia (idhanghoa, ngaycapnhat, dongia) VALUES (?, ?, ?)";
+        $data = array($idhanghoa, $ngaycapnhat, $dongia);
+
+        $add = $this->db->prepare($sql);
+
+        if (!$add->execute($data)) {
+            error_log(print_r($add->errorInfo(), true));
+            return false;
+        }
+
         return $add->rowCount();
     }
-    
-    // public function DongiaDelete($idDongia)
-    // {
-    //     $sql = "DELETE from Dongia where idDongia = ?";
-    //     $data = array($idDongia);
 
-    //     $del = $this->connect->prepare($sql);
-    //     $del->execute($data);
-    //     return $del->rowCount();
-    // }
-    public function DongiaUpdateStatus($idDonGia, $apDung)
+    // Xóa đơn giá theo ID
+    public function dongiaDelete($idDongia)
     {
-        $sql = "UPDATE dongia SET apDung = ? WHERE idDonGia = ?";
-        $data = array($apDung ? 1 : 0, $idDonGia);
-        
-        $update = $this->connect->prepare($sql);
-        $update->execute($data);
+        $sql = "DELETE FROM dongia WHERE idDongia = ?";
+        $data = array($idDongia);
+
+        $del = $this->db->prepare($sql);
+
+        if (!$del->execute($data)) {
+            error_log(print_r($del->errorInfo(), true));
+            return false;
+        }
+
+        return $del->rowCount();
+    }
+
+    // Cập nhật thông tin đơn giá
+    public function dongiaUpdate($idhanghoa, $ngaycapnhat, $dongia, $idDongia)
+    {
+        $sql = "UPDATE dongia 
+                SET idhanghoa = ?, ngaycapnhat = ?, dongia = ? 
+                WHERE idDongia = ?";
+        $data = array($idhanghoa, $ngaycapnhat, $dongia, $idDongia);
+
+        $update = $this->db->prepare($sql);
+
+        if (!$update->execute($data)) {
+            error_log(print_r($update->errorInfo(), true));
+            return false;
+        }
+
         return $update->rowCount();
     }
 
-    public function DongiaGetbyId($idDongia)
+    // Lấy thông tin đơn giá theo ID
+    public function dongiaGetbyId($idDongia)
     {
-        $sql = 'select * from dongia where idDonGia=?';
+        $sql = 'SELECT * FROM dongia WHERE idDongia = ?';
         $data = array($idDongia);
 
-
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
-        $getOne->execute($data);
+
+        if (!$getOne->execute($data)) {
+            error_log(print_r($getOne->errorInfo(), true));
+            return false;
+        }
 
         return $getOne->fetch();
     }
 
-    public function DongiaGetbyIdloaihang($idloaihang)
+    // Lấy đơn giá theo ID hàng hóa
+    public function dongiaGetbyIdHanghoa($idhanghoa)
     {
-        $sql = 'select * from Dongia where idloaihang=?';
-        $data = array($idloaihang);
+        $sql = 'SELECT * FROM dongia WHERE idhanghoa = ? ORDER BY ngaycapnhat DESC';
+        $data = array($idhanghoa);
 
-
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
-        $getOne->execute($data);
+
+        if (!$getOne->execute($data)) {
+            error_log(print_r($getOne->errorInfo(), true));
+            return false;
+        }
 
         return $getOne->fetchAll();
-    }
-    public function HanghoaUpdatePrice($idhanghoa, $giaban)
-    {
-        $sql = "UPDATE hanghoa SET giathamkhao = ? WHERE idhanghoa = ?";
-        $data = array($giaban, $idhanghoa);
-
-        $update = $this->connect->prepare($sql);
-        $update->execute($data);
-        return $update->rowCount();
-    }
-
-    // public function DongiaUpdate($idDonGia, $idHangHoa, $tenHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu, $apDung)
-    // {
-    //     $sql = "UPDATE dongia SET 
-    //             idHangHoa = ?, 
-    //             tenhanghoa = ?, 
-    //             giaBan = ?, 
-    //             ngayApDung = ?, 
-    //             ngayKetThuc = ?, 
-    //             dieuKien = ?, 
-    //             ghiChu = ?,
-    //             apDung = ? 
-    //             WHERE idDonGia = ?";
-                
-    //     $data = array($idHangHoa, $tenHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu, $apDung, $idDonGia);
-
-    //     $update = $this->connect->prepare($sql);
-    //     $update->execute($data);
-    //     return $update->rowCount();
-    // }
-
-    public function DongiaSetAllToFalse($idHangHoa) {
-        $sql = "UPDATE dongia SET apDung = 0 WHERE idHangHoa = ? AND apDung = 1";
-        $data = array($idHangHoa);
-        
-        $update = $this->connect->prepare($sql);
-        $update->execute($data);
-        return $update->rowCount();
     }
 }

@@ -123,9 +123,7 @@ $missing_images = $hanghoaObj->FindMissingImages();
                                 // Sử dụng displayImage.php để hiển thị ảnh theo ID
                                 $imageSrc = "./elements_LQA/mhanghoa/displayImage.php?id=" . $img->id;
                                 ?>
-                                <img src="<?php echo $imageSrc; ?>"
-                                    class="preview-img"
-                                    data-id="<?php echo $img->id; ?>"
+                                <img src="<?php echo $imageSrc; ?>" class="preview-img" data-id="<?php echo $img->id; ?>"
                                     alt="<?php echo htmlspecialchars($img->ten_file); ?>"
                                     title="<?php echo htmlspecialchars($img->ten_file); ?>"
                                     onerror="this.src='./img_LQA/no-image.png'">
@@ -294,7 +292,7 @@ $l = count($list_hanghoa);
                 foreach ($list_hanghoa as $u) {
             ?>
                     <tr>
-                        <td><?php echo $u->idhanghoa; ?></td>
+                        <td><?php echo htmlspecialchars($u->idhanghoa); ?></td>
                         <td><?php echo htmlspecialchars($u->tenhanghoa); ?></td>
                         <td><?php echo number_format($u->giathamkhao, 0, ',', '.'); ?> đ</td>
                         <td><?php echo htmlspecialchars($u->mota); ?></td>
@@ -304,8 +302,7 @@ $l = count($list_hanghoa);
                                 // Sử dụng script displayImage khi hinhanh là ID
                                 $imageSrc = "./elements_LQA/mhanghoa/displayImage.php?id=" . $u->hinhanh;
                             ?>
-                                <img class="iconbutton" src="<?php echo $imageSrc; ?>"
-                                    alt="Product Image"
+                                <img class="iconbutton" src="<?php echo $imageSrc; ?>" alt="Product Image"
                                     onerror="this.src='./img_LQA/no-image.png'">
                                 <?php
                                 // Hiển thị số lượng hình ảnh
@@ -330,25 +327,32 @@ $l = count($list_hanghoa);
                             }
                             ?>
                         </td>
-                        <td><?php echo htmlspecialchars($u->idThuongHieu ?? 'Chưa chọn'); ?></td>
-                        <td><?php echo htmlspecialchars($u->idDonViTinh ?? 'Chưa chọn'); ?></td>
-                        <td><?php echo htmlspecialchars($u->idNhanVien ?? 'Chưa chọn'); ?></td>
+                        <td><?php echo htmlspecialchars($u->ten_thuonghieu ?? 'Chưa chọn'); ?></td>
+                        <td><?php echo htmlspecialchars($u->ten_donvitinh ?? 'Chưa chọn'); ?></td>
+                        <td><?php echo htmlspecialchars($u->ten_nhanvien ?? 'Chưa chọn'); ?></td>
                         <td align="center">
                             <?php
                             if (isset($_SESSION['ADMIN'])) {
                             ?>
                                 <a
                                     href="./elements_LQA/mhanghoa/hanghoaAct.php?reqact=deletehanghoa&idhanghoa=<?php echo $u->idhanghoa; ?>">
-                                    <img src="./img_LQA/delete.png">
+                                    <img src="./img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php
                             } else {
                             ?>
-                                <img src="./img_LQA/delete.png">
+                                <img src="./img_LQA/Delete.png" class="iconimg">
                             <?php
                             }
                             ?>
-                            <img src="./img_LQA/Update.png" class="w_update_btn_open_hh" value="<?php echo $u->idhanghoa; ?>">
+                            <img src="./img_LQA/Update.png"
+                                class="iconimg generic-update-btn"
+                                data-module="mhanghoa"
+                                data-update-url="./elements_LQA/mhanghoa/hanghoaUpdate.php"
+                                data-id-param="idhanghoa"
+                                data-title="Cập nhật Hàng hóa"
+                                data-id="<?php echo htmlspecialchars($u->idhanghoa); ?>"
+                                alt="Update">
                         </td>
                     </tr>
             <?php
@@ -359,26 +363,54 @@ $l = count($list_hanghoa);
     </table>
 </div>
 
-<div id="w_update_hh">
-    <div id="w_update_form_hh"></div>
-    <input type="button" value="close" id="w_close_btn_hh">
-</div>
+<hr />
 
-<div id="replace-image-dialog" class="modal" style="display: none;">
-    <div class="modal-content">
-        <h3>Chọn hình ảnh thay thế</h3>
-        <p>Hình ảnh này đang được sử dụng bởi một số sản phẩm. Vui lòng chọn hình ảnh thay thế:</p>
-        <select id="replace-image-select">
-            <option value="">-- Chọn hình ảnh thay thế --</option>
-        </select>
-        <div class="modal-buttons">
-            <button id="confirm-replace">Xác nhận</button>
-            <button id="cancel-replace">Hủy</button>
-        </div>
+<!-- Popup container cho cập nhật hàng hóa -->
+<div id="w_update_hh">
+    <div class="update-popup-wrapper">
+        <span id="w_close_btn_hh">X</span>
+        <div id="w_update_form_hh"></div>
     </div>
 </div>
 
-<script src="../../js_LQA/jscript.js"></script>
+<style>
+    #w_update_hh {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        border: 2px solid #3498db;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        border-radius: 5px;
+        padding: 15px;
+        z-index: 9999;
+        display: none;
+        width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .update-popup-wrapper {
+        position: relative;
+    }
+
+    #w_close_btn_hh {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #f44336;
+        color: white;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 25px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 10000;
+    }
+</style>
 
 <script>
     // Javascript xử lý chọn hình ảnh
@@ -414,7 +446,8 @@ $l = count($list_hanghoa);
 
             // Nếu đã chọn một giá trị, highlight item tương ứng
             if (selectedValue) {
-                const selectedItem = document.querySelector(`.preview-item img[data-id="${selectedValue}"]`).parentNode;
+                const selectedItem = document.querySelector(`.preview-item img[data-id="${selectedValue}"]`)
+                    .parentNode;
                 selectedItem.classList.add('selected');
             }
         });

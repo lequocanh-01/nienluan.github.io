@@ -8,6 +8,9 @@ if (isset($_GET['req'])) {
         case 'updateuser':
             require './elements_LQA/mUser/userUpdate.php';
             break;
+        case 'userupdate':
+            require './elements_LQA/mUser/userUpdate.php';
+            break;
         case 'loaihangview':
             require './elements_LQA/mLoaihang/loaihangView.php';
             break;

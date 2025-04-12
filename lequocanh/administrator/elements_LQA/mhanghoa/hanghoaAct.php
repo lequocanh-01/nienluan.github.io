@@ -43,11 +43,53 @@ if (isset($_REQUEST['reqact'])) {
             $idDonViTinh = $_REQUEST['idDonViTinh'];
             $idNhanVien = $_REQUEST['idNhanVien'];
 
-            $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
-            if ($hanghoa) {
-                header('location: ../../index.php?req=hanghoaview&result=ok');
-            } else {
-                header('location: ../../index.php?req=hanghoaview&result=notok');
+            // Debug log si se solicita
+            $debug_log = isset($_REQUEST['debug_log']) && $_REQUEST['debug_log'] === 'true';
+            if ($debug_log) {
+                $log_file = __DIR__ . '/debug_log.txt';
+                $log_data = date('Y-m-d H:i:s') . " - Hanghoa Update request:\n";
+                $log_data .= "idhanghoa: $idhanghoa\n";
+                $log_data .= "tenhanghoa: $tenhanghoa\n";
+                $log_data .= "POST: " . print_r($_POST, true) . "\n";
+                $log_data .= "GET: " . print_r($_GET, true) . "\n";
+                $log_data .= "REQUEST: " . print_r($_REQUEST, true) . "\n";
+                $log_data .= "--------------------------------------\n";
+                file_put_contents($log_file, $log_data, FILE_APPEND);
+            }
+
+            try {
+                $result = $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
+
+                if ($debug_log) {
+                    $log_data = date('Y-m-d H:i:s') . " - Update result: " . ($result ? "Success" : "Failed") . "\n";
+                    file_put_contents(__DIR__ . '/debug_log.txt', $log_data, FILE_APPEND);
+                }
+
+                // Verificar si la solicitud es AJAX
+                if (isset($_POST['ajax']) || isset($_GET['ajax'])) {
+                    echo json_encode([
+                        'success' => $result ? true : false,
+                        'message' => $result ? 'Cập nhật hàng hóa thành công!' : 'Cập nhật thất bại!'
+                    ]);
+                    exit;
+                } else {
+                    header('location: ../../index.php?req=hanghoaview&result=' . ($result ? 'ok' : 'notok'));
+                }
+            } catch (Exception $e) {
+                if ($debug_log) {
+                    $log_data = date('Y-m-d H:i:s') . " - Exception: " . $e->getMessage() . "\n";
+                    file_put_contents(__DIR__ . '/debug_log.txt', $log_data, FILE_APPEND);
+                }
+
+                if (isset($_POST['ajax']) || isset($_GET['ajax'])) {
+                    echo json_encode([
+                        'success' => false,
+                        'message' => 'Lỗi: ' . $e->getMessage()
+                    ]);
+                    exit;
+                } else {
+                    header('location: ../../index.php?req=hanghoaview&result=notok&error=' . urlencode($e->getMessage()));
+                }
             }
             break;
 

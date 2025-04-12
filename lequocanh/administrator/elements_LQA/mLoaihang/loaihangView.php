@@ -2,7 +2,8 @@
 <hr>
 <div>Thêm loại hàng</div>
 <div>
-    <form name="newloaihang" id="formaddloaihang" method="post" action='./elements_LQA/mloaihang/loaihangAct.php?reqact=addnew' enctype="multipart/form-data">
+    <form name="newloaihang" id="formaddloaihang" method="post"
+        action='./elements_LQA/mloaihang/loaihangAct.php?reqact=addnew' enctype="multipart/form-data">
         <table>
             <tr>
                 <td>Tên loại hàng</td>
@@ -43,45 +44,54 @@
                 <th>Chức năng</th>
             </thead>
             <tbody>
-            <?php
-            if ($l > 0) {
-                foreach ($list_lh as $u) {
-            ?>
-                    <tr>
-                        <td><?php echo $u->idloaihang; ?></td>
-                        <td><?php echo $u->tenloaihang; ?></td>
-                        <td><?php echo $u->mota; ?></td>
-                        <td align="center">
+                <?php
+                if ($l > 0) {
+                    foreach ($list_lh as $u) {
+                ?>
+                        <tr>
+                            <td><?php echo $u->idloaihang; ?></td>
+                            <td><?php echo $u->tenloaihang; ?></td>
+                            <td><?php echo $u->mota; ?></td>
+                            <td align="center">
 
-                            <img class="iconbutton" src="data:image/png;base64,<?php echo $u->hinhanh; ?>">
-                        </td>
-                        <td align="center">
-                            <?php
-                            if (isset($_SESSION['ADMIN'])) {
-                            ?>
-                                <a href="./elements_LQA/mloaihang/loaihangAct.php?reqact=deleteloaihang&idloaihang=<?php echo $u->idloaihang; ?>">
-                                    <img src="./img_LQA/delete.png" class="iconimg">
-                                </a>
-                            <?php
-                            } else {
-                            ?>
-                                <img src="./img_LQA/delete.png" class="iconimg">
-                            <?php
-                            }
-                            ?>
-                            <img  src="./img_LQA/Update.png" class="w_update_btn_open" value="<?php echo $u->idloaihang; ?>">
-                        </td>
-                    </tr>
-            <?php
+                                <img class="iconbutton" src="data:image/png;base64,<?php echo $u->hinhanh; ?>">
+                            </td>
+                            <td align="center">
+                                <?php
+                                if (isset($_SESSION['ADMIN'])) {
+                                ?>
+                                    <a
+                                        href="./elements_LQA/mloaihang/loaihangAct.php?reqact=deleteloaihang&idloaihang=<?php echo $u->idloaihang; ?>">
+                                        <img src="img_LQA/Delete.png" class="iconimg">
+                                    </a>
+                                <?php
+                                } else {
+                                ?>
+                                    <img src="./img_LQA/Delete.png" class="iconimg">
+                                <?php
+                                }
+                                ?>
+                                <img src="./img_LQA/Update.png"
+                                    class="iconimg generic-update-btn"
+                                    data-module="mloaihang"
+                                    data-update-url="./elements_LQA/mLoaihang/loaihangUpdate.php"
+                                    data-id-param="idloaihang"
+                                    data-title="Cập nhật Loại hàng"
+                                    data-id="<?php echo htmlspecialchars($u->idloaihang); ?>"
+                                    alt="Update">
+                            </td>
+                        </tr>
+                <?php
+                    }
                 }
-            }
-            ?>
+                ?>
             </tbody>
         </table>
     </div>
+</div>
 
-    <div id="w_update">
-        <div id="w_update_form"></div>
-        <input type="button" value="close" id="w_close_btn">
-    </div>
+<!-- Modal popup for update -->
+<div id="w_update" class="modal-window" style="min-width: 600px; min-height: 300px; padding: 20px;">
+    <button type="button" id="w_close_btn" class="close-btn" style="position: absolute; top: 10px; right: 10px; z-index: 1001;">X</button>
+    <div id="w_update_form" style="width: 100%; padding: 10px;"></div>
 </div>

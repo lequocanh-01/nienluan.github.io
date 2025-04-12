@@ -9,6 +9,12 @@ require './elements_LQA/mod/userCls.php';
 $iduser = isset($_REQUEST['iduser']) ? $_REQUEST['iduser'] : 0;
 $userObj = new user();
 $getUserUpdate = $userObj->UserGetbyId($iduser);
+
+if (!$getUserUpdate) {
+    echo "<div class='alert alert-danger'>Không tìm thấy người dùng!</div>";
+    echo "<a href='index.php?req=userview' class='btn btn-secondary'>Quay lại</a>";
+    exit();
+}
 ?>
 
 <div class="admin-content">
@@ -75,5 +81,45 @@ $getUserUpdate = $userObj->UserGetbyId($iduser);
     </form>
 </div>
 
+<script>
+    $(document).ready(function() {
+        $("#formupdateuser").on("submit", function(e) {
+            e.preventDefault();
+
+            // Validate form
+            let isValid = true;
+            $(this).find("input[required]").each(function() {
+                if (!$(this).val()) {
+                    isValid = false;
+                    $(this).addClass("is-invalid");
+                } else {
+                    $(this).removeClass("is-invalid");
+                }
+            });
+
+            // Validate phone number
+            const phone = $(this).find('input[name="dienthoai"]').val();
+            if (phone) {
+                const phoneRegex = /^[0-9]{10}$/;
+                if (!phoneRegex.test(phone)) {
+                    alert("Số điện thoại phải có 10 chữ số");
+                    return;
+                }
+            }
+
+            // If form is valid, submit it
+            if (isValid) {
+                this.submit();
+            } else {
+                alert("Vui lòng điền đầy đủ thông tin bắt buộc");
+            }
+        });
+
+        // Remove invalid class on input
+        $("input").on("input", function() {
+            $(this).removeClass("is-invalid");
+        });
+    });
+</script>
 
 <script src="../../js_LQA/jscript.js"></script>

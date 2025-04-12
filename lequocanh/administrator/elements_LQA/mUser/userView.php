@@ -1,6 +1,8 @@
 <head>
     <link href="./bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="../public_files/mycss.css">
+    <!-- Add Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -200,21 +202,18 @@
                                 <td class="action-buttons">
                                     <?php if (isset($_SESSION['ADMIN'])) { ?>
                                         <a href='./elements_LQA/mUser/userAct.php?reqact=deleteuser&iduser=<?php echo $u->iduser; ?>'
-                                            class="admin-action"
-                                            data-username="<?php echo $u->username; ?>"
+                                            class="admin-action" data-username="<?php echo $u->username; ?>"
                                             onclick="return confirmDelete('<?php echo $u->username; ?>');">
-                                            <img src="./img_LQA/Delete.png" class="iconimg" alt="Delete">
+                                            <img src="./img_LQA/Delete.png" class="iconimg">
                                         </a>
                                     <?php } else { ?>
-                                        <img src="./img_LQA/Delete.png" class="iconimg disabled" alt="Delete">
+                                        <img src="./img_LQA/Delete.png" class="iconimg">
                                     <?php } ?>
 
                                     <?php if (isset($_SESSION['ADMIN']) || (isset($_SESSION['USER']) && $_SESSION['USER'] == $u->username)) { ?>
-                                        <a href='javascript:void(0);'
-                                            class="admin-action update-user"
-                                            data-username="<?php echo $u->username; ?>"
-                                            data-userid="<?php echo $u->iduser; ?>"
-                                            data-admin-password="<?php echo isset($_GET['admin_password']) ? $_GET['admin_password'] : ''; ?>">
+                                        <a href='javascript:void(0);' class="update-user"
+                                            data-username="<?php echo htmlspecialchars($u->username); ?>"
+                                            data-userid="<?php echo $u->iduser; ?>">
                                             <img src="./img_LQA/Update.png" class="iconimg" alt="Update">
                                         </a>
                                     <?php } else { ?>

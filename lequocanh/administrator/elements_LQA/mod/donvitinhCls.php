@@ -9,53 +9,104 @@ if (file_exists($s)) {
     }
 }
 require_once $f;
-class donvitinh extends Database
+
+class DonViTinh
 {
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
+
+    // Lấy tất cả các đơn vị tính
     public function donvitinhGetAll()
     {
-        $sql = 'select * from donvitinh';
-
-        $getAll = $this->connect->prepare($sql);
+        $sql = 'SELECT * FROM donvitinh';
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
-        $getAll->execute();
+
+        if (!$getAll->execute()) {
+            error_log(print_r($getAll->errorInfo(), true));
+            return false;
+        }
 
         return $getAll->fetchAll();
     }
+
+    // Thêm đơn vị tính mới
     public function donvitinhAdd($tenDonViTinh, $moTa, $ghiChu)
     {
-        $sql = "INSERT INTO donvitinh (tenDonViTinh, moTa, ghiChu) VALUES (?,?,?)";
+        $sql = "INSERT INTO donvitinh (tenDonViTinh, moTa, ghiChu) VALUES (?, ?, ?)";
         $data = array($tenDonViTinh, $moTa, $ghiChu);
-        $add = $this->connect->prepare($sql);
-        $add->execute($data);
+
+        $add = $this->db->prepare($sql);
+
+        if (!$add->execute($data)) {
+            error_log(print_r($add->errorInfo(), true));
+            return false;
+        }
+
         return $add->rowCount();
     }
-    public function donvitinhDelete($iddonvitinh)
-    {
-        $sql = "DELETE from donvitinh where iddonvitinh = ?";
-        $data = array($iddonvitinh);
 
-        $del = $this->connect->prepare($sql);
-        $del->execute($data);
+    // Xóa đơn vị tính theo ID
+    public function donvitinhDelete($idDonViTinh)
+    {
+        $sql = "DELETE FROM donvitinh WHERE idDonViTinh = ?";
+        $data = array($idDonViTinh);
+
+        $del = $this->db->prepare($sql);
+
+        if (!$del->execute($data)) {
+            error_log(print_r($del->errorInfo(), true));
+            return false;
+        }
+
         return $del->rowCount();
     }
+
+    // Cập nhật thông tin đơn vị tính
     public function donvitinhUpdate($tenDonViTinh, $moTa, $ghiChu, $idDonViTinh)
     {
-        $sql = "UPDATE donvitinh set tenDonViTinh=?, moTa=?, ghiChu=? WHERE idDonViTinh =?";
+        $sql = "UPDATE donvitinh 
+                SET tenDonViTinh = ?, moTa = ?, ghiChu = ? 
+                WHERE idDonViTinh = ?";
         $data = array($tenDonViTinh, $moTa, $ghiChu, $idDonViTinh);
 
-        $update = $this->connect->prepare($sql);
-        $update->execute($data);
+        $update = $this->db->prepare($sql);
+
+        // Debug: Log SQL and parameters
+        error_log("SQL: " . $sql);
+        error_log("Params: " . json_encode($data));
+
+        // Execute query
+        $result = $update->execute($data);
+
+        // Log result
+        error_log("Update result: " . ($result ? "success" : "failed") . ", rows affected: " . $update->rowCount());
+
+        if (!$result) {
+            error_log("SQL Error: " . json_encode($update->errorInfo()));
+            return false;
+        }
+
         return $update->rowCount();
     }
-    public function donvitinhGetbyId($iddonvitinh)
+
+    // Lấy thông tin đơn vị tính theo ID
+    public function donvitinhGetbyId($idDonViTinh)
     {
-        $sql = 'select * from donvitinh where iddonvitinh=?';
-        $data = array($iddonvitinh);
+        $sql = 'SELECT * FROM donvitinh WHERE idDonViTinh = ?';
+        $data = array($idDonViTinh);
 
-
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
-        $getOne->execute($data);
+
+        if (!$getOne->execute($data)) {
+            error_log(print_r($getOne->errorInfo(), true));
+            return false;
+        }
 
         return $getOne->fetch();
     }
@@ -66,11 +117,10 @@ class donvitinh extends Database
         $data = array($idloaihang);
 
 
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
         $getOne->execute($data);
 
         return $getOne->fetchAll();
     }
-    
 }

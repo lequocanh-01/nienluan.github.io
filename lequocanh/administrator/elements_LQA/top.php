@@ -16,17 +16,17 @@ echo '</br>';
 // Hiển thị thông báo thành công/thất bại/chờ
 if (isset($_GET['result'])) {
     if ($_GET['result'] == 'ok') {
-        ?>
-<img src="img_LQA/Success.png" height="50px">
-<?php
+?>
+        <img src="../img_LQA/Success.png" class="iconimg" height="50px">
+    <?php
     } else {
-        ?>
-<img src="img_LQA/Fail.png" height="50px">
-<?php
+    ?>
+        <img src="../img_LQA/Fail.png" class="iconimg" height="50px">
+    <?php
     }
 } else {
     ?>
-<img src="img_LQA/Wait.png" height="50px">
+    <img src="../img_LQA/Wait.png" class="iconimg" height="50px">
 <?php
 }
 ?>

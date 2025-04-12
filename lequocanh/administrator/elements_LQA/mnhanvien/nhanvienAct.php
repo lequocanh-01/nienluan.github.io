@@ -2,11 +2,24 @@
 session_start();
 require '../../elements_LQA/mod/nhanvienCls.php';
 
+function sendJsonResponse($success, $message = '')
+{
+    // Clear any previous output that might corrupt JSON
+    if (ob_get_contents()) ob_clean();
+
+    // Set proper headers
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+
+    // Return simple JSON
+    echo json_encode(['success' => $success, 'message' => $message]);
+    exit;
+}
+
 if (isset($_GET['reqact'])) {
     $requestAction = $_GET['reqact'];
     switch ($requestAction) {
-        case 'addnew': // Thêm mới
-            // Nhập dữ liệu
+        case 'addnew':
             $tenNV = isset($_REQUEST['tenNV']) ? $_REQUEST['tenNV'] : null;
             $SDT = isset($_REQUEST['SDT']) ? $_REQUEST['SDT'] : null;
             $email = isset($_REQUEST['email']) ? $_REQUEST['email'] : null;
@@ -14,27 +27,33 @@ if (isset($_GET['reqact'])) {
             $phuCap = isset($_REQUEST['phuCap']) ? $_REQUEST['phuCap'] : null;
             $chucVu = isset($_REQUEST['chucVu']) ? $_REQUEST['chucVu'] : null;
 
-            $lh = new NhanVien();
-            $kq = $lh->nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu);
-            if ($kq) {
-                header('location: ../../index.php?req=nhanvienview&result=ok');
+            $nv = new NhanVien();
+            $kq = $nv->nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu);
+
+            // Check if it's an AJAX request
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                sendJsonResponse($kq, $kq ? 'Thêm nhân viên thành công' : 'Thêm nhân viên thất bại');
             } else {
-                header('location: ../../index.php?req=nhanvienview&result=notok');
+                // Redirect for regular form submit
+                header("location:../../index.php?req=nhanvienview&result=" . ($kq ? "ok" : "notok"));
             }
             break;
 
         case 'deletenhanvien':
             $idNhanVien = isset($_REQUEST['idNhanVien']) ? $_REQUEST['idNhanVien'] : null;
             if ($idNhanVien) {
-                $lh = new NhanVien();
-                $kq = $lh->nhanvienDelete($idNhanVien);
-                if ($kq) {
-                    header('location: ../../index.php?req=nhanvienview&result=ok');
+                $nv = new NhanVien();
+                $kq = $nv->nhanvienDelete($idNhanVien);
+
+                // Check if it's an AJAX request
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    sendJsonResponse($kq, $kq ? 'Xóa nhân viên thành công' : 'Xóa nhân viên thất bại');
                 } else {
-                    header('location: ../../index.php?req=nhanvienview&result=notok');
+                    // Redirect for regular form submit
+                    header("location:../../index.php?req=nhanvienview&result=" . ($kq ? "ok" : "notok"));
                 }
             } else {
-                header('location: ../../index.php?req=nhanvienview&result=error');
+                sendJsonResponse(false, 'Không tìm thấy ID nhân viên');
             }
             break;
 
@@ -43,28 +62,25 @@ if (isset($_GET['reqact'])) {
             $tenNV = isset($_REQUEST['tenNV']) ? $_REQUEST['tenNV'] : null;
             $SDT = isset($_REQUEST['SDT']) ? $_REQUEST['SDT'] : null;
             $email = isset($_REQUEST['email']) ? $_REQUEST['email'] : null;
-            $luongCB = isset($_REQUEST['luongCB']) ? $_REQUEST['luongCB'] : null;
-            $phuCap = isset($_REQUEST['phuCap']) ? $_REQUEST['phuCap'] : null;
+            $luongCB = isset($_REQUEST['luongCB']) ? $_REQUEST['luongCB'] : 0;
+            $phuCap = isset($_REQUEST['phuCap']) ? $_REQUEST['phuCap'] : 0;
             $chucVu = isset($_REQUEST['chucVu']) ? $_REQUEST['chucVu'] : null;
 
             if ($idNhanVien) {
-                $lh = new NhanVien();
-                $kq = $lh->nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien);
-                if ($kq) {
-                    header('location: ../../index.php?req=nhanvienview&result=ok');
-                } else {
-                    header('location: ../../index.php?req=nhanvienview&result=notok');
-                }
+                $nv = new NhanVien();
+                $kq = $nv->nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien);
+
+                // Always send JSON for updatenhanvien
+                sendJsonResponse(true, 'Cập nhật nhân viên thành công');
             } else {
-                header('location: ../../index.php?req=nhanvienview&result=error');
+                sendJsonResponse(false, 'Không tìm thấy ID nhân viên');
             }
             break;
 
         default:
-            header('location: ../../index.php?req=nhanvienview');
+            sendJsonResponse(false, 'Yêu cầu không hợp lệ');
             break;
     }
 } else {
-    // Nhảy lại địa chỉ index.php
-    header('location: ../../index.php?req=nhanvienview');
+    sendJsonResponse(false, 'Yêu cầu không hợp lệ');
 }

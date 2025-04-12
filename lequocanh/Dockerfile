@@ -1,4 +1,30 @@
-FROM php:8.2-apache
+FROM php:apache
+
+# Cài đặt các extension PHP cần thiết
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+
+# Bật các extension
+RUN docker-php-ext-enable mysqli pdo pdo_mysql
+
+# Cài đặt một số tiện ích hữu ích
+RUN apt-get update && apt-get install -y \
+    zip \
+    unzip \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Bật mod_rewrite
+RUN a2enmod rewrite
+
+# Cấu hình PHP cho phát triển
+RUN echo "upload_max_filesize = 128M" >> /usr/local/etc/php/php.ini \
+    && echo "post_max_size = 128M" >> /usr/local/etc/php/php.ini \
+    && echo "max_execution_time = 300" >> /usr/local/etc/php/php.ini \
+    && echo "display_errors = On" >> /usr/local/etc/php/php.ini \
+    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/php.ini
+
+# Set working directory
+WORKDIR /var/www/html
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -26,9 +52,6 @@ COPY . /var/www/html/
 # Set proper permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
-
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
 
 # Install PHP info
 RUN echo "<?php phpinfo(); ?>" > /var/www/html/info.php

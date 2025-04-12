@@ -10,7 +10,8 @@ $l = count($list_lh);
 
 <div class="admin-form">
     <h3>Thêm thương hiệu mới</h3>
-    <form name="newthuonghieu" id="formaddthuonghieu" method="post" action='./elements_LQA/mthuonghieu/thuonghieuAct.php?reqact=addnew' enctype="multipart/form-data">
+    <form name="newthuonghieu" id="formaddthuonghieu" method="post"
+        action='./elements_LQA/mthuonghieu/thuonghieuAct.php?reqact=addnew' enctype="multipart/form-data">
         <table>
             <tr>
                 <td>Tên thương hiệu</td>
@@ -74,13 +75,17 @@ $l = count($list_lh);
                         </td>
                         <td align="center">
                             <?php if (isset($_SESSION['ADMIN'])) { ?>
-                                <a href="./elements_LQA/mthuonghieu/thuonghieuAct.php?reqact=deletethuonghieu&idThuongHieu=<?php echo htmlspecialchars($u->idThuongHieu); ?>" onclick="return confirm('Bạn có chắc muốn xóa không?');">
-                                    <img src="./img_LQA/delete.png" class="iconimg">
+                                <a href="./elements_LQA/mthuonghieu/thuonghieuAct.php?reqact=deletethuonghieu&idThuongHieu=<?php echo htmlspecialchars($u->idThuongHieu); ?>"
+                                    onclick="return confirm('Bạn có chắc muốn xóa không?');">
+                                    <img src="./img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php } else { ?>
-                                <img src="./img_LQA/delete.png" class="iconimg">
+                                <img src="./img_LQA/Delete.png" class="iconimg">
                             <?php } ?>
-                            <img src="./img_LQA/Update.png" class="w_update_btn_open_th" value="<?php echo htmlspecialchars($u->idThuongHieu); ?>">
+                            <img src="./img_LQA/Update.png"
+                                class="iconimg w_update_btn_open_th"
+                                value="<?php echo htmlspecialchars($u->idThuongHieu); ?>"
+                                alt="Update">
                         </td>
                     </tr>
             <?php
@@ -91,7 +96,16 @@ $l = count($list_lh);
     </table>
 </div>
 
-<div id="w_update_th">
+<!-- Container cho popup cập nhật thương hiệu -->
+<div id="w_update_th" class="visible-modal" style="display: none;">
+    <div id="w_close_btn_th" class="close-btn">X</div>
     <div id="w_update_form_th"></div>
-    <input type="button" value="close" id="w_close_btn_th">
 </div>
+
+<script>
+    /* 
+     * This custom script is no longer needed as the modal-handler.js
+     * now handles all updates centrally. 
+     * Delete this script and use the global handler instead.
+     */
+</script>

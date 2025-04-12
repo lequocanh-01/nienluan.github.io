@@ -10,26 +10,43 @@ if (file_exists($s)) {
 }
 require_once $f;
 
-class NhanVien extends Database
+class NhanVien
 {
-    // Lấy tất cả nhân viên
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
+
+    // Lấy tất cả các nhân viên
     public function nhanvienGetAll()
     {
         $sql = 'SELECT * FROM nhanvien';
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
-        $getAll->execute();
+
+        if (!$getAll->execute()) {
+            error_log(print_r($getAll->errorInfo(), true));
+            return false;
+        }
 
         return $getAll->fetchAll();
     }
 
-    // Thêm nhân viên
+    // Thêm nhân viên mới
     public function nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu)
     {
         $sql = "INSERT INTO nhanvien (tenNV, SDT, email, luongCB, phuCap, chucVu) VALUES (?, ?, ?, ?, ?, ?)";
         $data = array($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu);
-        $add = $this->connect->prepare($sql);
-        $add->execute($data);
+
+        $add = $this->db->prepare($sql);
+
+        if (!$add->execute($data)) {
+            error_log(print_r($add->errorInfo(), true));
+            return false;
+        }
+
         return $add->rowCount();
     }
 
@@ -38,18 +55,32 @@ class NhanVien extends Database
     {
         $sql = "DELETE FROM nhanvien WHERE idNhanVien = ?";
         $data = array($idNhanVien);
-        $del = $this->connect->prepare($sql);
-        $del->execute($data);
+
+        $del = $this->db->prepare($sql);
+
+        if (!$del->execute($data)) {
+            error_log(print_r($del->errorInfo(), true));
+            return false;
+        }
+
         return $del->rowCount();
     }
 
     // Cập nhật thông tin nhân viên
     public function nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien)
     {
-        $sql = "UPDATE nhanvien SET tenNV = ?, SDT = ?, email = ?, luongCB = ?, phuCap = ?, chucVu = ? WHERE idNhanVien = ?";
+        $sql = "UPDATE nhanvien 
+                SET tenNV = ?, SDT = ?, email = ?, luongCB = ?, phuCap = ?, chucVu = ? 
+                WHERE idNhanVien = ?";
         $data = array($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien);
-        $update = $this->connect->prepare($sql);
-        $update->execute($data);
+
+        $update = $this->db->prepare($sql);
+
+        if (!$update->execute($data)) {
+            error_log(print_r($update->errorInfo(), true));
+            return false;
+        }
+
         return $update->rowCount();
     }
 
@@ -58,9 +89,14 @@ class NhanVien extends Database
     {
         $sql = 'SELECT * FROM nhanvien WHERE idNhanVien = ?';
         $data = array($idNhanVien);
-        $getOne = $this->connect->prepare($sql);
+
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
-        $getOne->execute($data);
+
+        if (!$getOne->execute($data)) {
+            error_log(print_r($getOne->errorInfo(), true));
+            return false;
+        }
 
         return $getOne->fetch();
     }

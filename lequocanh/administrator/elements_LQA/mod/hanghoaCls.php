@@ -21,18 +21,31 @@ if ($database_file === null) {
 
 require_once $database_file;
 
-class hanghoa extends Database
+class hanghoa
 {
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
+
     public function HanghoaGetAll()
     {
-        $sql = 'select * from hanghoa';
-
-        $getAll = $this->connect->prepare($sql);
+        $sql = 'SELECT h.*, 
+                t.tenTH AS ten_thuonghieu, 
+                d.tenDonViTinh AS ten_donvitinh, 
+                n.tenNV AS ten_nhanvien 
+                FROM hanghoa h 
+                LEFT JOIN thuonghieu t ON h.idThuongHieu = t.idThuongHieu 
+                LEFT JOIN donvitinh d ON h.idDonViTinh = d.idDonViTinh 
+                LEFT JOIN nhanvien n ON h.idNhanVien = n.idNhanVien';
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
         $getAll->execute();
-
         return $getAll->fetchAll();
     }
+
     public function HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien)
     {
         // Convert empty strings to NULL for integer fields
@@ -42,19 +55,21 @@ class hanghoa extends Database
 
         $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien) VALUES (?,?,?,?,?,?,?,?)";
         $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien);
-        $add = $this->connect->prepare($sql);
+        $add = $this->db->prepare($sql);
         $add->execute($data);
         return $add->rowCount();
     }
+
     public function HanghoaDelete($idhanghoa)
     {
         $sql = "DELETE from hanghoa where idhanghoa = ?";
         $data = array($idhanghoa);
 
-        $del = $this->connect->prepare($sql);
+        $del = $this->db->prepare($sql);
         $del->execute($data);
         return $del->rowCount();
     }
+
     public function HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa)
     {
         // Convert empty strings to NULL for integer fields
@@ -65,16 +80,17 @@ class hanghoa extends Database
         $sql = "UPDATE hanghoa SET tenhanghoa=?, hinhanh=?, mota=?, giathamkhao=?, idloaihang=?, idThuongHieu=?, idDonViTinh=?, idNhanVien=? WHERE idhanghoa =?";
         $data = array($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
 
-        $update = $this->connect->prepare($sql);
+        $update = $this->db->prepare($sql);
         $update->execute($data);
         return $update->rowCount();
     }
+
     public function HanghoaGetbyId($idhanghoa)
     {
         $sql = 'select * from hanghoa where idhanghoa=?';
         $data = array($idhanghoa);
 
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
         $getOne->execute($data);
 
@@ -86,21 +102,23 @@ class hanghoa extends Database
         $sql = 'select * from hanghoa where idloaihang=?';
         $data = array($idloaihang);
 
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
         $getOne->execute($data);
 
         return $getOne->fetchAll();
     }
+
     public function HanghoaUpdatePrice($idhanghoa, $giaban)
     {
         $sql = "UPDATE hanghoa SET giathamkhao = ? WHERE idhanghoa = ?";
         $data = array($giaban, $idhanghoa);
 
-        $update = $this->connect->prepare($sql);
+        $update = $this->db->prepare($sql);
         $update->execute($data);
         return $update->rowCount();
     }
+
     public function searchHanghoa($keyword)
     {
         try {
@@ -108,7 +126,7 @@ class hanghoa extends Database
                        WHERE LOWER(tenhanghoa) LIKE LOWER(:keyword)
                        ORDER BY tenhanghoa ASC 
                        LIMIT 10";
-            $stmt = $this->connect->prepare($select);
+            $stmt = $this->db->prepare($select);
             $stmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -117,13 +135,14 @@ class hanghoa extends Database
             return [];
         }
     }
+
     public function CheckRelations($idhanghoa)
     {
         $tablesWithRelations = []; // Mảng để lưu tên các bảng có liên kết
 
         // Kiểm tra liên kết với bảng thuộc tính hàng hóa (ví dụ)
         $sql = "SELECT COUNT(*) FROM thuoctinhhh WHERE idhanghoa = ?";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$idhanghoa]);
         if ($stmt->fetchColumn() > 0) {
             $tablesWithRelations[] = 'thuoctinhhh';
@@ -131,7 +150,7 @@ class hanghoa extends Database
 
         // Kiểm tra liên kết với bảng đơn giá (ví dụ)
         $sql = "SELECT COUNT(*) FROM dongia WHERE idhanghoa = ?";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$idhanghoa]);
         if ($stmt->fetchColumn() > 0) {
             $tablesWithRelations[] = 'dongia';
@@ -141,10 +160,11 @@ class hanghoa extends Database
 
         return $tablesWithRelations; // Trả về danh sách các bảng có liên kết
     }
+
     public function GetAllThuongHieu()
     {
         $sql = 'SELECT * FROM thuonghieu';
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
         $getAll->execute();
         return $getAll->fetchAll();
@@ -153,7 +173,7 @@ class hanghoa extends Database
     public function GetAllDonViTinh()
     {
         $sql = 'SELECT * FROM donvitinh';
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
         $getAll->execute();
         return $getAll->fetchAll();
@@ -162,7 +182,7 @@ class hanghoa extends Database
     public function GetAllNhanVien()
     {
         $sql = 'SELECT * FROM nhanvien';
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
         $getAll->execute();
         return $getAll->fetchAll();
@@ -172,7 +192,7 @@ class hanghoa extends Database
     public function GetThuongHieuById($idThuongHieu)
     {
         $sql = 'SELECT * FROM thuonghieu WHERE idThuongHieu = ?';
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$idThuongHieu]);
         return $stmt->fetch(PDO::FETCH_OBJ);
     }
@@ -184,7 +204,7 @@ class hanghoa extends Database
                     (SELECT COUNT(*) FROM hanghoa WHERE hinhanh = h.id) as usage_count 
                     FROM hinhanh h 
                     ORDER BY h.ngay_tao DESC';
-            $getAll = $this->connect->prepare($sql);
+            $getAll = $this->db->prepare($sql);
             $getAll->setFetchMode(PDO::FETCH_OBJ);
             $getAll->execute();
             return $getAll->fetchAll();
@@ -200,7 +220,7 @@ class hanghoa extends Database
 
         try {
             $sql = 'SELECT * FROM hinhanh WHERE id = ?';
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([$id]);
             $hinhanh = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -250,7 +270,7 @@ class hanghoa extends Database
                 idhinhanh INT NOT NULL,
                 UNIQUE KEY (idhanghoa, idhinhanh)
             )";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log("Error in CreateHanghoaHinhanhTable: " . $e->getMessage());
@@ -263,24 +283,24 @@ class hanghoa extends Database
         try {
             // Kiểm tra xem đã có cột file_hash trong bảng hinhanh chưa
             $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
-            $checkColumnStmt = $this->connect->prepare($checkColumnSql);
+            $checkColumnStmt = $this->db->prepare($checkColumnSql);
             $checkColumnStmt->execute();
 
             // Nếu chưa có cột file_hash, thêm cột này vào bảng
             if ($checkColumnStmt->rowCount() == 0) {
                 $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
-                $this->connect->exec($addColumnSql);
+                $this->db->exec($addColumnSql);
             }
 
             if ($file_hash) {
                 $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao, file_hash) 
                         VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP, ?)";
-                $stmt = $this->connect->prepare($sql);
+                $stmt = $this->db->prepare($sql);
                 return $stmt->execute([$ten_file, $loai_file, $duong_dan, $file_hash]);
             } else {
                 $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao) 
                         VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)";
-                $stmt = $this->connect->prepare($sql);
+                $stmt = $this->db->prepare($sql);
                 return $stmt->execute([$ten_file, $loai_file, $duong_dan]);
             }
         } catch (PDOException $e) {
@@ -300,7 +320,7 @@ class hanghoa extends Database
 
             // Xóa record trong database
             $sql = "DELETE FROM hinhanh WHERE id = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             return $stmt->execute([$id]);
         } catch (PDOException $e) {
             error_log("Error in XoaHinhAnh: " . $e->getMessage());
@@ -313,7 +333,7 @@ class hanghoa extends Database
     {
         try {
             // Đảm bảo kết nối đang hoạt động
-            if (!$this->connect || !($this->connect instanceof PDO)) {
+            if (!$this->db || !($this->db instanceof PDO)) {
                 error_log("Không có kết nối database hợp lệ");
                 return false;
             }
@@ -321,19 +341,19 @@ class hanghoa extends Database
             // Kiểm tra trạng thái transaction hiện tại
             try {
                 // Bắt đầu giao dịch mới
-                $this->connect->beginTransaction();
+                $this->db->beginTransaction();
             } catch (PDOException $e) {
                 // Nếu có lỗi "There is no active transaction", thử commit trước khi bắt đầu mới
                 if (strpos($e->getMessage(), 'There is no active transaction') !== false) {
                     error_log("Đang thử phục hồi transaction: " . $e->getMessage());
                     try {
                         // Thử commit transaction hiện tại nếu có
-                        $this->connect->commit();
+                        $this->db->commit();
                     } catch (Exception $ex) {
                         // Bỏ qua lỗi nếu không có transaction để commit
                     }
                     // Bắt đầu transaction mới
-                    $this->connect->beginTransaction();
+                    $this->db->beginTransaction();
                 } else {
                     // Lỗi khác, ghi log và trả về false
                     error_log("Lỗi transaction: " . $e->getMessage());
@@ -346,7 +366,7 @@ class hanghoa extends Database
 
             // Cập nhật hình ảnh chính cho sản phẩm
             $sql = 'UPDATE hanghoa SET hinhanh = ? WHERE idhanghoa = ?';
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([$id_hinhanh, $idhanghoa]);
 
             if (!$result) {
@@ -355,13 +375,13 @@ class hanghoa extends Database
 
             // Thêm quan hệ vào bảng hanghoa_hinhanh nếu chưa tồn tại
             $checkSql = 'SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh = ?';
-            $checkStmt = $this->connect->prepare($checkSql);
+            $checkStmt = $this->db->prepare($checkSql);
             $checkStmt->execute([$idhanghoa, $id_hinhanh]);
             $exists = $checkStmt->fetchColumn() > 0;
 
             if (!$exists) {
                 $insertSql = 'INSERT INTO hanghoa_hinhanh (idhanghoa, idhinhanh) VALUES (?, ?)';
-                $insertStmt = $this->connect->prepare($insertSql);
+                $insertStmt = $this->db->prepare($insertSql);
                 $insertResult = $insertStmt->execute([$idhanghoa, $id_hinhanh]);
 
                 if (!$insertResult) {
@@ -373,13 +393,13 @@ class hanghoa extends Database
             $this->UpdateImageStatus($id_hinhanh);
 
             // Hoàn tất giao dịch
-            $this->connect->commit();
+            $this->db->commit();
 
             return true;
         } catch (Exception $e) {
             // Rollback nếu có lỗi
             try {
-                $this->connect->rollBack();
+                $this->db->rollBack();
             } catch (PDOException $rollbackException) {
                 error_log("Lỗi khi rollback: " . $rollbackException->getMessage());
             }
@@ -391,7 +411,7 @@ class hanghoa extends Database
     public function GetProductsByImageId($imageId)
     {
         $sql = "SELECT idhanghoa, tenhanghoa FROM hanghoa WHERE hinhanh = ?";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$imageId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -400,7 +420,7 @@ class hanghoa extends Database
     {
         try {
             $sql = "UPDATE hanghoa SET hinhanh = ? WHERE hinhanh = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             return $stmt->execute([$newImageId, $oldImageId]);
         } catch (PDOException $e) {
             return false;
@@ -410,7 +430,7 @@ class hanghoa extends Database
     public function GetImagePath($id)
     {
         $sql = 'SELECT duong_dan FROM hinhanh WHERE id = ?';
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
         $result = $stmt->fetch(PDO::FETCH_OBJ);
         return $result ? $result->duong_dan : null;
@@ -419,7 +439,7 @@ class hanghoa extends Database
     public function UpdateImageStatus($id)
     {
         $sql = 'UPDATE hinhanh SET trang_thai = 1 WHERE id = ?';
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         return $stmt->execute([$id]);
     }
 
@@ -427,7 +447,7 @@ class hanghoa extends Database
     public function FindProductsByName($name)
     {
         $sql = 'SELECT * FROM hanghoa WHERE tenhanghoa LIKE ?';
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute(["%" . $name . "%"]);
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
@@ -435,14 +455,14 @@ class hanghoa extends Database
     // Lấy ID được insert cuối cùng
     public function GetLastInsertId()
     {
-        return $this->connect->lastInsertId();
+        return $this->db->lastInsertId();
     }
 
     public function FindProductsByExactName($productName)
     {
         try {
             $sql = "SELECT * FROM hanghoa WHERE tenhanghoa = :productName";
-            $cmd = $this->connect->prepare($sql);
+            $cmd = $this->db->prepare($sql);
             $cmd->bindValue(":productName", $productName);
             $cmd->execute();
             $result = $cmd->fetchAll(PDO::FETCH_OBJ);
@@ -458,7 +478,7 @@ class hanghoa extends Database
     {
         try {
             $sql = "SELECT COUNT(*) FROM hinhanh WHERE ten_file = :fileName";
-            $cmd = $this->connect->prepare($sql);
+            $cmd = $this->db->prepare($sql);
             $cmd->bindValue(":fileName", $fileName);
             $cmd->execute();
             return $cmd->fetchColumn() > 0;
@@ -474,18 +494,18 @@ class hanghoa extends Database
         try {
             // Kiểm tra xem đã có cột file_hash trong bảng hinhanh chưa
             $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
-            $checkColumnStmt = $this->connect->prepare($checkColumnSql);
+            $checkColumnStmt = $this->db->prepare($checkColumnSql);
             $checkColumnStmt->execute();
 
             // Nếu chưa có cột file_hash, thêm cột này vào bảng
             if ($checkColumnStmt->rowCount() == 0) {
                 $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
-                $this->connect->exec($addColumnSql);
+                $this->db->exec($addColumnSql);
                 return false; // Vì vừa thêm cột, chắc chắn chưa có dữ liệu
             }
 
             $sql = "SELECT id FROM hinhanh WHERE file_hash = :fileHash";
-            $cmd = $this->connect->prepare($sql);
+            $cmd = $this->db->prepare($sql);
             $cmd->bindValue(":fileHash", $fileHash);
             $cmd->execute();
             $result = $cmd->fetch(PDO::FETCH_OBJ);
@@ -502,7 +522,7 @@ class hanghoa extends Database
     {
         try {
             $sql = "SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = :idhanghoa";
-            $cmd = $this->connect->prepare($sql);
+            $cmd = $this->db->prepare($sql);
             $cmd->bindValue(":idhanghoa", $idhanghoa);
             $cmd->execute();
             return $cmd->fetchColumn();
@@ -519,7 +539,7 @@ class hanghoa extends Database
             $sql = "SELECT h.* FROM hinhanh h 
                     INNER JOIN hanghoa_hinhanh hh ON h.id = hh.idhinhanh 
                     WHERE hh.idhanghoa = :idhanghoa";
-            $cmd = $this->connect->prepare($sql);
+            $cmd = $this->db->prepare($sql);
             $cmd->bindValue(":idhanghoa", $idhanghoa);
             $cmd->execute();
             return $cmd->fetchAll(PDO::FETCH_OBJ);
@@ -534,7 +554,7 @@ class hanghoa extends Database
     {
         try {
             $sql = "UPDATE hanghoa SET hinhanh = ? WHERE idhanghoa = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             return $stmt->execute([$id_hinhanh_moi, $idhanghoa]);
         } catch (Exception $e) {
             return false;
@@ -550,7 +570,7 @@ class hanghoa extends Database
                    JOIN hinhanh ha ON h.hinhanh = ha.id 
                    WHERE ha.ten_file NOT LIKE CONCAT('%', h.tenhanghoa, '%') 
                    AND ha.ten_file NOT LIKE CONCAT('%', REPLACE(h.tenhanghoa, ' ', ''), '%')";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (PDOException $e) {
@@ -568,7 +588,7 @@ class hanghoa extends Database
                    FROM hanghoa h 
                    LEFT JOIN hinhanh ha ON h.hinhanh = ha.id 
                    WHERE h.hinhanh > 0 AND ha.id IS NULL";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_OBJ);
         } catch (PDOException $e) {
@@ -583,7 +603,7 @@ class hanghoa extends Database
         try {
             // Lấy thông tin sản phẩm
             $sql = "SELECT tenhanghoa FROM hanghoa WHERE idhanghoa = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([$idhanghoa]);
             $product = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -593,7 +613,7 @@ class hanghoa extends Database
 
             // Lấy tất cả hình ảnh
             $sql = "SELECT * FROM hinhanh";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute();
             $images = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -615,17 +635,17 @@ class hanghoa extends Database
     public function ApplyAllExactMatchImages()
     {
         try {
-            $this->connect->beginTransaction();
+            $this->db->beginTransaction();
 
             // Lấy tất cả sản phẩm
             $sqlProducts = "SELECT idhanghoa, tenhanghoa FROM hanghoa";
-            $stmtProducts = $this->connect->prepare($sqlProducts);
+            $stmtProducts = $this->db->prepare($sqlProducts);
             $stmtProducts->execute();
             $products = $stmtProducts->fetchAll(PDO::FETCH_OBJ);
 
             // Lấy tất cả hình ảnh
             $sqlImages = "SELECT id, ten_file FROM hinhanh";
-            $stmtImages = $this->connect->prepare($sqlImages);
+            $stmtImages = $this->db->prepare($sqlImages);
             $stmtImages->execute();
             $images = $stmtImages->fetchAll(PDO::FETCH_OBJ);
 
@@ -636,18 +656,18 @@ class hanghoa extends Database
                     if ($this->IsExactImageNameMatch($product->tenhanghoa, $image->ten_file)) {
                         // Cập nhật hình ảnh chính cho sản phẩm
                         $sqlUpdate = "UPDATE hanghoa SET hinhanh = ? WHERE idhanghoa = ?";
-                        $stmtUpdate = $this->connect->prepare($sqlUpdate);
+                        $stmtUpdate = $this->db->prepare($sqlUpdate);
                         $stmtUpdate->execute([$image->id, $product->idhanghoa]);
 
                         // Thêm liên kết vào bảng hanghoa_hinhanh
                         $checkSql = "SELECT COUNT(*) FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh =?";
-                        $checkStmt = $this->connect->prepare($checkSql);
+                        $checkStmt = $this->db->prepare($checkSql);
                         $checkStmt->execute([$product->idhanghoa, $image->id]);
                         $exists = $checkStmt->fetchColumn() > 0;
 
                         if (!$exists) {
                             $insertSql = "INSERT INTO hanghoa_hinhanh (idhanghoa, idhinhanh) VALUES (?, ?)";
-                            $insertStmt = $this->connect->prepare($insertSql);
+                            $insertStmt = $this->db->prepare($insertSql);
                             $insertStmt->execute([$product->idhanghoa, $image->id]);
                         }
 
@@ -657,10 +677,10 @@ class hanghoa extends Database
                 }
             }
 
-            $this->connect->commit();
+            $this->db->commit();
             return $matchesCount;
         } catch (PDOException $e) {
-            $this->connect->rollBack();
+            $this->db->rollBack();
             error_log("Error in ApplyAllExactMatchImages: " . $e->getMessage());
             return 0;
         }
@@ -675,7 +695,7 @@ class hanghoa extends Database
 
             // Kiểm tra xem sản phẩm có tồn tại không
             $checkProduct = "SELECT hinhanh FROM hanghoa WHERE idhanghoa = ?";
-            $stmtCheckProduct = $this->connect->prepare($checkProduct);
+            $stmtCheckProduct = $this->db->prepare($checkProduct);
             $stmtCheckProduct->execute([$idhanghoa]);
             $currentImageId = $stmtCheckProduct->fetchColumn();
 
@@ -687,16 +707,16 @@ class hanghoa extends Database
             error_log("RemoveImageFromProduct - Hình ảnh hiện tại của sản phẩm: " . ($currentImageId ?: 'NULL'));
 
             // Bắt đầu giao dịch
-            $this->connect->beginTransaction();
+            $this->db->beginTransaction();
 
             // Đặt hình ảnh về NULL cho sản phẩm
             $sqlUpdate = "UPDATE hanghoa SET hinhanh = NULL WHERE idhanghoa = ?";
-            $stmtUpdate = $this->connect->prepare($sqlUpdate);
+            $stmtUpdate = $this->db->prepare($sqlUpdate);
             $result = $stmtUpdate->execute([$idhanghoa]);
 
             if (!$result) {
                 error_log("RemoveImageFromProduct - Lỗi khi cập nhật sản phẩm: " . implode(", ", $stmtUpdate->errorInfo()));
-                $this->connect->rollBack();
+                $this->db->rollBack();
                 return false;
             }
 
@@ -707,7 +727,7 @@ class hanghoa extends Database
                 try {
                     // Kiểm tra xem bảng hanghoa_hinhanh có tồn tại không
                     $checkTableSql = "SHOW TABLES LIKE 'hanghoa_hinhanh'";
-                    $checkTableStmt = $this->connect->prepare($checkTableSql);
+                    $checkTableStmt = $this->db->prepare($checkTableSql);
                     $checkTableStmt->execute();
                     $tableExists = $checkTableStmt->rowCount() > 0;
 
@@ -717,7 +737,7 @@ class hanghoa extends Database
                     }
 
                     $sqlDeleteRelation = "DELETE FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh = ?";
-                    $stmtDeleteRelation = $this->connect->prepare($sqlDeleteRelation);
+                    $stmtDeleteRelation = $this->db->prepare($sqlDeleteRelation);
                     $resultDelete = $stmtDeleteRelation->execute([$idhanghoa, $currentImageId]);
 
                     if (!$resultDelete) {
@@ -732,19 +752,19 @@ class hanghoa extends Database
             }
 
             // Hoàn tất giao dịch
-            $this->connect->commit();
+            $this->db->commit();
             error_log("RemoveImageFromProduct - Gỡ bỏ hình ảnh hoàn tất thành công");
 
             return true;
         } catch (PDOException $e) {
-            if ($this->connect->inTransaction()) {
-                $this->connect->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
             }
             error_log("Error in RemoveImageFromProduct: " . $e->getMessage());
             return false;
         } catch (Exception $e) {
-            if ($this->connect->inTransaction()) {
-                $this->connect->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
             }
             error_log("Unexpected error in RemoveImageFromProduct: " . $e->getMessage());
             return false;
@@ -758,7 +778,7 @@ class hanghoa extends Database
             error_log("RemoveAllMismatchedImages - Bắt đầu gỡ bỏ tất cả hình ảnh không khớp");
 
             // Bắt đầu giao dịch
-            $this->connect->beginTransaction();
+            $this->db->beginTransaction();
 
             // Lấy danh sách sản phẩm có hình ảnh không khớp
             $mismatched = $this->GetMismatchedProductImages();
@@ -766,7 +786,7 @@ class hanghoa extends Database
 
             if (empty($mismatched)) {
                 error_log("RemoveAllMismatchedImages - Không tìm thấy hình ảnh không khớp nào");
-                $this->connect->commit();
+                $this->db->commit();
                 return 0;
             }
 
@@ -777,7 +797,7 @@ class hanghoa extends Database
 
                 // Đặt hình ảnh về NULL cho sản phẩm
                 $sqlUpdate = "UPDATE hanghoa SET hinhanh = NULL WHERE idhanghoa = ?";
-                $stmtUpdate = $this->connect->prepare($sqlUpdate);
+                $stmtUpdate = $this->db->prepare($sqlUpdate);
                 $resultUpdate = $stmtUpdate->execute([$item->idhanghoa]);
 
                 if (!$resultUpdate) {
@@ -787,7 +807,7 @@ class hanghoa extends Database
 
                 // Xóa quan hệ trong bảng hanghoa_hinhanh
                 $sqlDeleteRelation = "DELETE FROM hanghoa_hinhanh WHERE idhanghoa = ? AND idhinhanh = ?";
-                $stmtDeleteRelation = $this->connect->prepare($sqlDeleteRelation);
+                $stmtDeleteRelation = $this->db->prepare($sqlDeleteRelation);
                 $resultDelete = $stmtDeleteRelation->execute([$item->idhanghoa, $item->id]);
 
                 if (!$resultDelete) {
@@ -799,21 +819,21 @@ class hanghoa extends Database
             }
 
             // Hoàn tất giao dịch
-            $this->connect->commit();
+            $this->db->commit();
 
             error_log("RemoveAllMismatchedImages - Hoàn tất gỡ bỏ " . $count . " hình ảnh");
             return $count;
         } catch (PDOException $e) {
             // Rollback nếu có lỗi
-            if ($this->connect->inTransaction()) {
-                $this->connect->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
             }
             error_log("Error in RemoveAllMismatchedImages: " . $e->getMessage());
             return false;
         } catch (Exception $e) {
             // Bắt các exception khác
-            if ($this->connect->inTransaction()) {
-                $this->connect->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
             }
             error_log("Unexpected error in RemoveAllMismatchedImages: " . $e->getMessage());
             return false;

@@ -29,8 +29,8 @@ if (empty($list_hh)) {
                         if (!empty($list_hh)) {
                             foreach ($list_hh as $h) {
                         ?>
-                                <option value="<?php echo htmlspecialchars($h->idhanghoa); ?>" 
-                                        data-price="<?php echo htmlspecialchars($h->giathamkhao); ?>">
+                                <option value="<?php echo htmlspecialchars($h->idhanghoa); ?>"
+                                    data-price="<?php echo htmlspecialchars($h->giathamkhao); ?>">
                                     <?php echo htmlspecialchars($h->tenhanghoa); ?>
                                 </option>
                         <?php

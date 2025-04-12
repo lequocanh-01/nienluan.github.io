@@ -102,8 +102,13 @@ if ($requestAction) {
             $userObj = new user();
             $user = $userObj->UserGetbyId($iduser);
 
+            if (!$user) {
+                header('location: ../../index.php?req=userview&result=user_not_found');
+                exit();
+            }
+
             // Kiểm tra nếu là tài khoản admin
-            if ($user && $user->username === 'admin') {
+            if ($user->username === 'admin') {
                 // Kiểm tra mật khẩu xác thực
                 if ($verify_password !== 'lequocanh') {
                     header('location: ../../index.php?req=userview&result=invalid_verify_pass');
@@ -133,9 +138,9 @@ if ($requestAction) {
             if ($result) {
                 header('location: ../../index.php?req=userview&result=ok');
             } else {
-                header('location: ../../index.php?req=userview&result=notok');
+                header('location: ../../index.php?req=userview&result=failed');
             }
-            break;
+            exit();
 
         case 'checklogin':
             $username = $_REQUEST['username'];
@@ -187,12 +192,14 @@ if ($requestAction) {
             break;
 
         case 'checkadmin':
-            header('Content-Type: application/json');
             $admin_password = isset($_REQUEST['admin_password']) ? $_REQUEST['admin_password'] : '';
 
-            // Kiểm tra mật khẩu đặc biệt cho admin
-            $result = ($admin_password === 'lequocanh');
-            echo json_encode(['success' => $result]);
+            // Kiểm tra mật khẩu admin
+            if ($admin_password === 'lequocanh') {
+                echo json_encode(['success' => true]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Mật khẩu không chính xác']);
+            }
             exit();
             break;
 

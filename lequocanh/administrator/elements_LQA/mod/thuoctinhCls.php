@@ -10,83 +10,94 @@ if (file_exists($s)) {
 }
 require_once $f;
 
-class ThuocTinh extends Database
+class ThuocTinh
 {
-    // Lấy tất cả thuộc tính
-    public function thuoctinhGetAll()
-    {
-        try {
-            $sql = 'SELECT * FROM thuoctinh';
-            $getAll = $this->connect->prepare($sql);
-            $getAll->setFetchMode(PDO::FETCH_OBJ);
-            $getAll->execute();
+    private $db;
 
-            return $getAll->fetchAll();
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-            return [];
-        }
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
     }
 
-    // Thêm thuộc tính
-    public function thuoctinhAdd($tenThuocTinh,  $ghiChu, $hinhanh)
+    // Lấy tất cả các thuộc tính
+    public function thuoctinhGetAll()
     {
-        try {
-            $sql = "INSERT INTO thuoctinh (tenThuocTinh, ghiChu, hinhanh) VALUES (?, ?, ?)";
-            $data = array($tenThuocTinh, $ghiChu, $hinhanh);
-            $add = $this->connect->prepare($sql);
-            $add->execute($data);
-            return $add->rowCount();
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-            return 0;
+        $sql = 'SELECT * FROM thuoctinh';
+        $getAll = $this->db->prepare($sql);
+        $getAll->setFetchMode(PDO::FETCH_OBJ);
+
+        if (!$getAll->execute()) {
+            error_log(print_r($getAll->errorInfo(), true));
+            return false;
         }
+
+        return $getAll->fetchAll();
+    }
+
+    // Thêm thuộc tính mới
+    public function thuoctinhAdd($tenThuocTinh, $ghiChu, $hinhanh)
+    {
+        $sql = "INSERT INTO thuoctinh (tenThuocTinh, ghiChu, hinhanh) VALUES (?, ?, ?)";
+        $data = array($tenThuocTinh, $ghiChu, $hinhanh);
+
+        $add = $this->db->prepare($sql);
+
+        if (!$add->execute($data)) {
+            error_log(print_r($add->errorInfo(), true));
+            return false;
+        }
+
+        return $add->rowCount();
     }
 
     // Xóa thuộc tính theo ID
     public function thuoctinhDelete($idThuocTinh)
     {
-        try {
-            $sql = "DELETE FROM thuoctinh WHERE idThuocTinh = ?";
-            $data = array($idThuocTinh);
-            $del = $this->connect->prepare($sql);
-            $del->execute($data);
-            return $del->rowCount();
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-            return 0;
+        $sql = "DELETE FROM thuoctinh WHERE idThuocTinh = ?";
+        $data = array($idThuocTinh);
+
+        $del = $this->db->prepare($sql);
+
+        if (!$del->execute($data)) {
+            error_log(print_r($del->errorInfo(), true));
+            return false;
         }
+
+        return $del->rowCount();
     }
 
     // Cập nhật thông tin thuộc tính
     public function thuoctinhUpdate($tenThuocTinh, $ghiChu, $hinhanh, $idThuocTinh)
     {
-        try {
-            $sql = "UPDATE thuoctinh SET tenThuocTinh = ?, ghiChu = ?, hinhanh = ? WHERE idThuocTinh = ?";
-            $data = array($tenThuocTinh, $ghiChu, $hinhanh, $idThuocTinh);
-            $update = $this->connect->prepare($sql);
-            $update->execute($data);
-            return $update->rowCount();
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-            return 0;
+        $sql = "UPDATE thuoctinh 
+                SET tenThuocTinh = ?, ghiChu = ?, hinhanh = ? 
+                WHERE idThuocTinh = ?";
+        $data = array($tenThuocTinh, $ghiChu, $hinhanh, $idThuocTinh);
+
+        $update = $this->db->prepare($sql);
+
+        if (!$update->execute($data)) {
+            error_log(print_r($update->errorInfo(), true));
+            return false;
         }
+
+        return $update->rowCount();
     }
 
     // Lấy thông tin thuộc tính theo ID
     public function thuoctinhGetById($idThuocTinh)
     {
-        try {
-            $sql = 'SELECT * FROM thuoctinh WHERE idThuocTinh = ?';
-            $data = array($idThuocTinh);
-            $getOne = $this->connect->prepare($sql);
-            $getOne->setFetchMode(PDO::FETCH_OBJ);
-            $getOne->execute($data);
+        $sql = 'SELECT * FROM thuoctinh WHERE idThuocTinh = ?';
+        $data = array($idThuocTinh);
 
-            return $getOne->fetch();
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-            return null;
+        $getOne = $this->db->prepare($sql);
+        $getOne->setFetchMode(PDO::FETCH_OBJ);
+
+        if (!$getOne->execute($data)) {
+            error_log(print_r($getOne->errorInfo(), true));
+            return false;
         }
+
+        return $getOne->fetch();
     }
 }

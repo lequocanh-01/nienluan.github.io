@@ -10,13 +10,20 @@ if (file_exists($s)) {
 }
 require_once $f;
 
-class ThuocTinhHH extends Database
+class ThuocTinhHH
 {
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
+
     // Lấy tất cả các thuộc tính
     public function thuoctinhhhGetAll()
     {
         $sql = 'SELECT * FROM thuoctinhhh';
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
 
         if (!$getAll->execute()) {
@@ -33,7 +40,7 @@ class ThuocTinhHH extends Database
         $sql = "INSERT INTO thuoctinhhh (idhanghoa, idThuocTinh, tenThuocTinhHH,  ghiChu) VALUES (?, ?, ?, ?)";
         $data = array($idhanghoa, $idThuocTinh, $tenThuocTinhHH,  $ghiChu);
 
-        $add = $this->connect->prepare($sql);
+        $add = $this->db->prepare($sql);
 
         if (!$add->execute($data)) {
             error_log(print_r($add->errorInfo(), true));
@@ -49,7 +56,7 @@ class ThuocTinhHH extends Database
         $sql = "DELETE FROM thuoctinhhh WHERE idThuocTinhHH = ?";
         $data = array($idThuocTinhHH);
 
-        $del = $this->connect->prepare($sql);
+        $del = $this->db->prepare($sql);
 
         if (!$del->execute($data)) {
             error_log(print_r($del->errorInfo(), true));
@@ -60,19 +67,45 @@ class ThuocTinhHH extends Database
     }
 
     // Cập nhật thông tin thuộc tính
-    public function thuoctinhhhUpdate( $tenThuocTinhHH,  $ghiChu, $idThuocTinhHH)
+    public function thuoctinhhhUpdate($idhanghoa, $idThuocTinh, $tenThuocTinhHH, $idThuocTinhHH)
     {
+        // Ghi log dữ liệu đầu vào
+        $log_file = __DIR__ . '/../mthuoctinhhh/update_log.txt';
+        $log_data = date('Y-m-d H:i:s') . " - Update parameters:\n";
+        $log_data .= "idhanghoa: $idhanghoa (type: " . gettype($idhanghoa) . ")\n";
+        $log_data .= "idThuocTinh: $idThuocTinh (type: " . gettype($idThuocTinh) . ")\n";
+        $log_data .= "tenThuocTinhHH: $tenThuocTinhHH (type: " . gettype($tenThuocTinhHH) . ")\n";
+        $log_data .= "idThuocTinhHH: $idThuocTinhHH (type: " . gettype($idThuocTinhHH) . ")\n";
+        file_put_contents($log_file, $log_data, FILE_APPEND);
+
         $sql = "UPDATE thuoctinhhh 
-                SET  tenThuocTinhHH = ?,  ghiChu = ? 
+                SET idhanghoa = ?, idThuocTinh = ?, tenThuocTinhHH = ?
                 WHERE idThuocTinhHH = ?";
-        $data = array( $tenThuocTinhHH,  $ghiChu, $idThuocTinhHH);
+        $data = array($idhanghoa, $idThuocTinh, $tenThuocTinhHH, $idThuocTinhHH);
 
-        $update = $this->connect->prepare($sql);
+        // Ghi log SQL trước khi thực thi
+        $log_data = date('Y-m-d H:i:s') . " - SQL Query: $sql\n";
+        $log_data .= "Data: " . print_r($data, true) . "\n";
+        file_put_contents($log_file, $log_data, FILE_APPEND);
 
-        if (!$update->execute($data)) {
-            error_log(print_r($update->errorInfo(), true));
+        $update = $this->db->prepare($sql);
+
+        $success = $update->execute($data);
+
+        // Ghi log kết quả
+        if (!$success) {
+            $error_info = $update->errorInfo();
+            $log_data = date('Y-m-d H:i:s') . " - SQL Error:\n";
+            $log_data .= "Code: " . $error_info[0] . "\n";
+            $log_data .= "SQL State: " . $error_info[1] . "\n";
+            $log_data .= "Message: " . $error_info[2] . "\n";
+            file_put_contents($log_file, $log_data, FILE_APPEND);
+            error_log(print_r($error_info, true));
             return false;
         }
+
+        $log_data = date('Y-m-d H:i:s') . " - Success, rows affected: " . $update->rowCount() . "\n";
+        file_put_contents($log_file, $log_data, FILE_APPEND);
 
         return $update->rowCount();
     }
@@ -83,7 +116,7 @@ class ThuocTinhHH extends Database
         $sql = 'SELECT * FROM thuoctinhhh WHERE idThuocTinhHH = ?';
         $data = array($idThuocTinhHH);
 
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
 
         if (!$getOne->execute($data)) {
@@ -99,7 +132,7 @@ class ThuocTinhHH extends Database
         $sql = 'SELECT * FROM thuoctinhhh WHERE idloaihang = ?';
         $data = array($idloaihang);
 
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
 
         if (!$getOne->execute($data)) {
@@ -116,7 +149,7 @@ class ThuocTinhHH extends Database
         $sql = 'SELECT * FROM thuoctinhhh WHERE idhanghoa = ?';
         $data = array($idhanghoa);
 
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
 
         if (!$getOne->execute($data)) {

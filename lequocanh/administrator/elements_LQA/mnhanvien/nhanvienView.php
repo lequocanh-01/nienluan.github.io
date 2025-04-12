@@ -11,7 +11,8 @@ $l = count($list_lh);
 
 <div class="admin-form">
     <h3>Thêm nhân viên mới</h3>
-    <form name="newnhanvien" id="formaddnhanvien" method="post" action='./elements_LQA/mnhanvien/nhanvienAct.php?reqact=addnew' enctype="multipart/form-data">
+    <form name="newnhanvien" id="formaddnhanvien" method="post"
+        action='./elements_LQA/mnhanvien/nhanvienAct.php?reqact=addnew' enctype="multipart/form-data">
         <table>
             <tr>
                 <td>Tên nhân viên</td>
@@ -79,13 +80,21 @@ $l = count($list_lh);
                         <td><?php echo htmlspecialchars($u->chucVu); ?></td>
                         <td align="center">
                             <?php if (isset($_SESSION['ADMIN'])) { ?>
-                                <a href="./elements_LQA/mnhanvien/nhanvienAct.php?reqact=deletenhanvien&idNhanVien=<?php echo htmlspecialchars($u->idNhanVien); ?>" onclick="return confirm('Bạn có chắc muốn xóa không?');">
-                                    <img src="./img_LQA/delete.png" class=""
+                                <a href="./elements_LQA/mnhanvien/nhanvienAct.php?reqact=deletenhanvien&idNhanVien=<?php echo htmlspecialchars($u->idNhanVien); ?>"
+                                    onclick="return confirm('Bạn có chắc muốn xóa không?');">
+                                    <img src="./img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php } else { ?>
-                                <img src="./img_LQA/delete.png" class="">
+                                <img src="./img_LQA/Delete.png" class="iconimg" />
                             <?php } ?>
-                            <img src="./img_LQA/Update.png" class="w_update_btn_open_nv" value="<?php echo htmlspecialchars($u->idNhanVien); ?>">
+                            <img src="./img_LQA/Update.png"
+                                class="iconimg generic-update-btn"
+                                data-module="mnhanvien"
+                                data-update-url="./elements_LQA/mnhanvien/nhanvienUpdate.php"
+                                data-id-param="idNhanVien"
+                                data-title="Cập nhật Nhân viên"
+                                data-id="<?php echo htmlspecialchars($u->idNhanVien); ?>"
+                                alt="Update">
                         </td>
                     </tr>
             <?php
@@ -98,5 +107,5 @@ $l = count($list_lh);
 
 <div id="w_update_nv">
     <div id="w_update_form_nv"></div>
-    <input type="button" value="close" id="w_close_btn_nv">
+    <button type="button" id="w_close_btn_nv">X</button>
 </div>

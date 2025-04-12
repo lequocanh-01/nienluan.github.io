@@ -1,0 +1,392 @@
+2025-04-12 05:50:49 - Hanghoa Update request:
+idhanghoa: 46
+tenhanghoa: Xiaomi 12T21
+POST: Array
+(
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Xiaomi 12T21
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Xiaomi 12T21
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 05:50:49 - Exception: SQLSTATE[HY000]: General error: 1366 Incorrect integer value: '' for column 'hinhanh' at row 1
+2025-04-12 05:52:32 - Hanghoa Update request:
+idhanghoa: 46
+tenhanghoa: Xiaomi 12T21
+POST: Array
+(
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Xiaomi 12T21
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Xiaomi 12T21
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 05:52:32 - Exception: SQLSTATE[HY000]: General error: 1366 Incorrect integer value: '' for column 'hinhanh' at row 1
+2025-04-12 05:52:42 - Hanghoa Update request:
+idhanghoa: 45
+tenhanghoa: Samsung Galaxy S2111
+POST: Array
+(
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Samsung Galaxy S2111
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Samsung Galaxy S2111
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 05:52:42 - Update result: Success
+2025-04-12 05:53:44 - Hanghoa Update request:
+idhanghoa: 45
+tenhanghoa: Samsung Galaxy S21
+POST: Array
+(
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Samsung Galaxy S21
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [tenhanghoa] => Samsung Galaxy S21
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 05:53:44 - Update result: Success
+2025-04-12 05:55:20 - Hanghoa Update request:
+idhanghoa: 46
+tenhanghoa: Xiaomi 12Trr
+POST: Array
+(
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => /administrator/index.php?req=hanghoaview
+    [tenhanghoa] => Xiaomi 12Trr
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => /administrator/index.php?req=hanghoaview
+    [tenhanghoa] => Xiaomi 12Trr
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 05:55:21 - Update result: Success
+2025-04-12 05:55:38 - Hanghoa Update request:
+idhanghoa: 46
+tenhanghoa: Xiaomi 12T
+POST: Array
+(
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => /administrator/index.php?req=hanghoaview
+    [tenhanghoa] => Xiaomi 12T
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 46
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => /administrator/index.php?req=hanghoaview
+    [tenhanghoa] => Xiaomi 12T
+    [mota] => Điện thoại giá rẻ với cấu hình cao
+    [giathamkhao] => 14000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 3
+    [idDonViTinh] => 1
+    [idNhanVien] => 7
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 05:55:38 - Update result: Success
+2025-04-12 06:27:19 - Hanghoa Update request:
+idhanghoa: 45
+tenhanghoa: Samsung Galaxy S2111
+POST: Array
+(
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => ./index.php?req=hanghoaview
+    [tenhanghoa] => Samsung Galaxy S2111
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => ./index.php?req=hanghoaview
+    [tenhanghoa] => Samsung Galaxy S2111
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 06:27:19 - Update result: Success
+2025-04-12 06:27:28 - Hanghoa Update request:
+idhanghoa: 45
+tenhanghoa: Samsung Galaxy S21
+POST: Array
+(
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => ./index.php?req=hanghoaview
+    [tenhanghoa] => Samsung Galaxy S21
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+)
+
+GET: Array
+(
+    [reqact] => updatehanghoa
+)
+
+REQUEST: Array
+(
+    [reqact] => updatehanghoa
+    [idhanghoa] => 45
+    [debug_log] => true
+    [ajax] => false
+    [redirect] => ./index.php?req=hanghoaview
+    [tenhanghoa] => Samsung Galaxy S21
+    [mota] => Điện thoại thông minh với màn hình Dynamic AMOLED
+    [giathamkhao] => 12000000.00
+    [id_hinhanh] => 0
+    [idloaihang] => 1
+    [idThuongHieu] => 2
+    [idDonViTinh] => 1
+    [idNhanVien] => 2
+    [ajs_anonymous_id] => 55f947c6-565e-4a46-8b19-a46c79297927
+    [lequocanh] => 06:17 - 26/03/2025
+    [admin] => 10:06 - 06/04/2025
+    [pma_lang] => vi
+    [PHPSESSID] => 6452bc1058e0c284ffb92dd213e0d4c1
+    [phpMyAdmin] => c40a1260f9d947e6715387c279f9f648
+    [pmaUser-1] => wUjGV5aFE62ss475jORY1+NW4yz+naaHMQHT2EpICO3yoOTJOuF4Gd/bAaA=
+)
+
+--------------------------------------
+2025-04-12 06:27:28 - Update result: Success

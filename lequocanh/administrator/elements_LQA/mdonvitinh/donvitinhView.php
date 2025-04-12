@@ -10,7 +10,8 @@ $l = count($list_lh);
 
 <div class="admin-form">
     <h3>Thêm đơn vị tính mới</h3>
-    <form name="newdonvitinh" id="formadddonvitinh" method="post" action='./elements_LQA/mdonvitinh/donvitinhAct.php?reqact=addnew' enctype="multipart/form-data">
+    <form name="newdonvitinh" id="formadddonvitinh" method="post"
+        action='./elements_LQA/mdonvitinh/donvitinhAct.php?reqact=addnew' enctype="multipart/form-data">
         <table>
             <tr>
                 <td>Tên đơn vị tính</td>
@@ -60,13 +61,21 @@ $l = count($list_lh);
                         <td><?php echo htmlspecialchars($u->ghiChu); ?></td>
                         <td align="center">
                             <?php if (isset($_SESSION['ADMIN'])) { ?>
-                                <a href="./elements_LQA/mdonvitinh/donvitinhAct.php?reqact=deletedonvitinh&iddonvitinh=<?php echo htmlspecialchars($u->idDonViTinh); ?>" onclick="return confirm('Bạn có chắc muốn xóa không?');">
-                                    <img src="./img_LQA/delete.png" class="iconimg">
+                                <a href="./elements_LQA/mdonvitinh/donvitinhAct.php?reqact=deletedonvitinh&iddonvitinh=<?php echo htmlspecialchars($u->idDonViTinh); ?>"
+                                    onclick="return confirm('Bạn có chắc muốn xóa không?');">
+                                    <img src="./img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php } else { ?>
-                                <img src="./img_LQA/delete.png" class="iconimg">
+                                <img src="./img_LQA/Delete.png" class="iconimg">
                             <?php } ?>
-                            <img src="./img_LQA/Update.png" class="w_update_btn_open_dvt" value="<?php echo htmlspecialchars($u->idDonViTinh); ?>">
+                            <img src="./img_LQA/Update.png"
+                                class="iconimg generic-update-btn"
+                                data-module="mdonvitinh"
+                                data-update-url="./elements_LQA/mdonvitinh/donvitinhUpdate.php"
+                                data-id-param="idDonViTinh"
+                                data-title="Cập nhật Đơn vị tính"
+                                data-id="<?php echo htmlspecialchars($u->idDonViTinh); ?>"
+                                alt="Update">
                         </td>
                     </tr>
             <?php
@@ -77,7 +86,7 @@ $l = count($list_lh);
     </table>
 </div>
 
-<div id="w_update_dvt">
+<div id="w_update_dvt" class="visible-modal" style="display: none;">
+    <div id="w_close_btn_dvt" class="close-btn">X</div>
     <div id="w_update_form_dvt"></div>
-    <input type="button" value="close" id="w_close_btn_dvt">
 </div>

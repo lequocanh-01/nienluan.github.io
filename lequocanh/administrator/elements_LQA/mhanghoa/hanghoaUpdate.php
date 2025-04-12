@@ -1,91 +1,179 @@
 <?php
-require '../../elements_LQA/mod/hanghoaCls.php';
-require '../../elements_LQA/mod/loaihangCls.php';
-$idhanghoa = $_REQUEST['idhanghoa'];
+require_once __DIR__ . '/../mod/hanghoaCls.php';
+require_once __DIR__ . '/../mod/loaihangCls.php';
+require_once __DIR__ . '/../mod/thuonghieuCls.php';
+require_once __DIR__ . '/../mod/donvitinhCls.php';
+require_once __DIR__ . '/../mod/nhanvienCls.php';
 
-$hanghoaObj = new hanghoa();
-$getLhUpdate = $hanghoaObj->HanghoaGetbyId($idhanghoa);
-$obj = new loaihang();
-$list_lh = $obj->LoaihangGetAll();
+// Función para escribir registros de depuración
+function write_debug_log($message, $data = null)
+{
+    $log_file = __DIR__ . '/debug_log.txt';
+    $log_data = date('Y-m-d H:i:s') . " - " . $message . "\n";
 
-// Fetch lists for employees, units of measurement, brands and images
-$list_nhanvien = $hanghoaObj->GetAllNhanVien();
-$list_donvitinh = $hanghoaObj->GetAllDonViTinh();
-$list_thuonghieu = $hanghoaObj->GetAllThuongHieu();
-$list_hinhanh = $hanghoaObj->GetAllHinhAnh();
+    if ($data !== null) {
+        if (is_array($data) || is_object($data)) {
+            $log_data .= print_r($data, true) . "\n";
+        } else {
+            $log_data .= $data . "\n";
+        }
+    }
 
-// Get current image
-$current_image = $hanghoaObj->GetHinhAnhById($getLhUpdate->hinhanh);
+    $log_data .= "--------------------------------------\n";
+    file_put_contents($log_file, $log_data, FILE_APPEND);
+}
+
+// Debugging - show all input
+$debug = [];
+$debug['POST'] = $_POST;
+$debug['GET'] = $_GET;
+$debug['REQUEST'] = $_REQUEST;
+
+// Try to get ID from various sources
+$idhanghoa = isset($_POST['idhanghoa']) ? $_POST['idhanghoa'] : (isset($_GET['idhanghoa']) ? $_GET['idhanghoa'] : (isset($_REQUEST['idhanghoa']) ? $_REQUEST['idhanghoa'] : null));
+
+// If still no ID, try alternative forms
+if (!$idhanghoa) {
+    if (isset($_POST['data-id'])) {
+        $idhanghoa = $_POST['data-id'];
+    } elseif (isset($_GET['data-id'])) {
+        $idhanghoa = $_GET['data-id'];
+    }
+}
+
+$debug['ID detected'] = $idhanghoa;
+
+// Output debug ONLY if explicitly requested with debug_output=true parameter
+if (isset($_GET['debug_output']) || isset($_POST['debug_output'])) {
+    echo "<div style='background-color: #f8f9fa; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px;'>";
+    echo "<h4>Debug Information</h4>";
+    echo "<pre>";
+    print_r($debug);
+    echo "</pre>";
+    echo "</div>";
+}
+
+// Registrar información de depuración si debug_log está habilitado
+if (isset($_POST['debug_log']) || isset($_GET['debug_log'])) {
+    write_debug_log("Carga de formulario de actualización", [
+        'idhanghoa' => $idhanghoa,
+        'debug' => $debug
+    ]);
+}
+
+if (!$idhanghoa) {
+    echo json_encode([
+        'success' => false,
+        'message' => "Không tìm thấy ID hàng hóa",
+        'debug' => $debug
+    ]);
+    exit;
+}
+
+$hangHoaObj = new HangHoa();
+$getHangHoaUpdate = $hangHoaObj->hangHoaGetbyId($idhanghoa);
+
+if (!$getHangHoaUpdate) {
+    echo json_encode([
+        'success' => false,
+        'message' => "Không tìm thấy hàng hóa với ID: " . htmlspecialchars($idhanghoa),
+        'debug' => $debug
+    ]);
+    exit;
+}
+
+// Registrar información sobre si se encontraron datos válidos
+if (isset($_POST['debug_log']) || isset($_GET['debug_log'])) {
+    write_debug_log("Datos recuperados para el formulario", [
+        'getHangHoaUpdate' => $getHangHoaUpdate,
+        'tieneLoaiHang' => !empty($loaiHangList),
+        'tieneThuongHieu' => !empty($thuongHieuList),
+        'tieneDonViTinh' => !empty($donViTinhList)
+    ]);
+}
+
+// Lấy danh sách loại hàng, thương hiệu, đơn vị tính
+$loaiHangObj = new LoaiHang();
+$loaiHangList = $loaiHangObj->loaihangGetAll();
+
+$thuongHieuObj = new ThuongHieu();
+$thuongHieuList = $thuongHieuObj->thuonghieuGetAll();
+
+$donViTinhObj = new DonViTinh();
+$donViTinhList = $donViTinhObj->donvitinhGetAll();
+
+// Lấy danh sách nhân viên
+$nhanVienObj = new NhanVien();
+$nhanVienList = $nhanVienObj->nhanvienGetAll();
 ?>
 
-<div class="update-form">
+<div class="update-form-container">
+    <div class="update-header">
     <h3>Cập nhật hàng hóa</h3>
-    <form name="updatehanghoa" id="formupdatehh" method="post"
-        action='./elements_LQA/mhanghoa/hanghoaAct.php?reqact=updatehanghoa'>
-        <input type="hidden" name="idhanghoa" value="<?php echo $getLhUpdate->idhanghoa; ?>" />
+        <span class="close-btn" id="close-btn">X</span>
+    </div>
+
+    <form name="updatehanghoa" id="updatehanghoa" method="post"
+        action="./elements_LQA/mhanghoa/hanghoaAct.php?reqact=updatehanghoa"
+        enctype="multipart/form-data">
+        <input type="hidden" name="idhanghoa" value="<?php echo htmlspecialchars($idhanghoa); ?>" />
+        <input type="hidden" name="debug_log" value="true" />
+        <input type="hidden" name="ajax" value="false" />
+        <input type="hidden" name="redirect" value="./index.php?req=hanghoaview" />
 
         <div class="form-group">
-            <label>Tên hàng hóa:</label>
-            <input type="text" name="tenhanghoa" value="<?php echo htmlspecialchars($getLhUpdate->tenhanghoa); ?>"
-                required />
+            <label>ID:</label>
+            <div><?php echo htmlspecialchars($idhanghoa); ?></div>
         </div>
 
         <div class="form-group">
-            <label>Giá tham khảo:</label>
-            <input type="number" name="giathamkhao" value="<?php echo $getLhUpdate->giathamkhao; ?>" required />
+            <label>Tên hàng hóa:</label>
+            <input type="text" class="form-control editable-input" name="tenhanghoa" value="<?php echo htmlspecialchars($getHangHoaUpdate->tenhanghoa ?? ''); ?>" required />
         </div>
 
         <div class="form-group">
             <label>Mô tả:</label>
-            <input type="text" name="mota" value="<?php echo htmlspecialchars($getLhUpdate->mota); ?>" />
+            <textarea name="mota" class="form-control editable-input" rows="3"><?php echo htmlspecialchars($getHangHoaUpdate->mota ?? ''); ?></textarea>
         </div>
 
         <div class="form-group">
-            <label>Hình ảnh:</label>
-            <div class="image-select-container">
-                <select name="id_hinhanh" required id="imageSelector">
-                    <option value="">-- Chọn hình ảnh --</option>
-                    <?php foreach ($list_hinhanh as $img): ?>
-                        <option value="<?php echo $img->id; ?>"
-                            <?php echo ($img->id == $getLhUpdate->hinhanh) ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($img->ten_file); ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+            <label>Giá tham khảo:</label>
+            <input type="number" class="form-control editable-input" name="giathamkhao" value="<?php echo htmlspecialchars($getHangHoaUpdate->giathamkhao ?? ''); ?>" />
+        </div>
 
-                <div class="selected-image-preview">
-                    <?php
-                    $imageSrc = "./elements_LQA/mhanghoa/displayImage.php?id=" . $getLhUpdate->hinhanh;
-                    ?>
-                    <img id="imagePreview" src="<?php echo $imageSrc; ?>"
-                        alt="Hình ảnh sản phẩm"
-                        onerror="this.src='./img_LQA/no-image.png'"
-                        style="max-width: 100px; max-height: 100px; margin-top: 10px;">
+        <div class="form-group">
+            <label>Hình ảnh ID:</label>
+            <input type="number" class="form-control editable-input" name="id_hinhanh" value="<?php echo htmlspecialchars($getHangHoaUpdate->hinhanh ?? '0'); ?>" min="0" />
+
+            <?php if (!empty($getHangHoaUpdate->hinhanh)): ?>
+                <div class="mt-2">
+                    <img src="./elements_LQA/mhanghoa/displayImage.php?id=<?php echo $getHangHoaUpdate->hinhanh; ?>" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Hình ảnh hiện tại" onerror="this.src='./img_LQA/no-image.png';" />
+                    <p>Hình ảnh hiện tại (ID: <?php echo $getHangHoaUpdate->hinhanh; ?>)</p>
                 </div>
-            </div>
+            <?php endif; ?>
+            <p class="hint">Nhập ID hình ảnh từ quản lý hình ảnh (để 0 nếu không có hình ảnh)</p>
         </div>
 
         <div class="form-group">
             <label>Loại hàng:</label>
-            <div class="radio-group">
-                <?php foreach ($list_lh as $l): ?>
-                    <label class="radio-item">
-                        <input type="radio" name="idloaihang" value="<?php echo $l->idloaihang; ?>"
-                            <?php echo ($l->idloaihang == $getLhUpdate->idloaihang) ? 'checked' : ''; ?> required>
-                        <img class="iconbutton" src="data:image/png;base64,<?php echo $l->hinhanh; ?>">
-                    </label>
+            <select name="idloaihang" class="form-control editable-input">
+                <?php foreach ($loaiHangList as $loaiHang): ?>
+                    <option value="<?php echo htmlspecialchars($loaiHang->idloaihang ?? ''); ?>"
+                        <?php echo isset($getHangHoaUpdate->idloaihang) && isset($loaiHang->idloaihang) && $loaiHang->idloaihang == $getHangHoaUpdate->idloaihang ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($loaiHang->tenloaihang ?? ''); ?>
+                    </option>
                 <?php endforeach; ?>
-            </div>
+            </select>
         </div>
 
         <div class="form-group">
             <label>Thương hiệu:</label>
-            <select name="idThuongHieu">
+            <select name="idThuongHieu" class="form-control editable-input">
                 <option value="">-- Chọn thương hiệu --</option>
-                <?php foreach ($list_thuonghieu as $th): ?>
-                    <option value="<?php echo $th->idThuongHieu; ?>"
-                        <?php echo ($th->idThuongHieu == $getLhUpdate->idThuongHieu) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($th->tenTH); ?>
+                <?php foreach ($thuongHieuList as $thuongHieu): ?>
+                    <option value="<?php echo htmlspecialchars($thuongHieu->idThuongHieu ?? ''); ?>"
+                        <?php echo isset($getHangHoaUpdate->idThuongHieu) && isset($thuongHieu->idThuongHieu) && $thuongHieu->idThuongHieu == $getHangHoaUpdate->idThuongHieu ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($thuongHieu->tenTH ?? ''); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -93,12 +181,12 @@ $current_image = $hanghoaObj->GetHinhAnhById($getLhUpdate->hinhanh);
 
         <div class="form-group">
             <label>Đơn vị tính:</label>
-            <select name="idDonViTinh">
+            <select name="idDonViTinh" class="form-control editable-input">
                 <option value="">-- Chọn đơn vị tính --</option>
-                <?php foreach ($list_donvitinh as $dvt): ?>
-                    <option value="<?php echo $dvt->idDonViTinh; ?>"
-                        <?php echo ($dvt->idDonViTinh == $getLhUpdate->idDonViTinh) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($dvt->tenDonViTinh); ?>
+                <?php foreach ($donViTinhList as $donViTinh): ?>
+                    <option value="<?php echo htmlspecialchars($donViTinh->idDonViTinh ?? ''); ?>"
+                        <?php echo isset($getHangHoaUpdate->idDonViTinh) && isset($donViTinh->idDonViTinh) && $donViTinh->idDonViTinh == $getHangHoaUpdate->idDonViTinh ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($donViTinh->tenDonViTinh ?? ''); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -106,33 +194,79 @@ $current_image = $hanghoaObj->GetHinhAnhById($getLhUpdate->hinhanh);
 
         <div class="form-group">
             <label>Nhân viên:</label>
-            <select name="idNhanVien">
+            <select name="idNhanVien" class="form-control editable-input">
                 <option value="">-- Chọn nhân viên --</option>
-                <?php foreach ($list_nhanvien as $nv): ?>
-                    <option value="<?php echo $nv->idNhanVien; ?>"
-                        <?php echo ($nv->idNhanVien == $getLhUpdate->idNhanVien) ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($nv->tenNV); ?>
+                <?php foreach ($nhanVienList as $nhanVien): ?>
+                    <option value="<?php echo htmlspecialchars($nhanVien->idNhanVien ?? ''); ?>"
+                        <?php echo isset($getHangHoaUpdate->idNhanVien) && isset($nhanVien->idNhanVien) && $nhanVien->idNhanVien == $getHangHoaUpdate->idNhanVien ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($nhanVien->tenNV ?? ''); ?>
                     </option>
                 <?php endforeach; ?>
             </select>
         </div>
 
         <div class="form-actions">
-            <input type="submit" value="Cập nhật" class="btn-update" />
-            <input type="reset" value="Làm lại" class="btn-reset" />
+            <button type="submit" class="btn btn-primary">Cập nhật</button>
         </div>
     </form>
 </div>
 
 <style>
-    .update-form {
-        padding: 20px;
-        background: white;
-        border-radius: 8px;
+    /* Đảm bảo tất cả các phần tử có thể tương tác */
+    * {
+        pointer-events: auto;
+    }
+
+    .editable-input {
+        pointer-events: auto !important;
+        cursor: text !important;
+    }
+
+    .update-form-container {
+        padding: 15px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        position: relative;
+        z-index: 9999;
+        pointer-events: auto;
+    }
+
+    .update-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+        position: relative;
+        z-index: 9999;
+    }
+
+    .update-header h3 {
+        margin: 0;
+        font-size: 18px;
+    }
+
+    .close-btn {
+        color: #fff;
+        background-color: #dc3545;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: bold;
+        pointer-events: auto !important;
     }
 
     .form-group {
+        position: relative;
+        z-index: 9999;
         margin-bottom: 15px;
+        pointer-events: auto;
     }
 
     .form-group label {
@@ -141,122 +275,116 @@ $current_image = $hanghoaObj->GetHinhAnhById($getLhUpdate->hinhanh);
         font-weight: bold;
     }
 
-    .form-group input[type="text"],
-    .form-group input[type="number"],
-    .form-group select {
+    .form-control {
         width: 100%;
         padding: 8px;
         border: 1px solid #ddd;
         border-radius: 4px;
-        margin-bottom: 10px;
-    }
-
-    .radio-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .radio-item {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        cursor: pointer;
+        cursor: text !important;
+        pointer-events: auto !important;
     }
 
     .form-actions {
-        margin-top: 20px;
-        display: flex;
-        gap: 10px;
+        text-align: center;
+        margin-top: 15px;
+        pointer-events: auto;
     }
 
-    .btn-update,
-    .btn-reset {
-        padding: 8px 16px;
+    .btn-primary {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
+        pointer-events: auto !important;
     }
 
-    .btn-update {
-        background-color: #007bff;
-        color: white;
-    }
-
-    .btn-reset {
-        background-color: #6c757d;
-        color: white;
-    }
-
-    .btn-update:hover {
+    .btn-primary:hover {
         background-color: #0056b3;
     }
 
-    .btn-reset:hover {
-        background-color: #5a6268;
-    }
-
-    .image-preview {
-        margin-top: 10px;
-        border: 1px solid #ddd;
-        padding: 10px;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
-        max-height: 300px;
-        overflow-y: auto;
-    }
-
-    .preview-item {
-        border: 1px solid #eee;
-        padding: 5px;
-        border-radius: 4px;
-        transition: all 0.2s;
-        cursor: pointer;
-    }
-
-    .preview-item:hover {
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        transform: translateY(-2px);
-    }
-
-    .preview-item.selected {
-        border-color: #007bff;
-        background-color: #f0f7ff;
-    }
-
-    .preview-img {
-        width: 100%;
-        height: 80px;
-        object-fit: contain;
-        border-radius: 4px;
-    }
-
-    .preview-info {
-        margin-top: 5px;
-        font-size: 12px;
-    }
-
-    .preview-name {
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .preview-size {
+    .hint {
+        margin: 5px 0;
+        font-size: 0.9em;
         color: #666;
-        font-size: 11px;
     }
 </style>
 
 <script>
-    document.getElementById('imageSelector').addEventListener('change', function() {
-        const imageId = this.value;
-        if (imageId) {
-            document.getElementById('imagePreview').src = "./elements_LQA/mhanghoa/displayImage.php?id=" + imageId;
-        } else {
-            document.getElementById('imagePreview').src = "./img_LQA/no-image.png";
+    // Đảm bảo các phần tử input có thể tương tác
+    window.onload = function() {
+        // Focus vào ô input đầu tiên sau khi form đã load
+        setTimeout(function() {
+            var inputs = document.querySelectorAll('input.form-control');
+            if (inputs.length > 0) {
+                inputs[0].focus();
+            }
+        }, 500);
+    }
+
+    // Thêm sự kiện tập trung cho các phần tử input
+    document.querySelectorAll('input.form-control, textarea.form-control, select.form-control').forEach(function(input) {
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.focus();
+        });
+    });
+
+    document.getElementById('close-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        // Emit custom event for parent window to handle closing
+        if (window.parent) {
+            window.parent.postMessage('closeUpdateForm', '*');
         }
+        // Also handle close if this is used in a native popup
+        var parentElement = window.frameElement && window.frameElement.parentElement;
+        if (parentElement) {
+            parentElement.style.display = 'none';
+        }
+    });
+
+    // Xử lý form submission
+    document.getElementById('updatehanghoa').addEventListener('submit', function(e) {
+        // Validate the image ID field
+        const idHinhanhField = document.querySelector('input[name="id_hinhanh"]');
+        if (idHinhanhField.value === '' || isNaN(parseInt(idHinhanhField.value))) {
+            idHinhanhField.value = '0'; // Set to 0 if empty or not a number
+        }
+
+        // Show submitting state
+        const submitBtn = document.querySelector('.btn-primary');
+        submitBtn.textContent = "Đang gửi...";
+        submitBtn.disabled = true;
+
+        // Submit form through JavaScript and handle redirect
+        e.preventDefault();
+
+        var formData = new FormData(this);
+
+        fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Response:", data);
+                if (data.success) {
+                    // Redirect to the list page
+                    window.top.location.href = "/administrator/index.php?req=hanghoaview";
+                } else {
+                    // Show error
+                    alert("Lỗi: " + data.message);
+                    submitBtn.textContent = "Cập nhật";
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                // Redirect anyway in case of error parsing JSON
+                window.top.location.href = "/administrator/index.php?req=hanghoaview";
+            });
+
+        return false;
     });
 </script>

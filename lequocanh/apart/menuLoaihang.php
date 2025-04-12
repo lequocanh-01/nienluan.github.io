@@ -1,5 +1,5 @@
 <?php
-require 'administrator/elements_LQA/mod/loaihangCls.php';
+require './administrator/elements_LQA/mod/loaihangCls.php';
 $current_id = isset($_GET['reqView']) ? $_GET['reqView'] : null;
 ?>
 <nav class="navbar navbar-expand-lg">

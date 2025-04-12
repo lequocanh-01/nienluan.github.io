@@ -11,67 +11,93 @@ if (file_exists($s)) {
 
 require_once $f;
 
-class ThuongHieu extends Database
+class ThuongHieu
 {
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
+
     // Lấy tất cả các thương hiệu
     public function thuonghieuGetAll()
     {
         $sql = 'SELECT * FROM thuonghieu';
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
-        $getAll->execute();
+
+        if (!$getAll->execute()) {
+            error_log(print_r($getAll->errorInfo(), true));
+            return false;
+        }
 
         return $getAll->fetchAll();
     }
 
-    // Thêm mới một thương hiệu
+    // Thêm thương hiệu mới
     public function thuonghieuAdd($tenTH, $SDT, $email, $diaChi, $hinhanh)
     {
         $sql = "INSERT INTO thuonghieu (tenTH, SDT, email, diaChi, hinhanh) VALUES (?, ?, ?, ?, ?)";
         $data = array($tenTH, $SDT, $email, $diaChi, $hinhanh);
-        $add = $this->connect->prepare($sql);
-        $add->execute($data);
+
+        $add = $this->db->prepare($sql);
+
+        if (!$add->execute($data)) {
+            error_log(print_r($add->errorInfo(), true));
+            return false;
+        }
+
         return $add->rowCount();
     }
 
     // Xóa thương hiệu theo ID
     public function thuonghieuDelete($idThuongHieu)
     {
-        try {
-            $sql = "DELETE FROM thuonghieu WHERE idThuongHieu = ?";
-            $data = array($idThuongHieu);
-            $del = $this->connect->prepare($sql);
-            $del->execute($data);
-            return $del->rowCount();
-        } catch (PDOException $e) {
-            echo "Lỗi: " . $e->getMessage();
-            return 0;
+        $sql = "DELETE FROM thuonghieu WHERE idThuongHieu = ?";
+        $data = array($idThuongHieu);
+
+        $del = $this->db->prepare($sql);
+
+        if (!$del->execute($data)) {
+            error_log(print_r($del->errorInfo(), true));
+            return false;
         }
+
+        return $del->rowCount();
     }
 
     // Cập nhật thông tin thương hiệu
     public function thuonghieuUpdate($tenTH, $SDT, $email, $diaChi, $hinhanh, $idThuongHieu)
     {
-        try {
-            $sql = "UPDATE thuonghieu SET tenTH = ?, SDT = ?, email = ?, diaChi = ?, hinhanh = ? WHERE idThuongHieu = ?";
-            $data = array($tenTH, $SDT, $email, $diaChi, $hinhanh, $idThuongHieu);
-            $update = $this->connect->prepare($sql);
-            $update->execute($data);
-            return $update->rowCount();
-        } catch (PDOException $e) {
-            echo "Lỗi: " . $e->getMessage();
-            return 0;
+        $sql = "UPDATE thuonghieu 
+                SET tenTH = ?, SDT = ?, email = ?, diaChi = ?, hinhanh = ? 
+                WHERE idThuongHieu = ?";
+        $data = array($tenTH, $SDT, $email, $diaChi, $hinhanh, $idThuongHieu);
+
+        $update = $this->db->prepare($sql);
+
+        if (!$update->execute($data)) {
+            error_log(print_r($update->errorInfo(), true));
+            return false;
         }
+
+        return $update->rowCount();
     }
 
     // Lấy thông tin thương hiệu theo ID
-    public function thuonghieuGetById($idThuongHieu)
+    public function thuonghieuGetbyId($idThuongHieu)
     {
         $sql = 'SELECT * FROM thuonghieu WHERE idThuongHieu = ?';
         $data = array($idThuongHieu);
-        $getOne = $this->connect->prepare($sql);
+
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
-        $getOne->execute($data);
+
+        if (!$getOne->execute($data)) {
+            error_log(print_r($getOne->errorInfo(), true));
+            return false;
+        }
 
         return $getOne->fetch();
     }

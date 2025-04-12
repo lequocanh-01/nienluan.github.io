@@ -7,32 +7,38 @@ if (file_exists($s)) {
 }
 require_once $f;
 
-class user extends Database
+class user
 {
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
+
     public function UserCheckLogin($username, $password)
     {
         $sql = 'select * from user where username = ? and password = ? and setlock = 1';
         $data = array($username, $password);
 
-        $select = $this->connect->prepare($sql);
+        $select = $this->db->prepare($sql);
         $select->setFetchMode(PDO::FETCH_OBJ);
         $select->execute($data);
 
         $get_obj = count($select->fetchAll());
 
-        if($get_obj === 1){
+        if ($get_obj === 1) {
             return true;
-        } else{
+        } else {
             return false;
         }
-        
     }
     public function UserCheckUsername($username)
     {
         $sql = 'select * from user where username = ?';
         $data = array($username);
 
-        $select = $this->connect->prepare($sql);
+        $select = $this->db->prepare($sql);
         $select->setFetchMode(PDO::FETCH_OBJ);
         $select->execute($data);
 
@@ -48,7 +54,7 @@ class user extends Database
     {
         $sql = 'select * from user';
 
-        $getAll = $this->connect->prepare($sql);
+        $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
         $getAll->execute();
 
@@ -59,7 +65,7 @@ class user extends Database
         $sql = "INSERT INTO user (username, password, hoten, gioitinh, ngaysinh, diachi, dienthoai) VALUES (?,?,?,?,?,?,?)";
         $data = array($username, $password, $hoten, $gioitinh, $ngaysinh, $diachi, $dienthoai);
 
-        $add = $this->connect->prepare($sql);
+        $add = $this->db->prepare($sql);
         $add->execute($data);
         return $add->rowCount();
     }
@@ -68,7 +74,7 @@ class user extends Database
         $sql = "DELETE from user where iduser = ?";
         $data = array($iduser);
 
-        $del = $this->connect->prepare($sql);
+        $del = $this->db->prepare($sql);
         $del->execute($data);
         return $del->rowCount();
     }
@@ -84,9 +90,9 @@ class user extends Database
                     diachi=?,
                     dienthoai=?
                     WHERE iduser=?";
-                    
+
             $data = array($username, $password, $hoten, $gioitinh, $ngaysinh, $diachi, $dienthoai, $iduser);
-            $update = $this->connect->prepare($sql);
+            $update = $this->db->prepare($sql);
             $update->execute($data);
             return $update->rowCount();
         } catch (PDOException $e) {
@@ -98,7 +104,7 @@ class user extends Database
         $sql = 'select * from user where iduser=?';
         $data = array($iduser);
 
-        $getOne = $this->connect->prepare($sql);
+        $getOne = $this->db->prepare($sql);
         $getOne->setFetchMode(PDO::FETCH_OBJ);
         $getOne->execute($data);
 
@@ -109,7 +115,7 @@ class user extends Database
         $sql = "UPDATE user set password = ? WHERE iduser =? ";
         $data = array($password, $iduser);
 
-        $update_pass = $this->connect->prepare($sql);
+        $update_pass = $this->db->prepare($sql);
         $update_pass->execute($data);
         return $update_pass->rowCount();
     }
@@ -118,7 +124,7 @@ class user extends Database
         $sql = "UPDATE user set setlock = ? WHERE iduser =? ";
         $data = array($setlock, $iduser);
 
-        $update_lock = $this->connect->prepare($sql);
+        $update_lock = $this->db->prepare($sql);
         $update_lock->execute($data);
         return $update_lock->rowCount();
     }
@@ -127,7 +133,7 @@ class user extends Database
         $sql = 'select * from user where iduser = ? and password = ?';
         $data = array($iduser, $passwordold);
 
-        $select = $this->connect->prepare($sql);
+        $select = $this->db->prepare($sql);
         $select->setFetchMode(PDO::FETCH_OBJ);
         $select->execute($data);
 
@@ -136,7 +142,7 @@ class user extends Database
             $sql = "UPDATE user set password = ? WHERE iduser =? ";
             $data = array($passwordnew, $iduser);
 
-            $update_pass = $this->connect->prepare($sql);
+            $update_pass = $this->db->prepare($sql);
             $update_pass->execute($data);
             return $update_pass->rowCount();
         } else {
@@ -144,27 +150,4 @@ class user extends Database
         }
     }
 }
-$user = new user();
-// $row = $user->UserAdd('sir','sir1234','Lê Quản Lý','1','1976-88-82','Lê Bình, Ninh Kiều, Cần Thơ','0893333332');
-// echo $row;
-
-// $list = $user->UserGetAll(); // trả về là 1 danh sách đối tượng
-// foreach ($list as $l) {
-// echo $l->username . '<br/>';}
-
-// echo $user->UserDelete(6);
-
-// $row = $user->UserUpdate('quocanh','quocanh1234','Lê Quản Lý','1','1976-88-82','Lê Bình, Ninh Kiều, Cần Thơ','0893333332',4);
-// echo $row;
-
-// $obj = $user->UserGetByid(5);
-// echo $obj->username .'<br/>';
-// echo $obj->hoten.'<br/>';
-// echo $obj->gioitinh .'<br/>';
-// echo $obj->ngaysinh .'<br/>';
-
-// echo $user->UserSetPassword(4,'124');
-
-// echo $user->UserSetACtive(4,1);
-
-// echo $user->UserChangePassword(4,'124','quocanh');
+// Removed direct instantiation of user class

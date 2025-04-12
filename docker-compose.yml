@@ -7,7 +7,7 @@ services:
     volumes:
       - D:/php_ws/lequocanh:/var/www/html
     ports:
-      - "80:80"
+      - "8081:80"
     networks:
       - app-network
 
@@ -27,7 +27,7 @@ services:
       PMA_PORT: 3306
       UPLOAD_LIMIT: 100M
     ports:
-      - "8888:80"
+      - "8082:80"
     depends_on:
       - mysql
     networks:

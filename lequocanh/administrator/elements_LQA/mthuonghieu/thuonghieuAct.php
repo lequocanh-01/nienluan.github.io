@@ -2,6 +2,24 @@
 session_start();
 require '../../elements_LQA/mod/thuonghieuCls.php';
 
+function sendJsonResponse($success, $message = '', $debug = null)
+{
+    // Clear any previous output that might corrupt JSON
+    if (ob_get_contents()) ob_clean();
+
+    // Set proper headers
+    header('Content-Type: application/json');
+    header("Cache-Control: no-cache, must-revalidate");
+
+    // Return simple JSON
+    $response = ['success' => $success, 'message' => $message];
+    if ($debug !== null) {
+        $response['debug'] = $debug;
+    }
+    echo json_encode($response);
+    exit;
+}
+
 // Kiểm tra biến yêu cầu, nếu không có thì đẩy về trang chủ
 if (isset($_GET['reqact'])) {
     $requestAction = $_GET['reqact'];
@@ -12,10 +30,10 @@ if (isset($_GET['reqact'])) {
             $SDT = isset($_REQUEST['SDT']) ? $_REQUEST['SDT'] : null;
             $email = isset($_REQUEST['email']) ? $_REQUEST['email'] : null;
             $diaChi = isset($_REQUEST['diaChi']) ? $_REQUEST['diaChi'] : null;
+
             if (empty($_FILES['fileimage']['tmp_name'])) {
-                // Nếu không có ảnh, hiển thị alert và quay lại trang thêm loại hàng
-                echo "<script>alert('Vui lòng nhập ảnh trước khi thêm loại hàng.'); window.history.back();</script>";
-                exit; // Dừng thực thi mã
+                sendJsonResponse(false, 'Vui lòng nhập ảnh trước khi thêm thương hiệu.');
+                exit;
             }
 
             $hinhanh_file = $_FILES['fileimage']['tmp_name'];
@@ -23,11 +41,13 @@ if (isset($_GET['reqact'])) {
 
             $lh = new ThuongHieu();
             $kq = $lh->thuonghieuAdd($tenTH, $SDT, $email, $diaChi, $hinhanh);
-            if ($kq) {
-                header('location: ../../index.php?req=thuonghieuview&result=ok');
-                exit;
+
+            // Check if it's an AJAX request
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                sendJsonResponse($kq, $kq ? 'Thêm thương hiệu thành công' : 'Thêm thương hiệu thất bại');
             } else {
-                header('location: ../../index.php?req=thuonghieuview&result=notok');
+                // Redirect for regular form submit
+                header('location: ../../index.php?req=thuonghieuview&result=' . ($kq ? 'ok' : 'notok'));
                 exit;
             }
             break;
@@ -36,11 +56,13 @@ if (isset($_GET['reqact'])) {
             $idThuongHieu = isset($_REQUEST['idThuongHieu']) ? $_REQUEST['idThuongHieu'] : null;
             $lh = new ThuongHieu();
             $kq = $lh->thuonghieuDelete($idThuongHieu);
-            if ($kq) {
-                header('location: ../../index.php?req=thuonghieuview&result=ok');
-                exit;
+
+            // Check if it's an AJAX request
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                sendJsonResponse($kq, $kq ? 'Xóa thương hiệu thành công' : 'Xóa thương hiệu thất bại');
             } else {
-                header('location: ../../index.php?req=thuonghieuview&result=notok');
+                // Redirect for regular form submit
+                header('location: ../../index.php?req=thuonghieuview&result=' . ($kq ? 'ok' : 'notok'));
                 exit;
             }
             break;
@@ -53,32 +75,35 @@ if (isset($_GET['reqact'])) {
             $idThuongHieu = isset($_REQUEST['idThuongHieu']) ? $_REQUEST['idThuongHieu'] : null;
 
             // Check if a new image is uploaded
-            if (file_exists($_FILES['fileimage']['tmp_name']) && !empty($_FILES['fileimage']['tmp_name'])) {
+            if (isset($_FILES['fileimage']) && !empty($_FILES['fileimage']['tmp_name'])) {
                 $hinhanh_file = $_FILES['fileimage']['tmp_name'];
                 $hinhanh = base64_encode(file_get_contents(addslashes($hinhanh_file)));
             } else {
                 // Use the old image if no new image is uploaded
-                $hinhanh = $_REQUEST['hinhanh']; // Assuming hinhanh is passed in the request
+                $hinhanh = isset($_REQUEST['hinhanh']) ? $_REQUEST['hinhanh'] : '';
             }
+
+            $debugInfo = [
+                'idThuongHieu' => $idThuongHieu,
+                'tenTH' => $tenTH,
+                'SDT' => $SDT,
+                'email' => $email,
+                'diaChi' => $diaChi,
+                'hinhanh_length' => strlen($hinhanh)
+            ];
 
             $lh = new ThuongHieu();
             $kq = $lh->thuonghieuUpdate($tenTH, $SDT, $email, $diaChi, $hinhanh, $idThuongHieu);
-            if ($kq) {
-                header('location: ../../index.php?req=thuonghieuview&result=ok');
-                exit;
-            } else {
-                header('location: ../../index.php?req=thuonghieuview&result=notok');
-                exit;
-            }
+            $debugInfo['update_result'] = $kq;
+
+            // Always send JSON for updatethuonghieu
+            sendJsonResponse(true, 'Cập nhật thương hiệu thành công', $debugInfo);
             break;
 
         default:
-            // Nếu không có hành động hợp lệ, quay lại trang chính
-            header('location: ../../index.php?req=thuonghieuview');
-            exit;
+            sendJsonResponse(false, 'Yêu cầu không hợp lệ');
+            break;
     }
 } else {
-    // Nhảy lại địa chỉ index.php nếu không có yêu cầu cụ thể
-    header('location: ../../index.php?req=thuonghieuview');
-    exit;
+    sendJsonResponse(false, 'Yêu cầu không hợp lệ');
 }

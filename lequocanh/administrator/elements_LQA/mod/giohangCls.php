@@ -1,18 +1,15 @@
 <?php
-$s = '../../elements_LQA/mod/database.php';
-if (file_exists($s)) {
-    $f = $s;
-} else {
-    $f = './elements_LQA/mod/database.php';
-    if (!file_exists($f)) {
-        $f = './administrator/elements_LQA/mod/database.php';
-    }
-}
-require_once $f;
+require_once 'database.php';
 
-class GioHang extends Database
+class GioHang
 {
+    private $db;
     private $cart_cache = null;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+    }
 
     private function getUserId()
     {
@@ -40,7 +37,7 @@ class GioHang extends Database
         try {
             // Kiểm tra sản phẩm có tồn tại trong bảng hanghoa không
             $checkProduct = "SELECT idhanghoa FROM hanghoa WHERE idhanghoa = ?";
-            $stmtProduct = $this->connect->prepare($checkProduct);
+            $stmtProduct = $this->db->prepare($checkProduct);
             $stmtProduct->execute([$productId]);
 
             if (!$stmtProduct->fetch()) {
@@ -50,28 +47,24 @@ class GioHang extends Database
 
             // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
             $checkSql = "SELECT quantity FROM tbl_giohang WHERE user_id = ? AND product_id = ?";
-            $checkStmt = $this->connect->prepare($checkSql);
+            $checkStmt = $this->db->prepare($checkSql);
             $checkStmt->execute([$userId, $productId]);
             $existingItem = $checkStmt->fetch(PDO::FETCH_ASSOC);
-            error_log("Existing item check: " . print_r($existingItem, true));
 
             if ($existingItem) {
                 // Nếu sản phẩm đã tồn tại, cập nhật số lượng
                 $sql = "UPDATE tbl_giohang SET quantity = quantity + ? WHERE user_id = ? AND product_id = ?";
-                $stmt = $this->connect->prepare($sql);
+                $stmt = $this->db->prepare($sql);
                 $result = $stmt->execute([$quantity, $userId, $productId]);
             } else {
                 // Nếu sản phẩm chưa tồn tại, thêm mới
                 $sql = "INSERT INTO tbl_giohang (user_id, product_id, quantity) VALUES (?, ?, ?)";
-                $stmt = $this->connect->prepare($sql);
+                $stmt = $this->db->prepare($sql);
                 $result = $stmt->execute([$userId, $productId, $quantity]);
             }
 
-            error_log("Cart operation result: " . ($result ? "success" : "failed"));
-
             // Xóa cache khi thêm sản phẩm mới
             $this->clearCartCache();
-
             return $result;
         } catch (PDOException $e) {
             error_log("Error in cart operation: " . $e->getMessage());
@@ -86,7 +79,7 @@ class GioHang extends Database
 
         try {
             $sql = "DELETE FROM tbl_giohang WHERE user_id = ? AND product_id = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([$userId, $productId]);
 
             // Xóa cache khi xóa sản phẩm
@@ -107,7 +100,7 @@ class GioHang extends Database
         try {
             if ($quantity > 0) {
                 $sql = "UPDATE tbl_giohang SET quantity = ? WHERE user_id = ? AND product_id = ?";
-                $stmt = $this->connect->prepare($sql);
+                $stmt = $this->db->prepare($sql);
                 return $stmt->execute([$quantity, $userId, $productId]);
             } else {
                 return $this->removeFromCart($productId);
@@ -140,7 +133,7 @@ class GioHang extends Database
                    INNER JOIN hanghoa h ON g.product_id = h.idhanghoa
                    WHERE g.user_id = ?";
 
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
 
             $cart = [];
@@ -174,7 +167,7 @@ class GioHang extends Database
 
         try {
             $sql = "DELETE FROM tbl_giohang WHERE user_id = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $result = $stmt->execute([$userId]);
 
             // Xóa cache khi xóa giỏ hàng
@@ -194,12 +187,12 @@ class GioHang extends Database
 
         try {
             $sql = "SELECT SUM(quantity) as total FROM tbl_giohang WHERE user_id = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result['total'] ?? 0;
         } catch (PDOException $e) {
-            error_log("Error getting cart item count: " . $e->getMessage());
+            error_log("Error getting cart count: " . $e->getMessage());
             return 0;
         }
     }
@@ -224,7 +217,7 @@ class GioHang extends Database
         try {
             if ($quantity > 0) {
                 $sql = "UPDATE tbl_giohang SET quantity = ? WHERE user_id = ? AND product_id = ?";
-                $stmt = $this->connect->prepare($sql);
+                $stmt = $this->db->prepare($sql);
                 $result = $stmt->execute([$quantity, $userId, $productId]);
 
                 // Xóa cache khi cập nhật số lượng
@@ -248,7 +241,7 @@ class GioHang extends Database
                    INNER JOIN hanghoa h ON g.product_id = h.idhanghoa 
                    WHERE g.user_id = ?";
 
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([$userId]);
 
             $cart = [];
