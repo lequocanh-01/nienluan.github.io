@@ -20,24 +20,26 @@ $isNhanVien = $phanQuyen->isNhanVien($username);
             <?php
             $current_page = isset($_GET['req']) ? $_GET['req'] : '';
             $menu_items = [
-                'userview' => ['icon' => 'fas fa-users', 'text' => 'Tài khoản', 'admin_only' => true],
-                'loaihangview' => ['icon' => 'fas fa-tags', 'text' => 'Loại hàng', 'admin_only' => false],
-                'hanghoaview' => ['icon' => 'fas fa-box', 'text' => 'Hàng hóa', 'admin_only' => false],
-                'thuoctinhhhview' => ['icon' => 'fas fa-list-ul', 'text' => 'Thuộc tính hàng hóa', 'admin_only' => false],
-                'thuoctinhview' => ['icon' => 'fas fa-clipboard-list', 'text' => 'Thuộc tính', 'admin_only' => false],
-                'dongiaview' => ['icon' => 'fas fa-dollar-sign', 'text' => 'Đơn giá', 'admin_only' => false],
-                'thuonghieuview' => ['icon' => 'fas fa-trademark', 'text' => 'Thương hiệu', 'admin_only' => false],
-                'donvitinhview' => ['icon' => 'fas fa-balance-scale', 'text' => 'Đơn vị tính', 'admin_only' => false],
-                'nhanvienview' => ['icon' => 'fas fa-user-tie', 'text' => 'Nhân viên', 'admin_only' => false],
-                'adminGiohangView' => ['icon' => 'fas fa-shopping-cart', 'text' => 'Giỏ hàng', 'admin_only' => false],
-                'hinhanhview' => ['icon' => 'fas fa-images', 'text' => 'Hình ảnh', 'admin_only' => false],
-                'userprofile' => ['icon' => 'fas fa-user-circle', 'text' => 'Hồ sơ cá nhân', 'admin_only' => false],
+                'userview' => ['icon' => 'fas fa-users', 'text' => 'Tài khoản', 'admin_only' => true, 'hide_from_employee' => true],
+                'loaihangview' => ['icon' => 'fas fa-tags', 'text' => 'Loại hàng', 'admin_only' => false, 'hide_from_employee' => false],
+                'hanghoaview' => ['icon' => 'fas fa-box', 'text' => 'Hàng hóa', 'admin_only' => false, 'hide_from_employee' => false],
+                'thuoctinhhhview' => ['icon' => 'fas fa-list-ul', 'text' => 'Thuộc tính hàng hóa', 'admin_only' => false, 'hide_from_employee' => false],
+                'thuoctinhview' => ['icon' => 'fas fa-clipboard-list', 'text' => 'Thuộc tính', 'admin_only' => false, 'hide_from_employee' => false],
+                'dongiaview' => ['icon' => 'fas fa-dollar-sign', 'text' => 'Đơn giá', 'admin_only' => false, 'hide_from_employee' => false],
+                'thuonghieuview' => ['icon' => 'fas fa-trademark', 'text' => 'Thương hiệu', 'admin_only' => false, 'hide_from_employee' => false],
+                'donvitinhview' => ['icon' => 'fas fa-balance-scale', 'text' => 'Đơn vị tính', 'admin_only' => false, 'hide_from_employee' => false],
+                'nhanvienview' => ['icon' => 'fas fa-user-tie', 'text' => 'Nhân viên', 'admin_only' => false, 'hide_from_employee' => true],
+                'adminGiohangView' => ['icon' => 'fas fa-shopping-cart', 'text' => 'Giỏ hàng', 'admin_only' => false, 'hide_from_employee' => false],
+                'hinhanhview' => ['icon' => 'fas fa-images', 'text' => 'Hình ảnh', 'admin_only' => false, 'hide_from_employee' => false],
+                'userprofile' => ['icon' => 'fas fa-user-circle', 'text' => 'Hồ sơ cá nhân', 'admin_only' => false, 'hide_from_employee' => false],
             ];
 
             foreach ($menu_items as $req => $item) {
                 // Kiểm tra quyền truy cập
-                if ($item['admin_only'] && !$isAdmin) {
-                    continue; // Bỏ qua các mục chỉ dành cho admin
+                if (($item['admin_only'] && !$isAdmin) ||
+                    ($item['hide_from_employee'] && $isNhanVien && !$isAdmin)
+                ) {
+                    continue; // Bỏ qua các mục không có quyền
                 }
 
                 $active_class = ($current_page === $req) ? 'active' : '';

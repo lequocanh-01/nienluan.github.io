@@ -34,18 +34,36 @@ class PhanQuyen
     // Kiểm tra quyền truy cập vào một chức năng cụ thể
     public function checkAccess($module, $username)
     {
-        // Chỉ Admin có quyền truy cập vào bảng user
-        if ($module === 'userview' && !isset($_SESSION['ADMIN'])) {
-            return false;
-        }
-
         // Nếu là Admin thì có quyền truy cập toàn bộ
         if (isset($_SESSION['ADMIN'])) {
             return true;
         }
 
-        // Nếu là nhân viên thì có quyền truy cập vào các module khác
+        // Nếu là user thông thường (không phải admin và không phải nhân viên)
+        if (isset($_SESSION['USER']) && !$this->isNhanVien($username)) {
+            // Chỉ cho phép xem hồ sơ cá nhân
+            $userAllowedModules = [
+                'userprofile',
+                'userUpdateProfile'
+            ];
+
+            return in_array($module, $userAllowedModules);
+        }
+
+        // Nếu là nhân viên
         if (isset($_SESSION['USER']) && $this->isNhanVien($username)) {
+            // Các bảng nhân viên KHÔNG được phép truy cập
+            $restrictedModules = [
+                'userview',
+                'userupdate',
+                'updateuser',  // Các module liên quan đến user
+                'nhanvienview'                          // Module liên quan đến nhân viên
+            ];
+
+            if (in_array($module, $restrictedModules)) {
+                return false;
+            }
+
             // Các module được phép truy cập cho nhân viên
             $allowedModules = [
                 'loaihangview',
@@ -53,7 +71,6 @@ class PhanQuyen
                 'dongiaview',
                 'thuonghieuview',
                 'donvitinhview',
-                'nhanvienview',
                 'thuoctinhview',
                 'thuoctinhhhview',
                 'adminGiohangView',
