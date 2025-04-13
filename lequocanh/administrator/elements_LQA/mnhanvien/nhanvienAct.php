@@ -26,9 +26,10 @@ if (isset($_GET['reqact'])) {
             $luongCB = isset($_REQUEST['luongCB']) ? $_REQUEST['luongCB'] : null;
             $phuCap = isset($_REQUEST['phuCap']) ? $_REQUEST['phuCap'] : null;
             $chucVu = isset($_REQUEST['chucVu']) ? $_REQUEST['chucVu'] : null;
+            $iduser = isset($_REQUEST['iduser']) ? $_REQUEST['iduser'] : null;
 
             $nv = new NhanVien();
-            $kq = $nv->nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu);
+            $kq = $nv->nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $iduser);
 
             // Check if it's an AJAX request
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -65,10 +66,11 @@ if (isset($_GET['reqact'])) {
             $luongCB = isset($_REQUEST['luongCB']) ? $_REQUEST['luongCB'] : 0;
             $phuCap = isset($_REQUEST['phuCap']) ? $_REQUEST['phuCap'] : 0;
             $chucVu = isset($_REQUEST['chucVu']) ? $_REQUEST['chucVu'] : null;
+            $iduser = isset($_REQUEST['iduser']) && $_REQUEST['iduser'] !== '' ? $_REQUEST['iduser'] : null;
 
             if ($idNhanVien) {
                 $nv = new NhanVien();
-                $kq = $nv->nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien);
+                $kq = $nv->nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien, $iduser);
 
                 // Always send JSON for updatenhanvien
                 sendJsonResponse(true, 'Cập nhật nhân viên thành công');

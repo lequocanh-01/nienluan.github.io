@@ -1,9 +1,29 @@
 <?php
 session_start();
 require_once './administrator/elements_LQA/mod/giohangCls.php';
+require_once './administrator/elements_LQA/mod/database.php';
 
 $giohang = new GioHang();
 $cartItemCount = $giohang->getCartItemCount();
+
+// Kiểm tra xem người dùng có phải là nhân viên không
+$isNhanVien = false;
+if (isset($_SESSION['USER'])) {
+    $username = $_SESSION['USER'];
+    $db = Database::getInstance()->getConnection();
+
+    // Kiểm tra user id
+    $stmt = $db->prepare("SELECT iduser FROM user WHERE username = ?");
+    $stmt->execute([$username]);
+    $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+    if ($user) {
+        // Kiểm tra xem có trong bảng nhân viên không
+        $stmt = $db->prepare("SELECT COUNT(*) FROM nhanvien WHERE iduser = ?");
+        $stmt->execute([$user->iduser]);
+        $isNhanVien = $stmt->fetchColumn() > 0;
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -46,44 +66,49 @@ $cartItemCount = $giohang->getCartItemCount();
 
                 <div class="ms-auto d-flex align-items-center">
                     <?php if (isset($_SESSION['USER'])): ?>
-                    <div class="dropdown me-2">
-                        <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown"
-                            data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user me-2"></i>
-                            <?php echo $_SESSION['USER']; ?>
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="userDropdown">
-                            <li><a class="dropdown-item" href="./administrator/elements_LQA/mUser/userProfile.php">
-                                    <i class="fas fa-user-circle me-2"></i>Thông tin tài khoản
-                                </a></li>
-                            <li>
-                                <hr class="dropdown-divider">
-                            </li>
-                            <li><a class="dropdown-item"
-                                    href="./administrator/elements_LQA/mUser/userAct.php?reqact=userlogout">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
-                                </a></li>
-                        </ul>
-                    </div>
+                        <div class="dropdown me-2">
+                            <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user me-2"></i>
+                                <?php echo $_SESSION['USER']; ?>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="./administrator/elements_LQA/mUser/userProfile.php">
+                                        <i class="fas fa-user-circle me-2"></i>Thông tin tài khoản
+                                    </a></li>
+                                <?php if ($isNhanVien): ?>
+                                    <li><a class="dropdown-item" href="./administrator/index.php">
+                                            <i class="fas fa-user-cog me-2"></i>Đến trang quản trị
+                                        </a></li>
+                                <?php endif; ?>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item"
+                                        href="./administrator/elements_LQA/mUser/userAct.php?reqact=userlogout">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </a></li>
+                            </ul>
+                        </div>
                     <?php elseif (isset($_SESSION['ADMIN'])): ?>
-                    <a href="./administrator/index.php" class="btn btn-light me-2">
-                        <i class="fas fa-user-shield me-2"></i>
-                        Quản trị viên
-                    </a>
+                        <a href="./administrator/index.php" class="btn btn-light me-2">
+                            <i class="fas fa-user-shield me-2"></i>
+                            Quản trị viên
+                        </a>
                     <?php else: ?>
-                    <a href="./administrator/userLogin.php" class="btn btn-light me-2">
-                        <i class="fas fa-user me-2"></i>
-                        Đăng nhập
-                    </a>
+                        <a href="./administrator/userLogin.php" class="btn btn-light me-2">
+                            <i class="fas fa-user me-2"></i>
+                            Đăng nhập
+                        </a>
                     <?php endif; ?>
 
                     <a href="./administrator/elements_LQA/mgiohang/giohangView.php"
                         class="btn btn-light position-relative">
                         <i class="fas fa-shopping-cart"></i>
                         <?php if (isset($_SESSION['USER']) || isset($_SESSION['ADMIN'])): ?>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            <?php echo $cartItemCount; ?>
-                        </span>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <?php echo $cartItemCount; ?>
+                            </span>
                         <?php endif; ?>
                     </a>
                 </div>

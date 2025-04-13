@@ -12,8 +12,8 @@ ini_set('log_errors', 1);
 ini_set('error_log', dirname(dirname(dirname(__FILE__))) . '/upload_errors.log');
 
 // Initialize database connection
-$db = new Database();
-$conn = $db->connect;
+$db = Database::getInstance();
+$conn = $db->getConnection();
 
 // Đảm bảo gửi header JSON cho các action không phải upload
 if (!isset($_REQUEST["reqact"]) || $_REQUEST["reqact"] !== "addnew") {

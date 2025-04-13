@@ -1,0 +1,16 @@
+idNhanVien: 10
+iduser: 
+tenNV: Nguyễn Thị K
+SDT: 0900234567
+email: nguyenthik@store.com
+luongCB: 10000000.00
+phuCap: 2000000.00
+chucVu: Nhân viên kế toánnn
+idNhanVien: 11
+iduser: 
+tenNV: Khôi
+SDT: 0989908011
+email: test@gmail.com
+luongCB: 5000000.00
+phuCap: 10000000.00
+chucVu: kiểm soát doanh thu

@@ -3,6 +3,8 @@
     <link rel="stylesheet" type="text/css" href="../public_files/mycss.css">
     <!-- Add Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -267,6 +269,24 @@
     integrity="sha384-oBqDVmMz4fnFO9gyb6g5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5" crossorigin="anonymous">
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"
-    integrity="sha384-1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1" crossorigin="anonymous"></script>
-<script></script>
+    integrity="sha384-1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1n1" crossorigin="anonymous"></script>
+<script>
+    $(document).ready(function() {
+        // Xử lý hiển thị/ẩn mật khẩu khi click vào biểu tượng con mắt
+        $('.toggle-password').on('click', function() {
+            var passwordDots = $(this).siblings('.password-dots');
+            var passwordText = $(this).siblings('.password-text');
+
+            if (passwordDots.is(':visible')) {
+                passwordDots.hide();
+                passwordText.show();
+                $(this).removeClass('fa-eye').addClass('fa-eye-slash');
+            } else {
+                passwordDots.show();
+                passwordText.hide();
+                $(this).removeClass('fa-eye-slash').addClass('fa-eye');
+            }
+        });
+    });
+</script>
 <script src="../../js_LQA/jscript.js"></script>

@@ -32,6 +32,39 @@ if ($requestAction) {
             }
             break;
 
+        case 'changepassword':
+            // Kiểm tra đăng nhập
+            if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
+                echo json_encode(['success' => false, 'message' => 'Bạn cần đăng nhập để thực hiện chức năng này']);
+                exit();
+            }
+
+            // Lấy dữ liệu từ form
+            $iduser = isset($_POST['iduser']) ? $_POST['iduser'] : '';
+            $passwordold = isset($_POST['passwordold']) ? $_POST['passwordold'] : '';
+            $passwordnew = isset($_POST['passwordnew']) ? $_POST['passwordnew'] : '';
+
+            // Log để debug
+            error_log("Change password request - ID: $iduser, Old Pass: $passwordold, New Pass: $passwordnew");
+
+            // Validate dữ liệu
+            if (empty($iduser) || empty($passwordold) || empty($passwordnew)) {
+                echo json_encode(['success' => false, 'message' => 'Vui lòng nhập đầy đủ thông tin']);
+                exit();
+            }
+
+            // Đổi mật khẩu
+            $userObj = new user();
+            $result = $userObj->UserChangePassword($iduser, $passwordold, $passwordnew);
+
+            if ($result) {
+                echo json_encode(['success' => true, 'message' => 'Đổi mật khẩu thành công']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Mật khẩu hiện tại không chính xác']);
+            }
+            exit();
+            break;
+
         case 'deleteuser':
             $iduser = $_REQUEST['iduser'];
             $userObj = new user();

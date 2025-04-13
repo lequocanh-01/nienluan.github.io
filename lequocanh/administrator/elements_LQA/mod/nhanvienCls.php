@@ -22,7 +22,9 @@ class NhanVien
     // Lấy tất cả các nhân viên
     public function nhanvienGetAll()
     {
-        $sql = 'SELECT * FROM nhanvien';
+        $sql = 'SELECT nv.*, u.hoten as ten_user, u.dienthoai as sdt_user 
+                FROM nhanvien nv 
+                LEFT JOIN user u ON nv.iduser = u.iduser';
         $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
 
@@ -35,10 +37,10 @@ class NhanVien
     }
 
     // Thêm nhân viên mới
-    public function nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu)
+    public function nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $iduser = null)
     {
-        $sql = "INSERT INTO nhanvien (tenNV, SDT, email, luongCB, phuCap, chucVu) VALUES (?, ?, ?, ?, ?, ?)";
-        $data = array($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu);
+        $sql = "INSERT INTO nhanvien (tenNV, SDT, email, luongCB, phuCap, chucVu, iduser) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $data = array($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $iduser);
 
         $add = $this->db->prepare($sql);
 
@@ -67,27 +69,80 @@ class NhanVien
     }
 
     // Cập nhật thông tin nhân viên
-    public function nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien)
+    public function nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien, $iduser)
     {
-        $sql = "UPDATE nhanvien 
-                SET tenNV = ?, SDT = ?, email = ?, luongCB = ?, phuCap = ?, chucVu = ? 
-                WHERE idNhanVien = ?";
-        $data = array($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien);
+        $db = Database::getInstance()->getConnection();
 
-        $update = $this->db->prepare($sql);
+        try {
+            // Debug: Ghi giá trị vào log
+            file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/administrator/debug_log.txt', "idNhanVien: $idNhanVien\niduser: $iduser\ntenNV: $tenNV\nSDT: $SDT\nemail: $email\nluongCB: $luongCB\nphuCap: $phuCap\nchucVu: $chucVu\n", FILE_APPEND);
 
-        if (!$update->execute($data)) {
-            error_log(print_r($update->errorInfo(), true));
+            // Convert empty string to NULL for iduser
+            if ($iduser === '') {
+                $iduser = null;
+            }
+
+            // Nếu có iduser, cập nhật cả iduser
+            if ($iduser !== null) {
+                $query = "UPDATE nhanvien 
+                        SET tennv = :tenNV, 
+                            sdt = :SDT, 
+                            email = :email, 
+                            luongcb = :luongCB, 
+                            phucap = :phuCap, 
+                            chucvu = :chucVu,
+                            iduser = :iduser
+                        WHERE idnhanvien = :idNhanVien";
+
+                $statement = $db->prepare($query);
+                $statement->bindParam(':tenNV', $tenNV);
+                $statement->bindParam(':SDT', $SDT);
+                $statement->bindParam(':email', $email);
+                $statement->bindParam(':luongCB', $luongCB, PDO::PARAM_STR);
+                $statement->bindParam(':phuCap', $phuCap, PDO::PARAM_STR);
+                $statement->bindParam(':chucVu', $chucVu);
+                $statement->bindParam(':idNhanVien', $idNhanVien, PDO::PARAM_INT);
+                $statement->bindParam(':iduser', $iduser, PDO::PARAM_INT);
+            } else {
+                $query = "UPDATE nhanvien 
+                        SET tennv = :tenNV, 
+                            sdt = :SDT, 
+                            email = :email, 
+                            luongcb = :luongCB, 
+                            phucap = :phuCap, 
+                            chucvu = :chucVu,
+                            iduser = NULL
+                        WHERE idnhanvien = :idNhanVien";
+
+                $statement = $db->prepare($query);
+                $statement->bindParam(':tenNV', $tenNV);
+                $statement->bindParam(':SDT', $SDT);
+                $statement->bindParam(':email', $email);
+                $statement->bindParam(':luongCB', $luongCB, PDO::PARAM_STR);
+                $statement->bindParam(':phuCap', $phuCap, PDO::PARAM_STR);
+                $statement->bindParam(':chucVu', $chucVu);
+                $statement->bindParam(':idNhanVien', $idNhanVien, PDO::PARAM_INT);
+            }
+
+            // Thực hiện câu lệnh
+            return $statement->execute();
+        } catch (PDOException $e) {
+            file_put_contents(
+                '/var/www/html/debug_log.txt',
+                "nhanvienUpdate ERROR: " . $e->getMessage() . "\n",
+                FILE_APPEND
+            );
             return false;
         }
-
-        return $update->rowCount();
     }
 
     // Lấy thông tin nhân viên theo ID
     public function nhanvienGetById($idNhanVien)
     {
-        $sql = 'SELECT * FROM nhanvien WHERE idNhanVien = ?';
+        $sql = 'SELECT nv.*, u.hoten as ten_user, u.dienthoai as sdt_user 
+                FROM nhanvien nv 
+                LEFT JOIN user u ON nv.iduser = u.iduser 
+                WHERE nv.idNhanVien = ?';
         $data = array($idNhanVien);
 
         $getOne = $this->db->prepare($sql);

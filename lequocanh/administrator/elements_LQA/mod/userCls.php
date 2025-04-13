@@ -149,5 +149,15 @@ class user
             return false;
         }
     }
+    public function UserGetAllExceptAdmin()
+    {
+        $sql = "SELECT * FROM user WHERE username != 'admin'";
+
+        $getAll = $this->db->prepare($sql);
+        $getAll->setFetchMode(PDO::FETCH_OBJ);
+        $getAll->execute();
+
+        return $getAll->fetchAll();
+    }
 }
 // Removed direct instantiation of user class

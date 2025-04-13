@@ -3,10 +3,23 @@
 
 <?php
 require_once './elements_LQA/mod/nhanvienCls.php';
+require_once './elements_LQA/mod/userCls.php';
 
 $lhobj = new NhanVien();
 $list_lh = $lhobj->nhanvienGetAll();
 $l = count($list_lh);
+
+// Lấy danh sách người dùng cho dropdown (trừ admin)
+$userObj = new user();
+$listUsers = $userObj->UserGetAllExceptAdmin();
+
+// Lấy danh sách id của những người dùng đã là nhân viên để loại bỏ khỏi dropdown
+$existingUserIds = [];
+foreach ($list_lh as $employee) {
+    if (isset($employee->iduser) && $employee->iduser) {
+        $existingUserIds[] = $employee->iduser;
+    }
+}
 ?>
 
 <div class="admin-form">
@@ -14,6 +27,24 @@ $l = count($list_lh);
     <form name="newnhanvien" id="formaddnhanvien" method="post"
         action='./elements_LQA/mnhanvien/nhanvienAct.php?reqact=addnew' enctype="multipart/form-data">
         <table>
+            <tr>
+                <td>Người dùng</td>
+                <td>
+                    <select name="iduser" id="iduser" class="form-control">
+                        <option value="">-- Chọn người dùng --</option>
+                        <?php foreach ($listUsers as $user):
+                            // Bỏ qua những user đã là nhân viên
+                            if (in_array($user->iduser, $existingUserIds)) {
+                                continue;
+                            }
+                        ?>
+                            <option value="<?php echo $user->iduser; ?>">
+                                <?php echo htmlspecialchars($user->username) . ' (' . htmlspecialchars($user->hoten) . ') - ' . htmlspecialchars($user->dienthoai); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
             <tr>
                 <td>Tên nhân viên</td>
                 <td><input type="text" name="tenNV" id="tenNV" required /></td>
@@ -28,11 +59,11 @@ $l = count($list_lh);
             </tr>
             <tr>
                 <td>Lương cơ bản</td>
-                <td><input type="number" name="luongCB" id="luongCB" required /></td>
+                <td><input type="number" name="luongCB" id="luongCB" max="9999999999" required /></td>
             </tr>
             <tr>
                 <td>Phụ cấp</td>
-                <td><input type="number" name="phuCap" id="phuCap" required /></td>
+                <td><input type="number" name="phuCap" id="phuCap" max="9999999999" required /></td>
             </tr>
             <tr>
                 <td>Chức vụ</td>
@@ -62,6 +93,7 @@ $l = count($list_lh);
                 <th>Lương cơ bản</th>
                 <th>Phụ cấp</th>
                 <th>Chức vụ</th>
+                <th>Người dùng</th>
                 <th>Chức năng</th>
             </tr>
         </thead>
@@ -78,6 +110,7 @@ $l = count($list_lh);
                         <td><?php echo number_format($u->luongCB, 0, ',', '.'); ?> đ</td>
                         <td><?php echo number_format($u->phuCap, 0, ',', '.'); ?> đ</td>
                         <td><?php echo htmlspecialchars($u->chucVu); ?></td>
+                        <td><?php echo isset($u->ten_user) ? htmlspecialchars($u->ten_user) : ''; ?></td>
                         <td align="center">
                             <?php if (isset($_SESSION['ADMIN'])) { ?>
                                 <a href="./elements_LQA/mnhanvien/nhanvienAct.php?reqact=deletenhanvien&idNhanVien=<?php echo htmlspecialchars($u->idNhanVien); ?>"
@@ -109,3 +142,46 @@ $l = count($list_lh);
     <div id="w_update_form_nv"></div>
     <button type="button" id="w_close_btn_nv">X</button>
 </div>
+
+<!-- Thêm JavaScript để xử lý chọn user -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Xử lý khi thay đổi user trong dropdown
+        $('#iduser').change(function() {
+            var userId = $(this).val();
+
+            if (userId) {
+                // Lấy thông tin user qua AJAX
+                $.ajax({
+                    url: './elements_LQA/mUser/getUserInfo.php',
+                    type: 'GET',
+                    data: {
+                        iduser: userId
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            // Điền thông tin vào form
+                            var userData = response.data;
+                            $('#tenNV').val(userData.hoten);
+                            $('#SDT').val(userData.dienthoai);
+                            if (userData.email) {
+                                $('#email').val(userData.email);
+                            }
+                        } else {
+                            alert('Không thể lấy thông tin người dùng: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('Đã xảy ra lỗi khi kết nối đến máy chủ');
+                    }
+                });
+            } else {
+                // Xóa dữ liệu nếu không chọn user
+                $('#tenNV').val('');
+                $('#SDT').val('');
+            }
+        });
+    });
+</script>

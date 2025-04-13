@@ -10,13 +10,13 @@ if (file_exists($s)) {
 }
 require_once $f;
 
-class HinhAnh extends Database
+class HinhAnh
 {
-    public $connect;
+    private $db;
 
     public function __construct()
     {
-        parent::__construct();
+        $this->db = Database::getInstance()->getConnection();
     }
 
     // Thêm hình ảnh mới
@@ -24,14 +24,15 @@ class HinhAnh extends Database
     {
         $sql = "INSERT INTO hinhanh (ten_file, duong_dan, loai_file, kich_thuoc, id_tham_chieu, loai_tham_chieu, thu_tu, trang_thai) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         return $stmt->execute([$ten_file, $duong_dan, $loai_file, $kich_thuoc, $id_tham_chieu, $loai_tham_chieu, $thu_tu]);
     }
 
     // Lấy tất cả hình ảnh
-    public function LayTatCaHinhAnh() {
+    public function LayTatCaHinhAnh()
+    {
         $sql = "SELECT * FROM hinhanh WHERE trang_thai = 1 ORDER BY ngay_tao DESC";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
@@ -40,7 +41,7 @@ class HinhAnh extends Database
     public function XoaHinhAnh($id)
     {
         $sql = "SELECT duong_dan FROM hinhanh WHERE id = ?";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute([$id]);
         $file = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -50,7 +51,7 @@ class HinhAnh extends Database
             }
 
             $sql = "DELETE FROM hinhanh WHERE id = ?";
-            $stmt = $this->connect->prepare($sql);
+            $stmt = $this->db->prepare($sql);
             return $stmt->execute([$id]);
         }
         return false;
@@ -63,7 +64,7 @@ class HinhAnh extends Database
 
         $placeholders = str_repeat('?,', count($ids) - 1) . '?';
         $sql = "SELECT duong_dan FROM hinhanh WHERE id IN ($placeholders)";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         $stmt->execute($ids);
 
         while (($file = $stmt->fetch(PDO::FETCH_OBJ)) instanceof stdClass) {
@@ -73,7 +74,7 @@ class HinhAnh extends Database
         }
 
         $sql = "DELETE FROM hinhanh WHERE id IN ($placeholders)";
-        $stmt = $this->connect->prepare($sql);
+        $stmt = $this->db->prepare($sql);
         return $stmt->execute($ids);
     }
 }
