@@ -97,7 +97,7 @@ $l = count($list_lh);
 </div>
 
 <!-- Container cho popup cập nhật thương hiệu -->
-<div id="w_update_th" class="visible-modal" style="display: none;">
+<div id="w_update_th" style="display: none;">
     <div id="w_close_btn_th" class="close-btn">X</div>
     <div id="w_update_form_th"></div>
 </div>

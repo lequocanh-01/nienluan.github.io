@@ -397,4 +397,20 @@ $(document).ready(function () {
     e.preventDefault();
     $("#w_update").hide().removeClass("visible-modal");
   });
+
+  // Add specific handler for donvitinh update close button
+  $(document).on("click", "#dynamic-close-btn, #close-btn", function (e) {
+    console.log("Close button clicked from modal-handler");
+    e.preventDefault();
+
+    // Hide all potential modal containers
+    $("#dynamic-update-modal").remove();
+    $("#w_update_dvt").hide();
+    $(".modal-window").hide();
+
+    // Remove any overlay that might exist
+    $(".modal-overlay, .popup-overlay").remove();
+
+    console.log("All modals should be closed now");
+  });
 });

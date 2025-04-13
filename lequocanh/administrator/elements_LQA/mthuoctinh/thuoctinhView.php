@@ -72,7 +72,7 @@ $l = count($list_lh);
                             <?php } ?>
                             <img src="./img_LQA/Update.png"
                                 class="iconimg w_update_btn_open_tt"
-                                value="<?php echo htmlspecialchars($u->idThuocTinh); ?>"
+                                data-id="<?php echo htmlspecialchars($u->idThuocTinh); ?>"
                                 alt="Update">
                         </td>
                     </tr>
@@ -85,8 +85,8 @@ $l = count($list_lh);
 </div>
 
 <!-- Container cho popup cập nhật thuộc tính -->
-<div id="w_update_tt" class="visible-modal" style="display: none;">
-    <div id="w_close_btn_tt" class="close-btn">X</div>
+<div id="w_update_tt">
+    <div id="w_close_btn_tt">×</div>
     <div id="w_update_form_tt"></div>
 </div>
 
@@ -102,26 +102,6 @@ $l = count($list_lh);
         z-index: 9990;
     }
 
-    .popup-container {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 500px;
-        background: transparent;
-        border: none;
-        z-index: 9995;
-        box-shadow: none;
-    }
-
-    .popup-content {
-        width: 100%;
-        height: 100%;
-        z-index: 9996;
-        overflow: visible;
-        background: transparent;
-    }
-
     .iconimg {
         cursor: pointer;
         width: 24px;
@@ -131,26 +111,7 @@ $l = count($list_lh);
 
 <script>
     $(document).ready(function() {
-        // Để đảm bảo popup hiển thị đúng
-        $("#w_update_tt").css("display", "none");
-
-        // Hiển thị popup
-        $(".w_update_btn_open_tt").click(function(e) {
-            e.preventDefault();
-            console.log("Clicked update button for thuoctinh ID:", $(this).attr("value"));
-            $("#w_update_tt").css("display", "block");
-        });
-
-        // Đóng popup khi nhấp vào nút đóng
-        $("#w_close_btn_tt").click(function() {
-            $("#w_update_tt").css("display", "none");
-        });
-
-        // Đóng popup khi nhấp bên ngoài
-        $("#w_update_tt").click(function(e) {
-            if ($(e.target).is("#w_update_tt")) {
-                $("#w_update_tt").css("display", "none");
-            }
-        });
+        // Đảm bảo popup ẩn khi trang tải
+        $("#w_update_tt").hide();
     });
 </script>

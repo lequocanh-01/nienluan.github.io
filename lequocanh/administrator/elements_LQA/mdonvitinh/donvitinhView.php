@@ -86,7 +86,8 @@ $l = count($list_lh);
     </table>
 </div>
 
-<div id="w_update_dvt" class="visible-modal" style="display: none;">
-    <div id="w_close_btn_dvt" class="close-btn">X</div>
+<!-- Container cho popup cập nhật đơn vị tính -->
+<div id="w_update_dvt" style="display: none;">
+    <div id="w_close_btn_dvt" class="close-btn">×</div>
     <div id="w_update_form_dvt"></div>
 </div>

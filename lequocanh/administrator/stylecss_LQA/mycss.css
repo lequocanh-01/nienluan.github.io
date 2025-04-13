@@ -1632,22 +1632,22 @@ img.product-image {
   background: #d32f2f;
 }
 
-/* Override class for modal visibility issues */
+/* Override class for modal visibility issues - modified to be less aggressive */
 .visible-modal {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  z-index: 9999 !important;
-  position: fixed !important;
-  top: 50% !important;
-  left: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  background-color: white !important;
-  border: 2px solid #3498db !important;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
-  width: 600px !important;
-  max-height: 90vh !important;
-  overflow-y: auto !important;
+  /* display: block !important; */ /* Commented out to prevent unwanted auto-display */
+  visibility: visible;
+  opacity: 1;
+  z-index: 9999;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: white;
+  border: 2px solid #3498db;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 #w_update_th {
@@ -1703,51 +1703,45 @@ img.product-image {
 #w_update_tt {
   display: none;
   position: fixed;
-  z-index: 1000;
-  background: white;
-  padding: 25px;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  max-width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  border-radius: 8px;
-  min-width: 500px;
-  min-height: 200px;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  background-color: white;
+  z-index: 1000;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  max-width: 700px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-#w_close_btn_tt {
+#w_update_tt .update-form {
+  padding: 15px;
+  width: 100%;
+}
+
+#close-btn-tt {
   position: absolute;
   top: 10px;
-  right: 10px;
-  width: 30px;
-  height: 30px;
-  background: #f44336;
+  right: 15px;
+  background-color: #ff4d4d;
   color: white;
   border: none;
   border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 16px;
-  z-index: 1001;
+  transition: background-color 0.3s;
 }
 
-#w_close_btn_tt:hover {
-  background: #d32f2f;
-  transform: scale(1.1);
-  transition: all 0.2s ease;
-}
-
-#w_update_form_tt {
-  padding: 10px;
-  width: 100%;
-  box-sizing: border-box;
+#close-btn-tt:hover {
+  background-color: #ff0000;
 }
 
 #w_close_btn:hover,

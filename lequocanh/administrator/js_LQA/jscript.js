@@ -144,67 +144,58 @@ $(document).ready(function () {
     e.preventDefault();
     e.stopPropagation();
 
-    // Hiển thị ở giữa màn hình
-    var windowHeight = $(window).height();
-    var windowWidth = $(window).width();
-    var popupHeight = 400; // Chiều cao ước tính của popup
-    var popupWidth = 600; // Chiều rộng ước tính của popup
+    var id = $(this).attr("value");
+    console.log("Opening brand update popup for ID: " + id);
 
-    $("#w_update_th").css("top", (windowHeight - popupHeight) / 2 + "px");
-    $("#w_update_th").css("left", (windowWidth - popupWidth) / 2 + "px");
+    // Center the popup in the middle of the screen
+    $("#w_update_th").css({
+      display: "block",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "auto",
+      height: "auto",
+    });
 
-    // Lấy ID từ thuộc tính value của nút
-    var $idThuongHieu = $(this).attr("value");
-    console.log("Cập nhật thương hiệu ID:", $idThuongHieu);
-
-    // Clear form trước khi load
+    // Clear any existing content
     $("#w_update_form_th").empty();
 
-    // Hiển thị thông báo đang tải
+    // Show loading message
     $("#w_update_form_th").html(
-      "<div style='text-align:center;padding:20px;'>Đang tải...</div>"
+      '<div style="text-align:center;padding:20px;">Đang tải...</div>'
     );
 
-    // Hiển thị popup ngay lập tức để người dùng thấy phản hồi
-    $("#w_update_th").show();
+    // Load the update form using AJAX
+    $.ajax({
+      url: "./elements_LQA/mthuonghieu/thuonghieuUpdate.php",
+      type: "GET",
+      data: { idThuongHieu: id },
+      success: function (data) {
+        $("#w_update_form_th").html(data);
 
-    // Load form cập nhật
-    $("#w_update_form_th").load(
-      "./elements_LQA/mthuonghieu/thuonghieuUpdate.php",
-      { idThuongHieu: $idThuongHieu },
-      function (response, status, request) {
-        if (status === "error") {
-          $("#w_update_form_th").html(
-            "<div style='color:red;padding:20px;'>Lỗi khi tải form: " +
-              request.status +
-              " " +
-              request.statusText +
-              "</div>"
-          );
-          return;
-        }
-
-        // Gán sự kiện cho nút đóng trong form
-        $("#w_update_form_th #close-btn").on("click", function () {
+        // Bind close event to the close button in the loaded form
+        $(document).on("click", "#close-btn", function () {
           $("#w_update_th").hide();
         });
+      },
+      error: function () {
+        $("#w_update_form_th").html(
+          '<div style="text-align:center;padding:20px;color:red;">Lỗi khi tải form. Vui lòng thử lại.</div>'
+        );
+      },
+    });
 
-        console.log("Form cập nhật thương hiệu đã được tải");
+    // Close popup when clicking on background
+    $(document).on("click", "#w_update_th", function (e) {
+      if ($(e.target).is("#w_update_th")) {
+        $("#w_update_th").hide();
       }
-    );
+    });
   });
 
   // Xử lý nút đóng chính
-  $("#w_close_btn_th").click(function (e) {
-    e.preventDefault();
+  $(document).on("click", "#w_close_btn_th", function () {
     $("#w_update_th").hide();
-  });
-
-  // Đóng khi click vào overlay
-  $(document).on("click", "#w_update_th", function (e) {
-    if ($(e.target).is("#w_update_th")) {
-      $("#w_update_th").hide();
-    }
   });
 
   // Setup message listener for close event from iframe
@@ -249,154 +240,119 @@ $(document).ready(function () {
     e.preventDefault();
     e.stopPropagation();
 
-    // Hiển thị ở giữa màn hình
-    var windowHeight = $(window).height();
-    var windowWidth = $(window).width();
-    var popupHeight = 400; // Chiều cao ước tính của popup
-    var popupWidth = 600; // Chiều rộng ước tính của popup
+    // Center the popup in the middle of the screen
+    $("#w_update_dvt").css({
+      display: "block",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "auto",
+      height: "auto",
+    });
 
-    $("#w_update_dvt").css("top", (windowHeight - popupHeight) / 2 + "px");
-    $("#w_update_dvt").css("left", (windowWidth - popupWidth) / 2 + "px");
-
-    // Lấy ID từ thuộc tính value của nút
+    // Get ID from button value attribute
     var $idDonViTinh = $(this).attr("value");
     console.log("Cập nhật đơn vị tính ID:", $idDonViTinh);
 
-    // Clear form trước khi load
+    // Clear form before loading
     $("#w_update_form_dvt").empty();
 
-    // Hiển thị thông báo đang tải
+    // Show loading message
     $("#w_update_form_dvt").html(
-      "<div style='text-align:center;padding:20px;'>Đang tải...</div>"
+      '<div style="text-align:center;padding:20px;">Đang tải...</div>'
     );
 
-    // Hiển thị popup ngay lập tức để người dùng thấy phản hồi
-    $("#w_update_dvt").show();
+    // Load update form using AJAX
+    $.ajax({
+      url: "./elements_LQA/mdonvitinh/donvitinhUpdate.php",
+      type: "GET",
+      data: { idDonViTinh: $idDonViTinh },
+      success: function (data) {
+        $("#w_update_form_dvt").html(data);
 
-    // Load form cập nhật
-    $("#w_update_form_dvt").load(
-      "./elements_LQA/mdonvitinh/donvitinhUpdate.php",
-      { idDonViTinh: $idDonViTinh },
-      function (response, status, request) {
-        if (status === "error") {
-          $("#w_update_form_dvt").html(
-            "<div style='color:red;padding:20px;'>Lỗi khi tải form: " +
-              request.status +
-              " " +
-              request.statusText +
-              "</div>"
-          );
-          return;
-        }
-
-        // Gán sự kiện cho form
-        $("#updatedonvitinh").on("submit", function (e) {
-          e.preventDefault();
-
-          var formData = new FormData(this);
-
-          $.ajax({
-            url: "./elements_LQA/mdonvitinh/donvitinhAct.php?reqact=updatedonvitinh",
-            type: "POST",
-            data: formData,
-            processData: false,
-            contentType: false,
-            success: function (response) {
-              $("#w_update_dvt").hide();
-              window.location.href =
-                "index.php?req=donvitinhview&t=" + new Date().getTime();
-            },
-            error: function (xhr, status, error) {
-              alert("Có lỗi xảy ra khi cập nhật đơn vị tính: " + error);
-            },
-          });
+        // Bind close event to the close button in the loaded form
+        $(document).on("click", "#close-btn", function () {
+          $("#w_update_dvt").hide();
         });
+      },
+      error: function () {
+        $("#w_update_form_dvt").html(
+          '<div style="text-align:center;padding:20px;color:red;">Lỗi khi tải form. Vui lòng thử lại.</div>'
+        );
+      },
+    });
 
-        console.log("Form cập nhật đơn vị tính đã được tải");
+    // Close popup when clicking on background
+    $(document).on("click", "#w_update_dvt", function (e) {
+      if ($(e.target).is("#w_update_dvt")) {
+        $("#w_update_dvt").hide();
       }
-    );
+    });
   });
 
-  // Xử lý nút đóng cho đơn vị tính
-  $("#w_close_btn_dvt").click(function (e) {
-    e.preventDefault();
+  // Handle close button for unit of measurement using event delegation
+  $(document).on("click", "#w_close_btn_dvt, #close-btn", function (e) {
+    console.log("Close button clicked in jscript.js");
+    if (e) e.preventDefault();
     $("#w_update_dvt").hide();
-  });
-
-  // Đóng khi click vào overlay cho đơn vị tính
-  $(document).on("click", "#w_update_dvt", function (e) {
-    if ($(e.target).is("#w_update_dvt")) {
-      $("#w_update_dvt").hide();
-    }
+    console.log("Hiding w_update_dvt");
   });
 
   // Setup for thuoctinh update
   $("#w_update_tt").hide();
-  $(document).on("click", ".w_update_btn_open_tt", function (e) {
-    e.preventDefault();
-    e.stopPropagation();
+  $(document).on("click", ".w_update_btn_open_tt", function () {
+    var id = $(this).data("id");
+    console.log("Opening attribute update popup for ID: " + id);
 
-    // Hiển thị ở giữa màn hình
-    var windowHeight = $(window).height();
-    var windowWidth = $(window).width();
-    var popupHeight = 400; // Chiều cao ước tính của popup
-    var popupWidth = 600; // Chiều rộng ước tính của popup
+    // Center the popup in the middle of the screen
+    $("#w_update_tt").css({
+      display: "block",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "auto",
+      height: "auto",
+    });
 
-    $("#w_update_tt").css("top", (windowHeight - popupHeight) / 2 + "px");
-    $("#w_update_tt").css("left", (windowWidth - popupWidth) / 2 + "px");
-
-    // Lấy ID từ thuộc tính value của nút
-    var $idThuocTinh = $(this).attr("value");
-    console.log("Cập nhật thuộc tính ID:", $idThuocTinh);
-
-    // Clear form trước khi load
+    // Clear any existing content
     $("#w_update_form_tt").empty();
 
-    // Hiển thị thông báo đang tải
+    // Show loading message
     $("#w_update_form_tt").html(
-      "<div style='text-align:center;padding:20px;'>Đang tải...</div>"
+      '<div style="text-align:center;padding:20px;">Đang tải...</div>'
     );
 
-    // Hiển thị popup ngay lập tức để người dùng thấy phản hồi
-    $("#w_update_tt").show();
+    // Load the update form using AJAX into the form div, not the entire container
+    $.ajax({
+      url: "./elements_LQA/mthuoctinh/thuoctinhUpdate.php",
+      type: "GET",
+      data: { id: id },
+      success: function (data) {
+        $("#w_update_form_tt").html(data);
 
-    // Load form cập nhật
-    $("#w_update_form_tt").load(
-      "./elements_LQA/mthuoctinh/thuoctinhUpdate.php",
-      { idThuocTinh: $idThuocTinh },
-      function (response, status, request) {
-        if (status === "error") {
-          $("#w_update_form_tt").html(
-            "<div style='color:red;padding:20px;'>Lỗi khi tải form: " +
-              request.status +
-              " " +
-              request.statusText +
-              "</div>"
-          );
-          return;
-        }
-
-        // Gán sự kiện cho nút đóng trong form
-        $("#w_update_form_tt #close-btn").on("click", function () {
+        // Bind close event to the close button in the loaded form
+        $(document).on("click", "#close-btn-tt", function () {
           $("#w_update_tt").hide();
         });
+      },
+      error: function () {
+        $("#w_update_form_tt").html(
+          '<div style="text-align:center;padding:20px;color:red;">Lỗi khi tải form. Vui lòng thử lại.</div>'
+        );
+      },
+    });
 
-        console.log("Form cập nhật thuộc tính đã được tải");
+    // Close popup when clicking on background
+    $(document).on("click", "#w_update_tt", function (e) {
+      if ($(e.target).is("#w_update_tt")) {
+        $("#w_update_tt").hide();
       }
-    );
+    });
   });
 
-  // Xử lý nút đóng chính
-  $("#w_close_btn_tt").click(function (e) {
-    e.preventDefault();
+  // Setup close button event for thuoctinh update
+  $(document).on("click", "#w_close_btn_tt", function () {
     $("#w_update_tt").hide();
-  });
-
-  // Đóng khi click vào overlay
-  $(document).on("click", "#w_update_tt", function (e) {
-    if ($(e.target).is("#w_update_tt")) {
-      $("#w_update_tt").hide();
-    }
   });
 
   // Xử lý cập nhật người dùng
