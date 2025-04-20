@@ -31,6 +31,7 @@ $isNhanVien = $phanQuyen->isNhanVien($username);
                 'nhanvienview' => ['icon' => 'fas fa-user-tie', 'text' => 'Nhân viên', 'admin_only' => false, 'hide_from_employee' => true],
                 'adminGiohangView' => ['icon' => 'fas fa-shopping-cart', 'text' => 'Giỏ hàng', 'admin_only' => false, 'hide_from_employee' => false],
                 'hinhanhview' => ['icon' => 'fas fa-images', 'text' => 'Hình ảnh', 'admin_only' => false, 'hide_from_employee' => false],
+                'nhacungcapview' => ['icon' => 'fas fa-truck', 'text' => 'Nhà cung cấp', 'admin_only' => false, 'hide_from_employee' => false],
                 'userprofile' => ['icon' => 'fas fa-user-circle', 'text' => 'Hồ sơ cá nhân', 'admin_only' => false, 'hide_from_employee' => false],
             ];
 

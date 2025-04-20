@@ -7,7 +7,7 @@ $username = isset($_SESSION['USER']) ? $_SESSION['USER'] : (isset($_SESSION['ADM
 
 if (isset($_GET['req'])) {
     $request = $_GET['req'];
-    
+
     // Kiểm tra quyền truy cập
     if (!$phanQuyen->checkAccess($request, $username)) {
         echo '<div class="alert alert-danger">
@@ -15,7 +15,7 @@ if (isset($_GET['req'])) {
               </div>';
         exit;
     }
-    
+
     switch ($request) {
         case 'userview':
             require './elements_LQA/mUser/userView.php';
@@ -61,6 +61,9 @@ if (isset($_GET['req'])) {
             break;
         case 'hinhanhview':
             require './elements_LQA/mhinhanh/hinhanhView.php';
+            break;
+        case 'nhacungcapview':
+            require './elements_LQA/mnhacungcap/nhacungcapView.php';
             break;
     }
 } else {

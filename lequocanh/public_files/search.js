@@ -2,11 +2,40 @@
  * Search Suggestions Script
  * Handles autocomplete search functionality for product search
  */
+console.log("Search suggestions script loaded"); // Debug log to verify script loading
+
 $(document).ready(function () {
   // Variables
   const searchInput = $("#searchInput");
   const searchResults = $("#searchResults");
   let searchTimeout;
+
+  console.log(
+    "Search input element:",
+    searchInput.length ? "Found" : "Not found"
+  ); // Debug log
+
+  // Test if search_suggestions.php is accessible
+  function testSearchEndpoint() {
+    console.log("Testing search_suggestions.php endpoint...");
+    $.ajax({
+      url: "search_suggestions.php",
+      method: "GET",
+      data: { query: "test" },
+      dataType: "json",
+      success: function (data) {
+        console.log("Search endpoint test successful. Response:", data);
+      },
+      error: function (xhr, status, error) {
+        console.error("Search endpoint test failed:", error);
+        console.log("XHR status:", status);
+        console.log("XHR response:", xhr.responseText);
+      },
+    });
+  }
+
+  // Run the test
+  testSearchEndpoint();
 
   // Function to handle search input
   function handleSearchInput() {
@@ -74,6 +103,9 @@ $(document).ready(function () {
         },
         error: function (xhr, status, error) {
           console.error("Search error:", error);
+          console.log("XHR status:", status);
+          console.log("XHR response:", xhr.responseText);
+
           searchResults.html(
             '<div class="text-center p-3 text-danger">Có lỗi xảy ra khi tìm kiếm</div>'
           );

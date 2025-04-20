@@ -96,6 +96,10 @@ $missing_images = $hanghoaObj->FindMissingImages();
                 <td><input type="number" name="giathamkhao" required /></td>
             </tr>
             <tr>
+                <td>Số lượng</td>
+                <td><input type="number" name="soLuong" value="0" min="0" /></td>
+            </tr>
+            <tr>
                 <td>Mô tả</td>
                 <td><input type="text" name="mota" /></td>
             </tr>
@@ -216,25 +220,30 @@ $l = count($list_hanghoa);
         Tổng số hàng hóa: <b><?php echo $l; ?></b>
 
         <?php
-        // Đếm tổng số hình ảnh đã áp dụng
-        $totalImages = 0;
+        // Lấy danh sách tất cả hình ảnh - số lượng thực tế trong DB
+        $allImages = $hanghoaObj->GetAllHinhAnh();
+        $totalImages = count($allImages);
+
+        // Đếm số sản phẩm có hình ảnh (có giá trị hinhanh > 0)
         $productsWithImages = 0;
         foreach ($list_hanghoa as $product) {
-            $imageCount = $hanghoaObj->CountImagesForProduct($product->idhanghoa);
-            $totalImages += $imageCount;
-            if ($imageCount > 0) {
+            if (isset($product->hinhanh) && $product->hinhanh > 0) {
                 $productsWithImages++;
             }
         }
+
         echo ' | Tổng số hình ảnh đã áp dụng: <b>' . $totalImages . '</b>';
         echo ' | Số sản phẩm có hình ảnh: <b>' . $productsWithImages . '/' . $l . '</b>';
         ?>
-
-        <?php
-        // Đoạn mã kiểm tra và hiển thị nút "Áp dụng tất cả hình ảnh phù hợp" đã được xóa
-        // vì chức năng này đã được thay thế bằng tự động áp dụng hình ảnh khi tải lên
-        ?>
     </div>
+
+    <?php
+    // Include search box
+    $searchFormId = 'product-search';
+    $tableBodyId = 'product-list';
+    $placeholderText = 'Tìm kiếm hàng hóa...';
+    include './elements_LQA/includes/search-box.php';
+    ?>
 
     <?php
     // Hiển thị thông báo về hình ảnh không khớp tên
@@ -278,6 +287,7 @@ $l = count($list_hanghoa);
                 <th>ID</th>
                 <th>Tên hàng hóa</th>
                 <th>Giá tham khảo</th>
+                <th>Số lượng</th>
                 <th>Mô tả</th>
                 <th>Hình ảnh</th>
                 <th>Thương Hiệu</th>
@@ -286,7 +296,7 @@ $l = count($list_hanghoa);
                 <th>Chức năng</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="product-list">
             <?php
             if ($l > 0) {
                 foreach ($list_hanghoa as $u) {
@@ -295,6 +305,7 @@ $l = count($list_hanghoa);
                         <td><?php echo htmlspecialchars($u->idhanghoa); ?></td>
                         <td><?php echo htmlspecialchars($u->tenhanghoa); ?></td>
                         <td><?php echo number_format($u->giathamkhao, 0, ',', '.'); ?> đ</td>
+                        <td align="center"><?php echo isset($u->soLuong) ? $u->soLuong : 0; ?></td>
                         <td><?php echo htmlspecialchars($u->mota); ?></td>
                         <td align="center">
                             <?php
@@ -305,25 +316,11 @@ $l = count($list_hanghoa);
                                 <img class="iconbutton" src="<?php echo $imageSrc; ?>" alt="Product Image"
                                     onerror="this.src='./img_LQA/no-image.png'">
                                 <?php
-                                // Hiển thị số lượng hình ảnh
-                                $imageCount = $hanghoaObj->CountImagesForProduct($u->idhanghoa);
-                                if ($imageCount > 0) {
-                                    echo '<div class="image-count">';
-                                    echo '<span class="badge">' . $imageCount . ' ảnh</span>';
-                                    echo '</div>';
-                                }
+                                // Không hiển thị số lượng hình ảnh ở đây vì mỗi sản phẩm chỉ có một hình ảnh chính
                                 ?>
                             <?php
                             } else {
                                 echo '<img class="iconbutton" src="./img_LQA/no-image.png" alt="No image">';
-
-                                // Hiển thị số lượng hình ảnh nếu có
-                                $imageCount = $hanghoaObj->CountImagesForProduct($u->idhanghoa);
-                                if ($imageCount > 0) {
-                                    echo '<div class="image-count">';
-                                    echo '<span class="badge">' . $imageCount . ' ảnh</span>';
-                                    echo '</div>';
-                                }
                             }
                             ?>
                         </td>
@@ -453,5 +450,7 @@ $l = count($list_hanghoa);
         });
     });
 </script>
+
+<script src="./js_LQA/test-search.js"></script>
 
 <hr />

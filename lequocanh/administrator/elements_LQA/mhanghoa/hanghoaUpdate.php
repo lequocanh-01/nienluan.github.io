@@ -109,7 +109,7 @@ $nhanVienList = $nhanVienObj->nhanvienGetAll();
 
 <div class="update-form-container">
     <div class="update-header">
-    <h3>Cập nhật hàng hóa</h3>
+        <h3>Cập nhật hàng hóa</h3>
         <span class="close-btn" id="close-btn">X</span>
     </div>
 
@@ -139,6 +139,11 @@ $nhanVienList = $nhanVienObj->nhanvienGetAll();
         <div class="form-group">
             <label>Giá tham khảo:</label>
             <input type="number" class="form-control editable-input" name="giathamkhao" value="<?php echo htmlspecialchars($getHangHoaUpdate->giathamkhao ?? ''); ?>" />
+        </div>
+
+        <div class="form-group">
+            <label>Số lượng:</label>
+            <input type="number" class="form-control editable-input" name="soLuong" value="<?php echo htmlspecialchars($getHangHoaUpdate->soLuong ?? '0'); ?>" min="0" />
         </div>
 
         <div class="form-group">

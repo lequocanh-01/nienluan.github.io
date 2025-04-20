@@ -46,15 +46,16 @@ class hanghoa
         return $getAll->fetchAll();
     }
 
-    public function HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien)
+    public function HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $soLuong = 0)
     {
         // Convert empty strings to NULL for integer fields
         $idThuongHieu = $idThuongHieu === '' ? null : $idThuongHieu;
         $idDonViTinh = $idDonViTinh === '' ? null : $idDonViTinh;
         $idNhanVien = $idNhanVien === '' ? null : $idNhanVien;
+        $soLuong = intval($soLuong);
 
-        $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien) VALUES (?,?,?,?,?,?,?,?)";
-        $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien);
+        $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien, soLuong) VALUES (?,?,?,?,?,?,?,?,?)";
+        $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $soLuong);
         $add = $this->db->prepare($sql);
         $add->execute($data);
         return $add->rowCount();
@@ -70,15 +71,16 @@ class hanghoa
         return $del->rowCount();
     }
 
-    public function HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa)
+    public function HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa, $soLuong = 0)
     {
         // Convert empty strings to NULL for integer fields
         $idThuongHieu = $idThuongHieu === '' ? null : $idThuongHieu;
         $idDonViTinh = $idDonViTinh === '' ? null : $idDonViTinh;
         $idNhanVien = $idNhanVien === '' ? null : $idNhanVien;
+        $soLuong = intval($soLuong);
 
-        $sql = "UPDATE hanghoa SET tenhanghoa=?, hinhanh=?, mota=?, giathamkhao=?, idloaihang=?, idThuongHieu=?, idDonViTinh=?, idNhanVien=? WHERE idhanghoa =?";
-        $data = array($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
+        $sql = "UPDATE hanghoa SET tenhanghoa=?, hinhanh=?, mota=?, giathamkhao=?, idloaihang=?, idThuongHieu=?, idDonViTinh=?, idNhanVien=?, soLuong=? WHERE idhanghoa =?";
+        $data = array($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $soLuong, $idhanghoa);
 
         $update = $this->db->prepare($sql);
         $update->execute($data);
