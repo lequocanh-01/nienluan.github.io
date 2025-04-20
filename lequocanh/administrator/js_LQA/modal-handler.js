@@ -16,12 +16,22 @@ $(document).ready(function () {
     console.log("Update button clicked for", module, "with ID", id);
     console.log("Loading from URL:", updateUrl);
 
+    // Debug để tìm lỗi
+    console.log("Module type:", typeof module);
+    console.log("Full button data:", $(this).data());
+
+    // Thêm kiểm tra chính xác cho mnhacungcap
+    if (module === "mnhacungcap") {
+      console.log("Đã xác nhận module nhà cung cấp");
+    }
+
     if (
       module === "mloaihang" ||
       module === "mnhanvien" ||
       module === "mdonvitinh" ||
       module === "mthuoctinhhh" ||
-      module === "mthuonghieu"
+      module === "mthuonghieu" ||
+      module === "mnhacungcap"
     ) {
       // Remove any existing dynamically created modal
       $("#dynamic-update-modal").remove();
@@ -361,6 +371,75 @@ $(document).ready(function () {
 
                     // Method 3: Replace location
                     window.location.replace("index.php?req=thuonghieuview");
+                  }
+                }
+              },
+              error: function (xhr, status, error) {
+                $("#noteForm").html(
+                  '<div style="color: red; font-weight: bold;">Lỗi: ' +
+                    error +
+                    "</div>"
+                );
+              },
+              cache: false,
+              contentType: false,
+              processData: false,
+            });
+          });
+
+          // Bind form submission for nhacungcap
+          $(document).on("submit", "#formupdate", function (e) {
+            // Kiểm tra xem form đang submit có thuộc module nhà cung cấp không
+            var modalContent = $(this).closest("#dynamic-update-modal");
+            if (!modalContent.length) {
+              return; // Không xử lý nếu form không nằm trong modal
+            }
+
+            // Kiểm tra xem form có là form cập nhật nhà cung cấp không
+            if (!$(this).find('input[name="idNCC"]').length) {
+              return; // Không phải form cập nhật nhà cung cấp, thoát
+            }
+
+            e.preventDefault();
+            console.log("Nhacungcap form submitted");
+            var formData = new FormData(this);
+
+            // Debug values
+            console.log("Form data being sent:");
+            for (var pair of formData.entries()) {
+              console.log(pair[0] + ": " + pair[1]);
+            }
+
+            $.ajax({
+              url: "./elements_LQA/mnhacungcap/nhacungcapAct.php?reqact=updatenhacungcap",
+              type: "POST",
+              data: formData,
+              headers: {
+                "X-Requested-With": "XMLHttpRequest",
+              },
+              success: function (response) {
+                console.log("Update response received:", response);
+
+                // Force reload regardless of response content
+                $("#dynamic-update-modal").remove();
+                console.log("Reloading page now...");
+
+                // Try multiple reload methods
+                try {
+                  // Method 1: Direct location change
+                  window.location.href =
+                    "index.php?req=nhacungcapview&t=" + new Date().getTime();
+                } catch (e) {
+                  console.error("Method 1 failed:", e);
+
+                  // Method 2: Reload current page
+                  try {
+                    window.location.reload(true);
+                  } catch (e2) {
+                    console.error("Method 2 failed:", e2);
+
+                    // Method 3: Replace location
+                    window.location.replace("index.php?req=nhacungcapview");
                   }
                 }
               },

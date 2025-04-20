@@ -41,13 +41,9 @@ if (!$getNccUpdate) {
 }
 ?>
 
-<div class="update-form-container">
-    <div class="update-header">
-        <h3>Cập nhật thông tin nhà cung cấp</h3>
-        <button id="close-btn" class="close-btn">X</button>
-    </div>
-
-    <form name="updatenhacungcap" id="formupdate" method="post" action="./elements_LQA/mnhacungcap/nhacungcapAct.php?reqact=updatenhacungcap">
+<div class="update-form">
+    <h3>Cập nhật thông tin nhà cung cấp</h3>
+    <form name="updatenhacungcap" id="formupdate" method="post" enctype="multipart/form-data">
         <input type="hidden" name="idNCC" value="<?php echo htmlspecialchars($getNccUpdate->idNCC); ?>" />
 
         <div class="form-group">
@@ -106,52 +102,14 @@ if (!$getNccUpdate) {
 </div>
 
 <style>
-    .update-form-container {
-        padding: 15px;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        position: relative;
-        z-index: 9999;
-        pointer-events: auto;
-    }
-
-    .update-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        border-bottom: 1px solid #ddd;
-        padding-bottom: 10px;
-        position: relative;
-        z-index: 9999;
-    }
-
-    .update-header h3 {
+    .update-form {
+        max-width: 100%;
         margin: 0;
-        font-size: 18px;
-    }
-
-    .close-btn {
-        color: #fff;
-        background-color: #dc3545;
-        border-radius: 50%;
-        width: 25px;
-        height: 25px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-weight: bold;
-        border: none;
-        pointer-events: auto !important;
+        padding: 0;
     }
 
     .form-group {
-        position: relative;
-        z-index: 9999;
         margin-bottom: 15px;
-        pointer-events: auto;
     }
 
     .form-group label {
@@ -160,19 +118,19 @@ if (!$getNccUpdate) {
         font-weight: bold;
     }
 
-    .form-control {
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group select,
+    .form-group textarea {
         width: 100%;
         padding: 8px;
         border: 1px solid #ddd;
         border-radius: 4px;
-        cursor: text !important;
-        pointer-events: auto !important;
     }
 
     .form-actions {
+        margin-top: 20px;
         text-align: center;
-        margin-top: 15px;
-        pointer-events: auto;
     }
 
     .btn-primary {
@@ -182,72 +140,29 @@ if (!$getNccUpdate) {
         border: none;
         border-radius: 4px;
         cursor: pointer;
-        pointer-events: auto !important;
     }
 
     .btn-primary:hover {
         background-color: #0056b3;
     }
+
+    .alert {
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
 </style>
 
-<script>
-    document.getElementById('close-btn').addEventListener('click', function(e) {
-        e.preventDefault();
-        // Close the popup
-        if (window.parent && typeof window.parent.closeModal === 'function') {
-            window.parent.closeModal();
-        } else {
-            const modal = document.getElementById('w_update_ncc');
-            if (modal) modal.style.display = 'none';
-
-            // Or try to notify parent window to close modal
-            window.parent.postMessage('closeUpdateForm', '*');
-        }
-    });
-
-    document.getElementById('formupdate').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        // Show submitting state
-        const submitBtn = document.querySelector('.btn-primary');
-        submitBtn.textContent = "Đang gửi...";
-        submitBtn.disabled = true;
-
-        // Get form data
-        const formData = new FormData(this);
-
-        // Send form data
-        fetch(this.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Response:", data);
-
-                if (data.success) {
-                    // Reload the page on success
-                    window.top.location.href = 'index.php?req=nhacungcapview&result=ok';
-                } else {
-                    // Show error message
-                    document.getElementById('noteForm').innerHTML =
-                        '<div style="color: red; font-weight: bold;">Lỗi: ' + data.message + '</div>';
-
-                    // Reset button state
-                    submitBtn.textContent = "Cập nhật";
-                    submitBtn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error("Error:", error);
-
-                // Show error message
-                document.getElementById('noteForm').innerHTML =
-                    '<div style="color: red; font-weight: bold;">Lỗi kết nối. Vui lòng thử lại.</div>';
-
-                // Reset button state
-                submitBtn.textContent = "Cập nhật";
-                submitBtn.disabled = false;
-            });
-    });
-</script>
+<!-- Không cần JavaScript ở đây nữa vì đã được xử lý trong modal-handler.js -->

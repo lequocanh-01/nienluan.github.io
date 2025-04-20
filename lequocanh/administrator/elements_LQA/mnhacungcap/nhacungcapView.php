@@ -129,52 +129,7 @@ $l = count($list_ncc);
     </table>
 </div>
 
-<!-- Popup container for supplier update -->
-<div id="w_update_ncc">
-    <div class="update-popup-wrapper">
-        <span id="w_close_btn_ncc">X</span>
-        <div id="w_update_form_ncc"></div>
-    </div>
-</div>
-
 <style>
-    #w_update_ncc {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #fff;
-        border: 2px solid #3498db;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        border-radius: 5px;
-        padding: 15px;
-        z-index: 9999;
-        display: none;
-        width: 600px;
-        max-height: 80vh;
-        overflow-y: auto;
-    }
-
-    .update-popup-wrapper {
-        position: relative;
-    }
-
-    #w_close_btn_ncc {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background: #f44336;
-        color: white;
-        width: 25px;
-        height: 25px;
-        border-radius: 50%;
-        text-align: center;
-        line-height: 25px;
-        font-weight: bold;
-        cursor: pointer;
-        z-index: 10000;
-    }
-
     .badge {
         display: inline-block;
         padding: 0.25em 0.6em;
@@ -261,6 +216,144 @@ $l = count($list_ncc);
                     row.style.display = '';
                 });
             }
+        });
+    });
+</script>
+
+<!-- Script debug và sửa lỗi nút cập nhật -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Debug script for nhacungcap loaded");
+
+        // Kiểm tra tất cả các nút cập nhật
+        const updateButtons = document.querySelectorAll('.generic-update-btn');
+        console.log("Found update buttons:", updateButtons.length);
+
+        // Kiểm tra từng nút
+        updateButtons.forEach((btn, index) => {
+            console.log(`Button ${index+1} data:`, {
+                module: btn.dataset.module,
+                url: btn.dataset.updateUrl,
+                idParam: btn.dataset.idParam,
+                id: btn.dataset.id
+            });
+
+            // Đảm bảo sự kiện click hoạt động đúng
+            btn.addEventListener('click', function(e) {
+                console.log("Direct click handler called for button", index + 1);
+
+                // Xử lý trực tiếp cho nút cập nhật nhà cung cấp
+                if (btn.dataset.module === 'mnhacungcap') {
+                    // Lấy thông tin nút
+                    const id = btn.dataset.id;
+                    const updateUrl = btn.dataset.updateUrl;
+                    const idParam = btn.dataset.idParam;
+                    const title = btn.dataset.title;
+
+                    console.log("Direct handling for nhacungcap button");
+
+                    // Xóa modal cũ nếu tồn tại
+                    if (document.getElementById('dynamic-update-modal')) {
+                        document.getElementById('dynamic-update-modal').remove();
+                    }
+
+                    // Tạo modal mới
+                    const modalHtml = `
+                        <div id="dynamic-update-modal" style="
+                          display: block; 
+                          position: fixed; 
+                          z-index: 10000; 
+                          top: 50%; 
+                          left: 50%; 
+                          transform: translate(-50%, -50%); 
+                          background: white; 
+                          padding: 25px; 
+                          border-radius: 8px; 
+                          box-shadow: 0 5px 20px rgba(0,0,0,0.3); 
+                          width: 600px; 
+                          max-height: 90vh; 
+                          overflow-y: auto;
+                          border: 2px solid #3498db;">
+                          <button id="dynamic-close-btn" style="
+                            position: absolute;
+                            top: 10px;
+                            right: 10px;
+                            background: #f44336;
+                            color: white;
+                            border: none;
+                            width: 30px;
+                            height: 30px;
+                            border-radius: 50%;
+                            font-weight: bold;
+                            cursor: pointer;">X</button>
+                          <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 10px;">${title}</h3>
+                          <div id="dynamic-update-form" style="margin-top: 15px;"></div>
+                        </div>
+                    `;
+
+                    // Thêm vào body
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+                    // Thêm sự kiện đóng modal
+                    document.getElementById('dynamic-close-btn').addEventListener('click', function() {
+                        document.getElementById('dynamic-update-modal').remove();
+                    });
+
+                    // Tạo form data
+                    const formData = new FormData();
+                    formData.append(idParam, id);
+
+                    // Gửi request để lấy form cập nhật
+                    fetch(updateUrl, {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.text())
+                        .then(html => {
+                            document.getElementById('dynamic-update-form').innerHTML = html;
+                            console.log("Form loaded successfully");
+
+                            // Xử lý submit form
+                            const form = document.getElementById('formupdate');
+                            if (form) {
+                                form.addEventListener('submit', function(e) {
+                                    e.preventDefault();
+                                    const formData = new FormData(this);
+
+                                    // Log form data
+                                    console.log("Submitting form data:");
+                                    for (let [key, value] of formData.entries()) {
+                                        console.log(key + ": " + value);
+                                    }
+
+                                    // Gửi form đến server
+                                    fetch('./elements_LQA/mnhacungcap/nhacungcapAct.php?reqact=updatenhacungcap', {
+                                            method: 'POST',
+                                            body: formData
+                                        })
+                                        .then(response => {
+                                            console.log("Update successful");
+                                            // Reload page
+                                            window.location.href = 'index.php?req=nhacungcapview&t=' + new Date().getTime();
+                                        })
+                                        .catch(error => {
+                                            console.error("Error updating:", error);
+                                            document.getElementById('noteForm').innerHTML =
+                                                '<div style="color: red; font-weight: bold;">Lỗi: ' + error + '</div>';
+                                        });
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Error loading form:", error);
+                            document.getElementById('dynamic-update-form').innerHTML =
+                                '<div style="color: red">Lỗi tải biểu mẫu: ' + error + '</div>';
+                        });
+
+                    // Ngăn sự kiện click tiếp tục truyền lên
+                    e.stopPropagation();
+                }
+            });
         });
     });
 </script>
