@@ -35,4 +35,3 @@ if (isset($data['productId']) && isset($data['quantity'])) {
 // Trả về response dạng JSON
 header('Content-Type: application/json');
 echo json_encode($response);
-?>

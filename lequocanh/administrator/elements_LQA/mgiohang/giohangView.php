@@ -3,30 +3,34 @@ session_start();
 require_once '../../elements_LQA/mod/giohangCls.php';
 require_once '../../elements_LQA/mod/hanghoaCls.php';
 
-// Kiểm tra đăng nhập
-if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
-    header('Location: ../../userLogin.php');
-    exit();
-}
+// Remove login requirement to allow viewing cart with session ID
+// Users can have items in cart linked to their session without being logged in
+
+// Enable error reporting can be kept for development
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(0);
 
 $giohang = new GioHang();
 $hanghoa = new hanghoa();
+
+// Get cart items
 $cart = $giohang->getCart();
 $cartDetails = [];
 $totalAmount = 0;
 
 if (!empty($cart)) {
     foreach ($cart as $item) {
-        if (isset($item['product_id'], $item['tenhanghoa'], $item['giathamkhao'], $item['quantity'], $item['hinhanh'])) {
+        if (isset($item['product_id'])) {
             $cartDetails[] = [
                 'id' => $item['product_id'],
-                'name' => $item['tenhanghoa'],
-                'price' => $item['giathamkhao'],
+                'name' => $item['tenhanghoa'] ?? 'Unknown Product',
+                'price' => $item['giathamkhao'] ?? 0,
                 'quantity' => $item['quantity'],
-                'hinhanh' => $item['hinhanh'],
-                'subtotal' => $item['giathamkhao'] * $item['quantity']
+                'hinhanh' => $item['hinhanh'] ?? null,
+                'subtotal' => ($item['giathamkhao'] ?? 0) * $item['quantity']
             ];
-            $totalAmount += $item['giathamkhao'] * $item['quantity'];
+            $totalAmount += ($item['giathamkhao'] ?? 0) * $item['quantity'];
         }
     }
 }

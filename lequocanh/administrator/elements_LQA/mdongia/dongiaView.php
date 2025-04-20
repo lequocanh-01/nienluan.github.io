@@ -29,9 +29,9 @@ if (empty($list_hh)) {
                         if (!empty($list_hh)) {
                             foreach ($list_hh as $h) {
                         ?>
-                                <option value="<?php echo htmlspecialchars($h->idhanghoa); ?>"
-                                    data-price="<?php echo htmlspecialchars($h->giathamkhao); ?>">
-                                    <?php echo htmlspecialchars($h->tenhanghoa); ?>
+                                <option value="<?php echo htmlspecialchars($h->idhanghoa ?? ''); ?>"
+                                    data-price="<?php echo htmlspecialchars($h->giathamkhao ?? ''); ?>">
+                                    <?php echo htmlspecialchars($h->tenhanghoa ?? ''); ?>
                                 </option>
                         <?php
                             }
@@ -98,17 +98,17 @@ if (empty($list_hh)) {
                 foreach ($list_lh as $u) {
             ?>
                     <tr>
-                        <td><?php echo htmlspecialchars($u->idDonGia); ?></td>
-                        <td><?php echo htmlspecialchars($u->idHangHoa); ?></td>
-                        <td><?php echo htmlspecialchars($u->tenhanghoa); ?></td>
+                        <td><?php echo htmlspecialchars($u->idDonGia ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($u->idHangHoa ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($u->tenhanghoa ?? ''); ?></td>
                         <td><?php echo number_format($u->giaBan, 0, ',', '.'); ?> đ</td>
-                        <td><?php echo htmlspecialchars($u->ngayApDung); ?></td>
-                        <td><?php echo htmlspecialchars($u->ngayKetThuc); ?></td>
-                        <td><?php echo htmlspecialchars($u->dieuKien); ?></td>
-                        <td><?php echo htmlspecialchars($u->ghiChu); ?></td>
+                        <td><?php echo htmlspecialchars($u->ngayApDung ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($u->ngayKetThuc ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($u->dieuKien ?? ''); ?></td>
+                        <td><?php echo htmlspecialchars($u->ghiChu ?? ''); ?></td>
                         <td>
                             <form method="post" action="./elements_LQA/mdongia/updateSetFalse.php">
-                                <input type="hidden" name="idDonGia" value="<?php echo htmlspecialchars($u->idDonGia); ?>">
+                                <input type="hidden" name="idDonGia" value="<?php echo htmlspecialchars($u->idDonGia ?? ''); ?>">
                                 <input type="hidden" name="apDung" value="<?php echo $u->apDung ? 'false' : 'true'; ?>">
                                 <button type="submit" class="btn-status <?php echo $u->apDung ? 'active' : ''; ?>">
                                     <?php echo $u->apDung ? 'Đang áp dụng' : 'Ngừng áp dụng'; ?>

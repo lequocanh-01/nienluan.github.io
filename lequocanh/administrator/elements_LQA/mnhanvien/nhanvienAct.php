@@ -29,14 +29,34 @@ if (isset($_GET['reqact'])) {
             $iduser = isset($_REQUEST['iduser']) ? $_REQUEST['iduser'] : null;
 
             $nv = new NhanVien();
+
+            // Kiểm tra nếu iduser đã được gán cho nhân viên khác
+            $isUserAlreadyAssigned = false;
+
+            if (!empty($iduser)) {
+                $allEmployees = $nv->nhanvienGetAll();
+                foreach ($allEmployees as $emp) {
+                    if ($emp->iduser == $iduser) {
+                        $isUserAlreadyAssigned = true;
+                        break;
+                    }
+                }
+            }
+
+            // Tiếp tục thêm mới nhân viên
             $kq = $nv->nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $iduser);
 
             // Check if it's an AJAX request
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
-                sendJsonResponse($kq, $kq ? 'Thêm nhân viên thành công' : 'Thêm nhân viên thất bại');
+                if ($isUserAlreadyAssigned) {
+                    sendJsonResponse($kq, $kq ? 'Thêm nhân viên thành công. Lưu ý: Người dùng này đã được gán cho một nhân viên khác.' : 'Thêm nhân viên thất bại');
+                } else {
+                    sendJsonResponse($kq, $kq ? 'Thêm nhân viên thành công' : 'Thêm nhân viên thất bại');
+                }
             } else {
                 // Redirect for regular form submit
-                header("location:../../index.php?req=nhanvienview&result=" . ($kq ? "ok" : "notok"));
+                $notice = $isUserAlreadyAssigned ? "&notice=duplicate_user" : "";
+                header("location:../../index.php?req=nhanvienview&result=" . ($kq ? "ok" : "notok") . $notice);
             }
             break;
 

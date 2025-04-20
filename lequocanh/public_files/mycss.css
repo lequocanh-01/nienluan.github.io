@@ -1888,3 +1888,104 @@ body {
   margin-right: 10px;
   font-size: 18px;
 }
+
+/* Enhanced Search Results Styling */
+.search-results-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 5px;
+}
+
+.search-item {
+  display: flex;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: #333;
+  background: #fff;
+  border: 1px solid #eee;
+}
+
+.search-item:hover {
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-item-image {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.search-item-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.search-item-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.search-item-name {
+  font-weight: 600;
+  margin-bottom: 5px;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.search-item-price {
+  color: #dc3545;
+  font-weight: 700;
+}
+
+/* Make sure search results container is visible and positioned correctly */
+#searchResults {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: white;
+  z-index: 1050;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  display: none;
+  border: 1px solid #ddd;
+}
+
+/* Add responsive adjustments */
+@media (max-width: 767px) {
+  .search-item {
+    padding: 8px;
+  }
+
+  .search-item-image {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    margin-right: 10px;
+  }
+
+  .search-item-name {
+    font-size: 0.9rem;
+    -webkit-line-clamp: 1;
+  }
+
+  .search-item-price {
+    font-size: 0.85rem;
+  }
+}

@@ -1,110 +1,148 @@
 <?php
+// Prevent PHP errors/warnings from breaking JSON output
+error_reporting(0);
+ob_start();
+
+require_once 'core/init.php';
 require_once './administrator/elements_LQA/mod/hanghoaCls.php';
 
-// Enable error reporting for debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Tạo file log riêng cho search
-$logFile = __DIR__ . '/search_debug.log';
-file_put_contents($logFile, "--- Search Log " . date('Y-m-d H:i:s') . " ---\n", FILE_APPEND);
-
-function logToFile($message)
-{
-    global $logFile;
-    file_put_contents($logFile, date('Y-m-d H:i:s') . ": " . $message . "\n", FILE_APPEND);
+// Check if we received a search query
+if (!isset($_GET['query']) || empty($_GET['query'])) {
+    // Return empty JSON array if no query provided
+    header('Content-Type: application/json');
+    echo json_encode([]);
+    exit;
 }
 
-$term = isset($_GET['term']) ? trim($_GET['term']) : '';
-logToFile("Search term received: " . $term);
+// Get and sanitize the search query
+$searchQuery = trim($_GET['query']);
+$searchQuery = filter_var($searchQuery, FILTER_SANITIZE_STRING);
 
-// Lấy domain của trang web
-$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-$host = $_SERVER['HTTP_HOST'];
-$baseUrl = $protocol . $host;
-logToFile("Base URL: " . $baseUrl);
+// Ensure the query is at least 2 characters long
+if (strlen($searchQuery) < 2) {
+    header('Content-Type: application/json');
+    echo json_encode([]);
+    exit;
+}
 
-if (strlen($term) >= 2) {
-    try {
-        $hanghoa = new hanghoa();
-        $results = $hanghoa->searchHanghoa($term);
-        logToFile("Search results count: " . count($results));
+try {
+    // First attempt with modern products table
+    $results = searchProducts($searchQuery);
 
-        $suggestions = array_map(function ($item) use ($hanghoa, $baseUrl) {
-            // Lấy thông tin hình ảnh từ bảng hinhanh
-            $hinhanh = $hanghoa->GetHinhAnhById($item->hinhanh);
-
-            logToFile("Product ID: " . $item->idhanghoa . ", Name: " . $item->tenhanghoa . ", Image ID: " . $item->hinhanh);
-
-            // Kiểm tra nếu hình ảnh tồn tại
-            if ($hinhanh) {
-                logToFile("Image found: " . json_encode($hinhanh));
-            } else {
-                logToFile("No image found for ID: " . $item->hinhanh);
-            }
-
-            // Khởi tạo đường dẫn hình ảnh mặc định
-            $imagePath = $baseUrl . '/img_LQA/updating-image.png';
-            $isDefaultImage = true;
-            logToFile("Default image path: " . $imagePath);
-
-            // Nếu có hình ảnh và có đường dẫn, sử dụng đường dẫn đó
-            if ($hinhanh && !empty($hinhanh->duong_dan)) {
-                $originalPath = $hinhanh->duong_dan;
-                logToFile("Found image path in database: " . $originalPath);
-
-                // Đảm bảo đường dẫn hình ảnh là tuyệt đối
-                if (strpos($originalPath, 'http') === 0) {
-                    // Đường dẫn đã là URL đầy đủ
-                    $imagePath = $originalPath;
-                    $isDefaultImage = false;
-                    logToFile("Using existing absolute URL: " . $imagePath);
-                } else {
-                    // Chuẩn hóa đường dẫn tương đối
-                    $relativePath = ltrim($originalPath, '/');
-
-                    // Tạo đường dẫn tuyệt đối
-                    $imagePath = $baseUrl . '/' . $relativePath;
-                    $isDefaultImage = false;
-                    logToFile("Created absolute URL from relative path: " . $imagePath);
-
-                    // Kiểm tra file có tồn tại không
-                    $localPath = __DIR__ . '/' . $relativePath;
-                    if (file_exists($localPath)) {
-                        logToFile("File exists at: " . $localPath);
-                    } else {
-                        logToFile("File DOES NOT exist at: " . $localPath);
-                        // Reset to default image if file doesn't exist
-                        $imagePath = $baseUrl . '/img_LQA/updating-image.png';
-                        $isDefaultImage = true;
-                    }
-                }
-            } else {
-                logToFile("No valid image path found, using default image");
-            }
-
-            return [
-                'id' => $item->idhanghoa,
-                'name' => $item->tenhanghoa,
-                'price' => number_format($item->giathamkhao, 0, ',', '.') . ' VNĐ',
-                'image' => $imagePath,
-                'isDefaultImage' => $isDefaultImage
-            ];
-        }, $results);
-
-        // Log kết quả gợi ý cuối cùng
-        logToFile("Final suggestions: " . json_encode($suggestions));
-
-        header('Content-Type: application/json');
-        echo json_encode($suggestions);
-    } catch (Exception $e) {
-        logToFile("Error in search_suggestions.php: " . $e->getMessage());
-        error_log("Error in search_suggestions.php: " . $e->getMessage());
-        header('HTTP/1.1 500 Internal Server Error');
-        echo json_encode(['error' => 'Có lỗi xảy ra khi tìm kiếm']);
+    // If no results, try with the hanghoaCls
+    if (empty($results)) {
+        $results = searchHanghoa($searchQuery);
     }
-} else {
+
+    // Clear any output buffers before sending JSON
+    ob_end_clean();
+
+    // Return JSON response
+    header('Content-Type: application/json');
+    echo json_encode($results);
+} catch (Exception $e) {
+    // Log error (don't expose details to frontend)
+    error_log('Search suggestion error: ' . $e->getMessage());
+
+    // Clear any output buffers
+    ob_end_clean();
+
+    // Return empty results on error
     header('Content-Type: application/json');
     echo json_encode([]);
 }
-exit();
+
+// Function to search using the 'products' table
+function searchProducts($searchQuery)
+{
+    global $pdo;
+    $results = [];
+
+    try {
+        // Prepare search query with wildcards for partial matching
+        $searchParam = '%' . $searchQuery . '%';
+
+        // SQL query to search products by name, description, or brand
+        $sql = "SELECT 
+                    p.id, 
+                    p.name, 
+                    p.price, 
+                    p.sale_price, 
+                    (SELECT image FROM product_images WHERE product_id = p.id LIMIT 1) as image,
+                    b.name as brand_name
+                FROM 
+                    products p
+                LEFT JOIN 
+                    brands b ON p.brand_id = b.id
+                WHERE 
+                    p.name LIKE ? OR 
+                    p.description LIKE ? OR 
+                    b.name LIKE ?
+                LIMIT 8";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$searchParam, $searchParam, $searchParam]);
+
+        // Format results for the frontend
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $displayPrice = isset($row['sale_price']) && $row['sale_price'] > 0 ? $row['sale_price'] : $row['price'];
+            $image = !empty($row['image']) ? 'uploads/products/' . $row['image'] : 'uploads/products/default.jpg';
+
+            $results[] = [
+                'id' => $row['id'],
+                'name' => $row['name'],
+                'price' => number_format($displayPrice, 0, ',', '.') . '₫',
+                'image' => $image,
+                'brand' => $row['brand_name'],
+                'url' => 'product.php?id=' . $row['id']
+            ];
+        }
+    } catch (PDOException $e) {
+        error_log('Search products error: ' . $e->getMessage());
+    }
+
+    return $results;
+}
+
+// Function to search using hanghoa table
+function searchHanghoa($searchQuery)
+{
+    $results = [];
+
+    try {
+        // Use the hanghoa class from the existing code
+        $hanghoa = new hanghoa();
+        $items = $hanghoa->searchHanghoa($searchQuery);
+
+        if ($items && is_array($items)) {
+            foreach ($items as $item) {
+                // Get image information if available
+                $imagePath = 'img_LQA/updating-image.png'; // Default fallback image
+                if (isset($item->hinhanh)) {
+                    $imageInfo = $hanghoa->GetHinhAnhById($item->hinhanh);
+                    if ($imageInfo && !empty($imageInfo->duong_dan)) {
+                        $imagePath = $imageInfo->duong_dan;
+                    }
+                }
+
+                // Format price - assuming giathamkhao is the price
+                $price = isset($item->giathamkhao) ?
+                    number_format($item->giathamkhao, 0, ',', '.') . '₫' :
+                    'Liên hệ';
+
+                $results[] = [
+                    'id' => $item->idhanghoa,
+                    'name' => $item->tenhanghoa,
+                    'price' => $price,
+                    'image' => $imagePath,
+                    'brand' => isset($item->thuonghieu) ? $item->thuonghieu : '',
+                    'url' => 'index.php?reqHanghoa=' . $item->idhanghoa
+                ];
+            }
+        }
+    } catch (Exception $e) {
+        error_log('Search hanghoa error: ' . $e->getMessage());
+    }
+
+    return $results;
+}

@@ -5,6 +5,11 @@
 require_once './elements_LQA/mod/nhanvienCls.php';
 require_once './elements_LQA/mod/userCls.php';
 
+// Hiển thị thông báo nếu có
+if (isset($_GET['notice']) && $_GET['notice'] == 'duplicate_user') {
+    echo '<div class="alert alert-warning">Lưu ý: Người dùng này đã được gán cho một nhân viên khác.</div>';
+}
+
 $lhobj = new NhanVien();
 $list_lh = $lhobj->nhanvienGetAll();
 $l = count($list_lh);
@@ -13,7 +18,7 @@ $l = count($list_lh);
 $userObj = new user();
 $listUsers = $userObj->UserGetAllExceptAdmin();
 
-// Lấy danh sách id của những người dùng đã là nhân viên để loại bỏ khỏi dropdown
+// Lấy danh sách id của những người dùng đã là nhân viên để đánh dấu trong dropdown
 $existingUserIds = [];
 foreach ($list_lh as $employee) {
     if (isset($employee->iduser) && $employee->iduser) {
@@ -32,14 +37,11 @@ foreach ($list_lh as $employee) {
                 <td>
                     <select name="iduser" id="iduser" class="form-control">
                         <option value="">-- Chọn người dùng --</option>
-                        <?php foreach ($listUsers as $user):
-                            // Bỏ qua những user đã là nhân viên
-                            if (in_array($user->iduser, $existingUserIds)) {
-                                continue;
-                            }
-                        ?>
-                            <option value="<?php echo $user->iduser; ?>">
+                        <?php foreach ($listUsers as $user): ?>
+                            <option value="<?php echo $user->iduser; ?>"
+                                <?php echo in_array($user->iduser, $existingUserIds) ? 'style="color: grey;"' : ''; ?>>
                                 <?php echo htmlspecialchars($user->username) . ' (' . htmlspecialchars($user->hoten) . ') - ' . htmlspecialchars($user->dienthoai); ?>
+                                <?php echo in_array($user->iduser, $existingUserIds) ? ' [Đã có nhân viên]' : ''; ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -147,11 +149,20 @@ foreach ($list_lh as $employee) {
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Lưu danh sách user đã là nhân viên
+        var existingUserIds = <?php echo json_encode($existingUserIds); ?>;
+
         // Xử lý khi thay đổi user trong dropdown
         $('#iduser').change(function() {
             var userId = $(this).val();
+            $('#noteForm').text('');
 
             if (userId) {
+                // Kiểm tra xem user đã là nhân viên chưa
+                if (existingUserIds.includes(parseInt(userId))) {
+                    $('#noteForm').html('<span style="color: orange;">Lưu ý: Người dùng này đã được gán cho một nhân viên khác.</span>');
+                }
+
                 // Lấy thông tin user qua AJAX
                 $.ajax({
                     url: './elements_LQA/mUser/getUserInfo.php',
@@ -181,6 +192,7 @@ foreach ($list_lh as $employee) {
                 // Xóa dữ liệu nếu không chọn user
                 $('#tenNV').val('');
                 $('#SDT').val('');
+                $('#email').val('');
             }
         });
     });

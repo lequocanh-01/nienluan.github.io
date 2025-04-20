@@ -16,14 +16,7 @@ error_log("Document Root: " . $_SERVER['DOCUMENT_ROOT']);
 error_log("Script Filename: " . $_SERVER['SCRIPT_FILENAME']);
 error_log("Script Name: " . $_SERVER['SCRIPT_NAME']);
 
-// Kiểm tra đăng nhập
-if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
-    error_log("User not logged in");
-    header('Content-Type: application/json');
-    echo json_encode(['error' => 'Vui lòng đăng nhập để sử dụng giỏ hàng']);
-    exit();
-}
-
+// Allow cart access for all users, including guests with session IDs
 $giohang = new GioHang();
 
 // Kiểm tra hành động từ GET

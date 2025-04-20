@@ -105,11 +105,9 @@ if (isset($_SESSION['USER'])) {
                     <a href="./administrator/elements_LQA/mgiohang/giohangView.php"
                         class="btn btn-light position-relative">
                         <i class="fas fa-shopping-cart"></i>
-                        <?php if (isset($_SESSION['USER']) || isset($_SESSION['ADMIN'])): ?>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                <?php echo $cartItemCount; ?>
-                            </span>
-                        <?php endif; ?>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <?php echo $cartItemCount; ?>
+                        </span>
                     </a>
                 </div>
             </div>
@@ -230,6 +228,7 @@ if (isset($_SESSION['USER'])) {
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="administrator/js_LQA/jscript.js"></script>
+    <script src="public_files/search.js"></script>
 </body>
 
 </html>
