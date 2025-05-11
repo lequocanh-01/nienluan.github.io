@@ -275,18 +275,32 @@ if (!empty($cart)) {
                                 <?php
                                 // Kiểm tra xem hinhanh có phải là ID hợp lệ không
                                 if (isset($item['hinhanh']) && is_numeric($item['hinhanh']) && $item['hinhanh'] > 0) {
-                                    // Sử dụng displayImage.php để hiển thị hình ảnh theo ID
-                                    $imageSrc = "displayImage.php?id=" . $item['hinhanh'];
+                                    // Sử dụng đường dẫn tuyệt đối đến displayImage.php trong thư mục mhanghoa
+                                    $imageSrc = "../../elements_LQA/mhanghoa/displayImage.php?id=" . $item['hinhanh'] . "&t=" . time(); // Thêm timestamp để tránh cache
+                                    error_log("Giỏ hàng - Hiển thị hình ảnh ID: " . $item['hinhanh'] . " cho sản phẩm: " . $item['name'] . " với đường dẫn: " . $imageSrc);
                                 } else {
                                     // Nếu không có hình ảnh hợp lệ, sử dụng ngay hình ảnh mặc định
                                     $imageSrc = "../../img_LQA/no-image.png";
+                                    error_log("Giỏ hàng - Không có hình ảnh hợp lệ cho sản phẩm: " . $item['name']);
                                 }
                                 ?>
                                 <img src="<?php echo $imageSrc; ?>"
                                     alt="<?php echo htmlspecialchars($item['name']); ?>"
                                     class="product-image"
-                                    onerror="this.onerror=null; this.src='../../img_LQA/no-image.png';">
+                                    onerror="this.onerror=null; this.src='../../img_LQA/no-image.png'; console.log('Lỗi tải hình ảnh: ' + this.alt);">
                                 <span class="product-name"><?php echo htmlspecialchars($item['name']); ?></span>
+                                <?php if (isset($item['hinhanh']) && is_numeric($item['hinhanh']) && $item['hinhanh'] > 0): ?>
+                                    <!-- Thông tin debug hình ảnh (chỉ hiển thị trong chế độ phát triển) -->
+                                    <span class="d-none">Image ID: <?php echo $item['hinhanh']; ?></span>
+
+                                    <!-- Thử hiển thị hình ảnh bằng cách khác -->
+                                    <img src="../../elements_LQA/mhanghoa/displayImage.php?id=<?php echo $item['hinhanh']; ?>&t=<?php echo time(); ?>"
+                                        alt="<?php echo htmlspecialchars($item['name']); ?>"
+                                        class="product-image"
+                                        style="display: none;"
+                                        onload="if(this.previousElementSibling.previousElementSibling.naturalWidth === 0) { this.previousElementSibling.previousElementSibling.src = this.src; this.style.display = 'none'; } else { this.style.display = 'none'; }"
+                                        onerror="this.style.display = 'none';">
+                                <?php endif; ?>
                             </td>
                             <td class="price" data-price="<?php echo $item['price']; ?>">
                                 <?php echo number_format($item['price'], 0, ',', '.'); ?> ₫
@@ -435,9 +449,35 @@ if (!empty($cart)) {
                     row.querySelector('.subtotal').textContent =
                         new Intl.NumberFormat('vi-VN').format(subtotal) + ' ₫';
                     updateTotalPrice();
+                } else {
+                    // Xử lý khi cập nhật thất bại
+                    if (data.outOfStock) {
+                        // Sản phẩm hết hàng
+                        alert(data.message);
+                        // Giữ nguyên giá trị cũ
+                        input.value = currentValue;
+                    } else if (data.availableQuantity !== undefined) {
+                        // Số lượng vượt quá tồn kho
+                        alert(data.message);
+                        // Cập nhật lại số lượng tối đa có thể đặt
+                        input.value = data.availableQuantity;
+                        // Cập nhật lại thành tiền
+                        const row = input.closest('tr');
+                        const price = parseInt(row.querySelector('.price').dataset.price);
+                        const subtotal = price * data.availableQuantity;
+                        row.querySelector('.subtotal').textContent =
+                            new Intl.NumberFormat('vi-VN').format(subtotal) + ' ₫';
+                        updateTotalPrice();
+                    } else {
+                        // Lỗi khác
+                        alert(data.message || 'Có lỗi xảy ra khi cập nhật giỏ hàng');
+                        input.value = currentValue;
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
+                alert('Có lỗi xảy ra khi cập nhật giỏ hàng');
+                input.value = currentValue;
             }
         }
 

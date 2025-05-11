@@ -5,6 +5,10 @@ require_once("../mod/hanghoaCls.php");
 // Tắt báo lỗi để tránh output không mong muốn
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
+// Ghi log để debug
+error_log("displayImage.php trong mhanghoa được gọi với ID: " . (isset($_GET['id']) ? $_GET['id'] : 'không có ID'));
 
 // Đảm bảo có ID ảnh
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
@@ -27,8 +31,36 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             $imagePath = 'D:/PHP_WS/lequocanh/' . $imageRelativePath;
         }
 
+        error_log("Đường dẫn hình ảnh: " . $imagePath);
+
+        // Thử các đường dẫn khác nhau nếu đường dẫn chính không tồn tại
+        $possiblePaths = [
+            $imagePath,
+            'D:/PHP_WS/lequocanh/' . $imageRelativePath,
+            'D:/PHP_WS/' . $imageRelativePath,
+            '../../../' . $imageRelativePath,
+            '../../' . $imageRelativePath,
+            '../' . $imageRelativePath,
+            $imageRelativePath,
+            '../../../uploads/' . basename($imageRelativePath),
+            '../../uploads/' . basename($imageRelativePath),
+            '../uploads/' . basename($imageRelativePath),
+            './uploads/' . basename($imageRelativePath)
+        ];
+
+        $foundPath = null;
+        foreach ($possiblePaths as $path) {
+            error_log("Kiểm tra đường dẫn: " . $path);
+            if (file_exists($path)) {
+                $foundPath = $path;
+                error_log("Tìm thấy hình ảnh tại: " . $path);
+                break;
+            }
+        }
+
         // Kiểm tra xem file có tồn tại không
-        if (file_exists($imagePath)) {
+        if ($foundPath) {
+            $imagePath = $foundPath;
             // Xác định loại MIME của file
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mime = finfo_file($finfo, $imagePath);

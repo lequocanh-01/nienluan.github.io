@@ -131,18 +131,24 @@ class GioHang
                    LEFT JOIN hanghoa h ON g.product_id = h.idhanghoa
                    WHERE g.session_id = ? OR g.user_id = ?";
 
+            error_log("Executing cart query with sessionId: " . $sessionId . ", userId: " . $userId);
+
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$sessionId, $userId]);
 
             $cart = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                // Debug log để kiểm tra dữ liệu hình ảnh
+                error_log("Cart item: Product ID=" . $row['product_id'] . ", Image ID=" . ($row['hinhanh'] ?? 'NULL') . ", Name=" . ($row['tenhanghoa'] ?? 'Unknown'));
+
                 // Include cart items even if some fields are NULL
                 $cart[] = [
                     'product_id' => $row['product_id'],
                     'tenhanghoa' => $row['tenhanghoa'] ?? 'Unknown Product',
                     'giathamkhao' => $row['giathamkhao'] ?? 0,
                     'quantity' => $row['quantity'],
-                    'hinhanh' => $row['hinhanh'] ?? null
+                    'hinhanh' => $row['hinhanh'] ?? null,
+                    'name' => $row['tenhanghoa'] ?? 'Unknown Product' // Thêm trường name để đảm bảo tương thích
                 ];
             }
 
@@ -232,9 +238,9 @@ class GioHang
     public function getCartByUserId($userId)
     {
         try {
-            $sql = "SELECT g.product_id, g.quantity, h.tenhanghoa, h.giathamkhao, h.hinhanh 
+            $sql = "SELECT g.product_id, g.quantity, h.tenhanghoa, h.giathamkhao, h.hinhanh
                    FROM tbl_giohang g
-                   INNER JOIN hanghoa h ON g.product_id = h.idhanghoa 
+                   INNER JOIN hanghoa h ON g.product_id = h.idhanghoa
                    WHERE g.user_id = ?";
 
             $stmt = $this->db->prepare($sql);

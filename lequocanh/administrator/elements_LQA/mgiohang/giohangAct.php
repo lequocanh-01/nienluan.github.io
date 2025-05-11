@@ -3,6 +3,7 @@ if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
 require_once '../../elements_LQA/mod/giohangCls.php';
+require_once '../../elements_LQA/mod/mtonkhoCls.php';
 
 // Debug information
 ini_set('display_errors', 1);
@@ -18,6 +19,7 @@ error_log("Script Name: " . $_SERVER['SCRIPT_NAME']);
 
 // Allow cart access for all users, including guests with session IDs
 $giohang = new GioHang();
+$tonkho = new MTonKho();
 
 // Kiểm tra hành động từ GET
 if (isset($_GET['action'])) {
@@ -32,19 +34,57 @@ if (isset($_GET['action'])) {
             if (isset($_GET['productId']) && isset($_GET['quantity'])) {
                 $productId = $_GET['productId'];
                 $quantity = $_GET['quantity'];
-                $result = $giohang->addToCart($productId, $quantity);
 
-                // Lưu HTTP_REFERER vào biến
-                $referrer = $_SERVER['HTTP_REFERER'];
+                // Kiểm tra số lượng tồn kho
+                $tonkhoInfo = $tonkho->getTonKhoByIdHangHoa($productId);
 
-                if (strpos($referrer, 'administrator') !== false && strpos($referrer, 'administrator/elements_LQA/mgiohang') === false) {
-                    // Nếu đang ở trang admin (không phải trang giỏ hàng), chuyển về trang giỏ hàng admin
-                    header('Location: ../mgiohang/giohangView.php');
-                } else {
-                    // Chuyển hướng đến trang thông báo thành công
-                    header('Location: cart_redirect.php?referrer=' . urlencode($referrer));
+                // Lấy số lượng hiện tại trong giỏ hàng (nếu có)
+                $currentCart = $giohang->getCart();
+                $currentQuantity = 0;
+
+                foreach ($currentCart as $item) {
+                    if ($item['product_id'] == $productId) {
+                        $currentQuantity = $item['quantity'];
+                        break;
+                    }
                 }
-                exit();
+
+                // Tổng số lượng sau khi thêm
+                $totalQuantity = $currentQuantity + $quantity;
+
+                // Kiểm tra xem có đủ hàng không
+                if (!$tonkhoInfo || $tonkhoInfo->soLuong == 0) {
+                    // Sản phẩm hết hàng
+                    $_SESSION['cart_error'] = 'Sản phẩm đã hết hàng!';
+
+                    // Lưu HTTP_REFERER vào biến
+                    $referrer = $_SERVER['HTTP_REFERER'];
+                    header('Location: ' . $referrer);
+                    exit();
+                } elseif ($totalQuantity > $tonkhoInfo->soLuong) {
+                    // Số lượng yêu cầu vượt quá số lượng tồn kho
+                    $_SESSION['cart_error'] = 'Số lượng tồn kho chỉ còn ' . $tonkhoInfo->soLuong . ' sản phẩm!';
+
+                    // Lưu HTTP_REFERER vào biến
+                    $referrer = $_SERVER['HTTP_REFERER'];
+                    header('Location: ' . $referrer);
+                    exit();
+                } else {
+                    // Đủ hàng, thêm vào giỏ hàng
+                    $result = $giohang->addToCart($productId, $quantity);
+
+                    // Lưu HTTP_REFERER vào biến
+                    $referrer = $_SERVER['HTTP_REFERER'];
+
+                    if (strpos($referrer, 'administrator') !== false && strpos($referrer, 'administrator/elements_LQA/mgiohang') === false) {
+                        // Nếu đang ở trang admin (không phải trang giỏ hàng), chuyển về trang giỏ hàng admin
+                        header('Location: ../mgiohang/giohangView.php');
+                    } else {
+                        // Chuyển hướng đến trang thông báo thành công
+                        header('Location: cart_redirect.php?referrer=' . urlencode($referrer));
+                    }
+                    exit();
+                }
             }
             break;
 

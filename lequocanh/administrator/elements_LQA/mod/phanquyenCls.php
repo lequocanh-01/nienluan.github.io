@@ -22,7 +22,7 @@ class PhanQuyen
     // Kiểm tra xem username có phải là nhân viên không
     public function isNhanVien($username)
     {
-        $sql = 'SELECT nv.* FROM nhanvien nv 
+        $sql = 'SELECT nv.* FROM nhanvien nv
                 INNER JOIN user u ON nv.iduser = u.iduser
                 WHERE u.username = ?';
         $stmt = $this->db->prepare($sql);
@@ -34,8 +34,12 @@ class PhanQuyen
     // Kiểm tra quyền truy cập vào một chức năng cụ thể
     public function checkAccess($module, $username)
     {
+        // Log để debug
+        error_log("Kiểm tra quyền truy cập - Module: $module, Username: $username");
+
         // Nếu là Admin thì có quyền truy cập toàn bộ
         if (isset($_SESSION['ADMIN'])) {
+            error_log("User là admin, cho phép truy cập");
             return true;
         }
 
@@ -47,7 +51,9 @@ class PhanQuyen
                 'userUpdateProfile'
             ];
 
-            return in_array($module, $userAllowedModules);
+            $hasAccess = in_array($module, $userAllowedModules);
+            error_log("User thông thường - Module: $module, Cho phép: " . ($hasAccess ? 'Có' : 'Không'));
+            return $hasAccess;
         }
 
         // Nếu là nhân viên
@@ -61,6 +67,7 @@ class PhanQuyen
             ];
 
             if (in_array($module, $restrictedModules)) {
+                error_log("Nhân viên không được phép truy cập module hạn chế: $module");
                 return false;
             }
 
@@ -75,14 +82,24 @@ class PhanQuyen
                 'thuoctinhhhview',
                 'adminGiohangView',
                 'hinhanhview',
+                'mphieunhap',
+                'mchitietphieunhap',
+                'mphieunhapedit',
+                'mchitietphieunhapedit',
+                'mtonkho',
+                'mtonkhoedit',
+                'mphieunhapfixtonkho',
                 'userprofile',
                 'userUpdateProfile'
             ];
 
-            return in_array($module, $allowedModules);
+            $hasAccess = in_array($module, $allowedModules);
+            error_log("Nhân viên - Module: $module, Cho phép: " . ($hasAccess ? 'Có' : 'Không'));
+            return $hasAccess;
         }
 
         // Mặc định không có quyền truy cập
+        error_log("Không có quyền truy cập mặc định cho module: $module");
         return false;
     }
 }

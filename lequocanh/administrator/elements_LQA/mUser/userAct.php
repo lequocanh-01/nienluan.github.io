@@ -203,25 +203,45 @@ if ($requestAction) {
             break;
 
         case 'userlogout':
+            // Ghi log để debug
+            error_log("Đang xử lý đăng xuất...");
+
             $time_login = date('h:i - d/m/Y');
+            $namelogin = '';
+
             if (isset($_SESSION['USER'])) {
                 $namelogin = $_SESSION['USER'];
+                error_log("Đăng xuất USER: " . $namelogin);
             }
             if (isset($_SESSION['ADMIN'])) {
                 $namelogin = $_SESSION['ADMIN'];
+                error_log("Đăng xuất ADMIN: " . $namelogin);
             }
+
             // Chỉnh sửa tên cookie
             $namelogin = str_replace(' ', '-', $namelogin);
             $namelogin = str_replace('"', '', $namelogin);
             setcookie($namelogin, $time_login, time() + (86400 * 30), '/'); // 1 tháng
+
+            // Xóa session
+            unset($_SESSION['USER']);
+            unset($_SESSION['ADMIN']);
             session_destroy();
 
+            error_log("Đã xóa session, chuyển hướng người dùng...");
+
+            // Lưu trữ thông tin trước khi xóa session
+            $isAdmin = isset($_SESSION['ADMIN']);
+
             // Chuyển hướng về trang chủ sau khi đăng xuất
-            if (isset($_SESSION['ADMIN'])) {
+            if ($isAdmin) {
+                error_log("Chuyển hướng đến trang admin");
                 header('location: ../../index.php');
             } else {
+                error_log("Chuyển hướng đến trang chủ");
                 header('location: ../../../index.php');
             }
+            exit(); // Đảm bảo dừng thực thi script sau khi chuyển hướng
             break;
 
         case 'checkadmin':

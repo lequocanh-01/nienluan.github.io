@@ -32,13 +32,13 @@ class hanghoa
 
     public function HanghoaGetAll()
     {
-        $sql = 'SELECT h.*, 
-                t.tenTH AS ten_thuonghieu, 
-                d.tenDonViTinh AS ten_donvitinh, 
-                n.tenNV AS ten_nhanvien 
-                FROM hanghoa h 
-                LEFT JOIN thuonghieu t ON h.idThuongHieu = t.idThuongHieu 
-                LEFT JOIN donvitinh d ON h.idDonViTinh = d.idDonViTinh 
+        $sql = 'SELECT h.*,
+                t.tenTH AS ten_thuonghieu,
+                d.tenDonViTinh AS ten_donvitinh,
+                n.tenNV AS ten_nhanvien
+                FROM hanghoa h
+                LEFT JOIN thuonghieu t ON h.idThuongHieu = t.idThuongHieu
+                LEFT JOIN donvitinh d ON h.idDonViTinh = d.idDonViTinh
                 LEFT JOIN nhanvien n ON h.idNhanVien = n.idNhanVien';
         $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
@@ -46,16 +46,15 @@ class hanghoa
         return $getAll->fetchAll();
     }
 
-    public function HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $soLuong = 0)
+    public function HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien)
     {
         // Convert empty strings to NULL for integer fields
         $idThuongHieu = $idThuongHieu === '' ? null : $idThuongHieu;
         $idDonViTinh = $idDonViTinh === '' ? null : $idDonViTinh;
         $idNhanVien = $idNhanVien === '' ? null : $idNhanVien;
-        $soLuong = intval($soLuong);
 
-        $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien, soLuong) VALUES (?,?,?,?,?,?,?,?,?)";
-        $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $soLuong);
+        $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien) VALUES (?,?,?,?,?,?,?,?)";
+        $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien);
         $add = $this->db->prepare($sql);
         $add->execute($data);
         return $add->rowCount();
@@ -71,16 +70,15 @@ class hanghoa
         return $del->rowCount();
     }
 
-    public function HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa, $soLuong = 0)
+    public function HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa)
     {
         // Convert empty strings to NULL for integer fields
         $idThuongHieu = $idThuongHieu === '' ? null : $idThuongHieu;
         $idDonViTinh = $idDonViTinh === '' ? null : $idDonViTinh;
         $idNhanVien = $idNhanVien === '' ? null : $idNhanVien;
-        $soLuong = intval($soLuong);
 
-        $sql = "UPDATE hanghoa SET tenhanghoa=?, hinhanh=?, mota=?, giathamkhao=?, idloaihang=?, idThuongHieu=?, idDonViTinh=?, idNhanVien=?, soLuong=? WHERE idhanghoa =?";
-        $data = array($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $soLuong, $idhanghoa);
+        $sql = "UPDATE hanghoa SET tenhanghoa=?, hinhanh=?, mota=?, giathamkhao=?, idloaihang=?, idThuongHieu=?, idDonViTinh=?, idNhanVien=? WHERE idhanghoa =?";
+        $data = array($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
 
         $update = $this->db->prepare($sql);
         $update->execute($data);
@@ -124,9 +122,9 @@ class hanghoa
     public function searchHanghoa($keyword)
     {
         try {
-            $select = "SELECT * FROM hanghoa 
+            $select = "SELECT * FROM hanghoa
                        WHERE LOWER(tenhanghoa) LIKE LOWER(:keyword)
-                       ORDER BY tenhanghoa ASC 
+                       ORDER BY tenhanghoa ASC
                        LIMIT 10";
             $stmt = $this->db->prepare($select);
             $stmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
@@ -202,9 +200,9 @@ class hanghoa
     public function GetAllHinhAnh()
     {
         try {
-            $sql = 'SELECT h.*, 
-                    (SELECT COUNT(*) FROM hanghoa WHERE hinhanh = h.id) as usage_count 
-                    FROM hinhanh h 
+            $sql = 'SELECT h.*,
+                    (SELECT COUNT(*) FROM hanghoa WHERE hinhanh = h.id) as usage_count
+                    FROM hinhanh h
                     ORDER BY h.ngay_tao DESC';
             $getAll = $this->db->prepare($sql);
             $getAll->setFetchMode(PDO::FETCH_OBJ);
@@ -221,6 +219,31 @@ class hanghoa
         if (!$id) return null;
 
         try {
+            error_log("GetHinhAnhById - Bắt đầu tìm hình ảnh với ID: " . $id);
+
+            // Kiểm tra xem bảng hinhanh có tồn tại không
+            try {
+                $checkTable = $this->db->query("SHOW TABLES LIKE 'hinhanh'");
+                if ($checkTable->rowCount() == 0) {
+                    error_log("GetHinhAnhById - Bảng hinhanh không tồn tại");
+                    return null;
+                }
+            } catch (PDOException $e) {
+                error_log("GetHinhAnhById - Lỗi khi kiểm tra bảng hinhanh: " . $e->getMessage());
+            }
+
+            // Kiểm tra cấu trúc bảng hinhanh
+            try {
+                $columns = $this->db->query("SHOW COLUMNS FROM hinhanh");
+                $columnNames = [];
+                while ($column = $columns->fetch(PDO::FETCH_ASSOC)) {
+                    $columnNames[] = $column['Field'];
+                }
+                error_log("GetHinhAnhById - Cấu trúc bảng hinhanh: " . implode(", ", $columnNames));
+            } catch (PDOException $e) {
+                error_log("GetHinhAnhById - Lỗi khi lấy cấu trúc bảng hinhanh: " . $e->getMessage());
+            }
+
             $sql = 'SELECT * FROM hinhanh WHERE id = ?';
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$id]);
@@ -229,6 +252,7 @@ class hanghoa
             if ($hinhanh) {
                 // Log đường dẫn để debug
                 error_log("GetHinhAnhById - ID: " . $id . ", đường dẫn gốc: " . $hinhanh->duong_dan);
+                error_log("GetHinhAnhById - Thông tin đầy đủ: " . print_r($hinhanh, true));
 
                 // Xử lý đường dẫn hình ảnh
                 if (strpos($hinhanh->duong_dan, 'data:image') === 0) {
@@ -295,12 +319,12 @@ class hanghoa
             }
 
             if ($file_hash) {
-                $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao, file_hash) 
+                $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao, file_hash)
                         VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP, ?)";
                 $stmt = $this->db->prepare($sql);
                 return $stmt->execute([$ten_file, $loai_file, $duong_dan, $file_hash]);
             } else {
-                $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao) 
+                $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao)
                         VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP)";
                 $stmt = $this->db->prepare($sql);
                 return $stmt->execute([$ten_file, $loai_file, $duong_dan]);
@@ -538,8 +562,8 @@ class hanghoa
     public function GetAllImagesForProduct($idhanghoa)
     {
         try {
-            $sql = "SELECT h.* FROM hinhanh h 
-                    INNER JOIN hanghoa_hinhanh hh ON h.id = hh.idhinhanh 
+            $sql = "SELECT h.* FROM hinhanh h
+                    INNER JOIN hanghoa_hinhanh hh ON h.id = hh.idhinhanh
                     WHERE hh.idhanghoa = :idhanghoa";
             $cmd = $this->db->prepare($sql);
             $cmd->bindValue(":idhanghoa", $idhanghoa);
@@ -567,10 +591,10 @@ class hanghoa
     public function GetMismatchedProductImages()
     {
         try {
-            $sql = "SELECT h.idhanghoa, h.tenhanghoa, ha.id, ha.ten_file 
-                   FROM hanghoa h 
-                   JOIN hinhanh ha ON h.hinhanh = ha.id 
-                   WHERE ha.ten_file NOT LIKE CONCAT('%', h.tenhanghoa, '%') 
+            $sql = "SELECT h.idhanghoa, h.tenhanghoa, ha.id, ha.ten_file
+                   FROM hanghoa h
+                   JOIN hinhanh ha ON h.hinhanh = ha.id
+                   WHERE ha.ten_file NOT LIKE CONCAT('%', h.tenhanghoa, '%')
                    AND ha.ten_file NOT LIKE CONCAT('%', REPLACE(h.tenhanghoa, ' ', ''), '%')";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
@@ -586,9 +610,9 @@ class hanghoa
     {
         try {
             // Tìm các hình ảnh được tham chiếu trong bảng hanghoa nhưng không tồn tại trong bảng hinhanh
-            $sql = "SELECT h.idhanghoa, h.tenhanghoa, h.hinhanh 
-                   FROM hanghoa h 
-                   LEFT JOIN hinhanh ha ON h.hinhanh = ha.id 
+            $sql = "SELECT h.idhanghoa, h.tenhanghoa, h.hinhanh
+                   FROM hanghoa h
+                   LEFT JOIN hinhanh ha ON h.hinhanh = ha.id
                    WHERE h.hinhanh > 0 AND ha.id IS NULL";
             $stmt = $this->db->prepare($sql);
             $stmt->execute();

@@ -201,7 +201,7 @@ error_log("User ID: " . $currentUser->iduser . ", isNhanVien: " . ($isNhanVien ?
             </div>
 
             <div class="profile-actions">
-                <a href="index.php?req=userUpdateProfile" class="btn btn-primary">
+                <a href="../../elements_LQA/mUser/updateProfile.php" class="btn btn-primary">
                     <i class="fas fa-edit"></i> Cập nhật thông tin
                 </a>
 
@@ -215,7 +215,7 @@ error_log("User ID: " . $currentUser->iduser . ", isNhanVien: " . ($isNhanVien ?
                     </a>
                 <?php endif; ?>
 
-                <a href="./elements_LQA/mUser/userAct.php?reqact=userlogout" class="btn btn-danger">
+                <a href="../../elements_LQA/mUser/userAct.php?reqact=userlogout" class="btn btn-danger">
                     <i class="fas fa-sign-out-alt"></i> Đăng xuất
                 </a>
 

@@ -7,8 +7,48 @@ if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
     exit();
 }
 
-include_once "../../config/config.php";
-include_once "../../elements_LQA/mod/userCls.php";
+// Tìm đường dẫn đúng đến các file cần thiết
+$configPaths = [
+    "../../config/config.php",
+    "./config/config.php",
+    "../config/config.php"
+];
+
+$userClsPaths = [
+    "../../elements_LQA/mod/userCls.php",
+    "./elements_LQA/mod/userCls.php",
+    "../mod/userCls.php"
+];
+
+// Tìm và include file config.php
+$configFound = false;
+foreach ($configPaths as $path) {
+    if (file_exists($path)) {
+        include_once $path;
+        $configFound = true;
+        error_log("userUpdateProfile.php - Đã tìm thấy config.php tại: " . $path);
+        break;
+    }
+}
+
+if (!$configFound) {
+    error_log("userUpdateProfile.php - Không tìm thấy file config.php");
+}
+
+// Tìm và include file userCls.php
+$userClsFound = false;
+foreach ($userClsPaths as $path) {
+    if (file_exists($path)) {
+        include_once $path;
+        $userClsFound = true;
+        error_log("userUpdateProfile.php - Đã tìm thấy userCls.php tại: " . $path);
+        break;
+    }
+}
+
+if (!$userClsFound) {
+    error_log("userUpdateProfile.php - Không tìm thấy file userCls.php");
+}
 
 // Get username from session
 $username = isset($_SESSION['ADMIN']) ? $_SESSION['ADMIN'] : $_SESSION['USER'];
@@ -16,20 +56,44 @@ $username = isset($_SESSION['ADMIN']) ? $_SESSION['ADMIN'] : $_SESSION['USER'];
 // Initialize user class
 $userObj = new user();
 
+// Kiểm tra xem đối tượng user đã được khởi tạo đúng chưa
+if (!isset($userObj) || !is_object($userObj)) {
+    error_log("userUpdateProfile.php - Lỗi: Đối tượng userObj không tồn tại hoặc không phải là object");
+    echo '<div class="alert alert-danger">Lỗi: Không thể khởi tạo đối tượng user. Vui lòng thử lại sau.</div>';
+    exit();
+}
+
+// Thêm debug
+error_log("userUpdateProfile.php - Đang lấy danh sách người dùng");
+
 // Get all users to find current user ID
-$allUsers = $userObj->UserGetAll();
+try {
+    $allUsers = $userObj->UserGetAll();
+    error_log("userUpdateProfile.php - Số lượng người dùng: " . count($allUsers));
+} catch (Exception $e) {
+    error_log("userUpdateProfile.php - Lỗi khi lấy danh sách người dùng: " . $e->getMessage());
+    echo '<div class="alert alert-danger">Lỗi khi lấy danh sách người dùng. Vui lòng thử lại sau.</div>';
+    exit();
+}
+
 $currentUser = null;
 
 foreach ($allUsers as $user) {
     if ($user->username === $username) {
         $currentUser = $user;
+        error_log("userUpdateProfile.php - Đã tìm thấy người dùng: " . $username);
         break;
     }
 }
 
 // Check if user was found
 if (!$currentUser) {
-    header('location: ../../index.php');
+    error_log("userUpdateProfile.php - Không tìm thấy người dùng: " . $username);
+    echo '<div class="alert alert-danger">Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.</div>';
+    // Thêm nút quay lại
+    echo '<div style="text-align: center; margin-top: 20px;">
+            <a href="/administrator/index.php" class="btn btn-primary">Quay lại trang chính</a>
+          </div>';
     exit();
 }
 
@@ -82,8 +146,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success_message = "Cập nhật thông tin thành công";
             // Refresh user data
             $currentUser = $userObj->UserGetbyId($currentUser->iduser);
+
+            // Thêm log để debug
+            error_log("Cập nhật thông tin thành công cho user: " . $username);
+
+            // Chuyển hướng về trang profile sau 2 giây
+            echo '<script>
+                setTimeout(function() {
+                    window.location.href = "../../index.php?req=userprofile";
+                }, 2000);
+            </script>';
         } else {
             $error_message = "Có lỗi xảy ra, vui lòng thử lại sau";
+            error_log("Lỗi khi cập nhật thông tin cho user: " . $username);
         }
     }
 }
@@ -250,6 +325,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-actions">
                 <a href="../../index.php?req=userprofile" class="btn btn-secondary">Quay lại</a>
                 <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                <!-- Debug info -->
+                <div class="d-none">
+                    <p>Current path: <?php echo __FILE__; ?></p>
+                    <p>Username: <?php echo $username; ?></p>
+                    <p>Is Admin: <?php echo isset($_SESSION['ADMIN']) ? 'Yes' : 'No'; ?></p>
+                </div>
             </div>
         </form>
     </div>

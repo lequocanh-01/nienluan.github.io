@@ -96,10 +96,6 @@ $missing_images = $hanghoaObj->FindMissingImages();
                 <td><input type="number" name="giathamkhao" required /></td>
             </tr>
             <tr>
-                <td>Số lượng</td>
-                <td><input type="number" name="soLuong" value="0" min="0" /></td>
-            </tr>
-            <tr>
                 <td>Mô tả</td>
                 <td><input type="text" name="mota" /></td>
             </tr>
@@ -287,7 +283,6 @@ $l = count($list_hanghoa);
                 <th>ID</th>
                 <th>Tên hàng hóa</th>
                 <th>Giá tham khảo</th>
-                <th>Số lượng</th>
                 <th>Mô tả</th>
                 <th>Hình ảnh</th>
                 <th>Thương Hiệu</th>
@@ -305,7 +300,6 @@ $l = count($list_hanghoa);
                         <td><?php echo htmlspecialchars($u->idhanghoa); ?></td>
                         <td><?php echo htmlspecialchars($u->tenhanghoa); ?></td>
                         <td><?php echo number_format($u->giathamkhao, 0, ',', '.'); ?> đ</td>
-                        <td align="center"><?php echo isset($u->soLuong) ? $u->soLuong : 0; ?></td>
                         <td><?php echo htmlspecialchars($u->mota); ?></td>
                         <td align="center">
                             <?php

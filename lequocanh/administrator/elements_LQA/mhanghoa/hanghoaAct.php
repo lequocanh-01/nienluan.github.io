@@ -13,9 +13,8 @@ if (isset($_REQUEST['reqact'])) {
             $idThuongHieu = $_REQUEST['idThuongHieu'];
             $idDonViTinh = $_REQUEST['idDonViTinh'];
             $idNhanVien = $_REQUEST['idNhanVien'];
-            $soLuong = isset($_REQUEST['soLuong']) ? $_REQUEST['soLuong'] : 0;
 
-            $hanghoa->HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $soLuong);
+            $hanghoa->HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien);
             if ($hanghoa) {
                 header('location: ../../index.php?req=hanghoaview&result=ok');
             } else {
@@ -43,7 +42,6 @@ if (isset($_REQUEST['reqact'])) {
             $idThuongHieu = $_REQUEST['idThuongHieu'];
             $idDonViTinh = $_REQUEST['idDonViTinh'];
             $idNhanVien = $_REQUEST['idNhanVien'];
-            $soLuong = isset($_REQUEST['soLuong']) ? $_REQUEST['soLuong'] : 0;
 
             // Debug log si se solicita
             $debug_log = isset($_REQUEST['debug_log']) && $_REQUEST['debug_log'] === 'true';
@@ -60,7 +58,7 @@ if (isset($_REQUEST['reqact'])) {
             }
 
             try {
-                $result = $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa, $soLuong);
+                $result = $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
 
                 if ($debug_log) {
                     $log_data = date('Y-m-d H:i:s') . " - Update result: " . ($result ? "Success" : "Failed") . "\n";

@@ -3,7 +3,7 @@
         window.history.back();
     }
 
-    // Xử lý thông báo khi thêm giỏ hàng thành công
+    // Xử lý thông báo khi thêm giỏ hàng thành công hoặc có lỗi
     document.addEventListener('DOMContentLoaded', function() {
         // Kiểm tra xem URL có chứa tham số cartAdded không
         const urlParams = new URLSearchParams(window.location.search);
@@ -15,6 +15,16 @@
             const newUrl = window.location.href.replace(/[&?]cartAdded=1/, '');
             window.history.replaceState({}, document.title, newUrl);
         }
+
+        // Kiểm tra xem có thông báo lỗi từ giỏ hàng không
+        <?php if (isset($_SESSION['cart_error'])): ?>
+            // Hiển thị thông báo lỗi
+            alert('<?php echo $_SESSION['cart_error']; ?>');
+            <?php
+            // Xóa thông báo lỗi sau khi hiển thị
+            unset($_SESSION['cart_error']);
+            ?>
+        <?php endif; ?>
     });
 </script>
 
@@ -25,7 +35,9 @@ if (session_status() == PHP_SESSION_NONE) {
 require_once './administrator/elements_LQA/mod/hanghoaCls.php';
 require_once './administrator/elements_LQA/mod/thuoctinhhhCls.php';
 require_once './administrator/elements_LQA/mod/thuoctinhCls.php';
+require_once './administrator/elements_LQA/mod/mtonkhoCls.php';
 $hanghoa = new hanghoa();
+$tonkho = new MTonKho();
 
 if (isset($_GET['reqHanghoa'])) {
     $idhanghoa = $_GET['reqHanghoa'];
@@ -34,6 +46,9 @@ if (isset($_GET['reqHanghoa'])) {
     // Thêm truy vấn để lấy thông tin thuộc tính hàng hóa
     $thuocTinhHHObj = new ThuocTinhHH();
     $listThuocTinh = $thuocTinhHHObj->thuoctinhhhGetbyIdHanghoa($idhanghoa);
+
+    // Lấy thông tin tồn kho của sản phẩm
+    $tonkhoInfo = $tonkho->getTonKhoByIdHangHoa($idhanghoa);
 }
 ?>
 <link rel="stylesheet" href="public_files/mycss.css">
@@ -48,7 +63,7 @@ if (isset($_GET['reqHanghoa'])) {
 
             if ($hinhanh && !empty($hinhanh->duong_dan)) {
                 // If we have a valid image path, use it directly
-                echo '<img src="' . $hinhanh->duong_dan . '" class="img-fluid rounded-start" 
+                echo '<img src="' . $hinhanh->duong_dan . '" class="img-fluid rounded-start"
                     alt="' . htmlspecialchars($obj->tenhanghoa) . '" onerror="this.src=\'img_LQA/updating-image.png\'">';
             } else {
                 // Hiển thị ảnh "Đang cập nhật" thay vì cố gắng tải hình ảnh không tồn tại
@@ -73,6 +88,16 @@ if (isset($_GET['reqHanghoa'])) {
                 </p>
                 <p class="card-text"><strong>Thương hiệu:
                     </strong><?php echo $obj->idThuongHieu ? $hanghoa->GetThuongHieuById($obj->idThuongHieu)->tenTH : 'Chưa chọn'; ?>
+                </p>
+
+                <!-- Hiển thị thông tin tồn kho -->
+                <p class="card-text">
+                    <strong>Tình trạng: </strong>
+                    <?php if ($tonkhoInfo && $tonkhoInfo->soLuong > 0): ?>
+                        <span class="text-success">Còn hàng (<?php echo $tonkhoInfo->soLuong; ?> sản phẩm)</span>
+                    <?php else: ?>
+                        <span class="text-danger">Hết hàng</span>
+                    <?php endif; ?>
                 </p>
                 <!-- Hiển thị thông tin thuộc tính hàng hóa -->
                 <?php if (!empty($listThuocTinh)): ?>
@@ -118,7 +143,15 @@ if (isset($_GET['reqHanghoa'])) {
 </div>
 
 <style>
+    .text-success {
+        font-weight: bold;
+        color: #28a745 !important;
+    }
 
+    .text-danger {
+        font-weight: bold;
+        color: #dc3545 !important;
+    }
 </style>
 
 <?php if (isset($_SESSION['USER'])): ?>

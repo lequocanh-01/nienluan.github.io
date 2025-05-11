@@ -22,47 +22,48 @@ if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
     <!-- Thêm jQuery từ CDN (trước Bootstrap và các script khác) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
     <!-- Thêm style trực tiếp để sửa vấn đề hình ảnh -->
     <style>
-        img.iconimg {
-            width: 24px !important;
-            height: 24px !important;
-            object-fit: contain !important;
-            cursor: pointer;
-        }
+    img.iconimg {
+        width: 24px !important;
+        height: 24px !important;
+        object-fit: contain !important;
+        cursor: pointer;
+    }
 
-        img[src*="Delete.png"],
-        img[src*="Update.png"],
-        img[src*="Lock.png"],
-        img[src*="Unlock.png"],
-        img[src*="Success.png"],
-        img[src*="Fail.png"],
-        img[src*="Wait.png"] {
-            width: 24px !important;
-            height: 24px !important;
-        }
+    img[src*="Delete.png"],
+    img[src*="Update.png"],
+    img[src*="Lock.png"],
+    img[src*="Unlock.png"],
+    img[src*="Success.png"],
+    img[src*="Fail.png"],
+    img[src*="Wait.png"] {
+        width: 24px !important;
+        height: 24px !important;
+    }
 
-        .btn-sm {
-            padding: 0;
-            background: transparent;
-            border: none;
-        }
+    .btn-sm {
+        padding: 0;
+        background: transparent;
+        border: none;
+    }
 
-        /* Modal styles */
-        .modal-dialog {
-            max-width: 600px;
-        }
+    /* Modal styles */
+    .modal-dialog {
+        max-width: 600px;
+    }
 
-        .modal-header {
-            background-color: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-        }
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
 
-        .modal-body {
-            padding: 20px;
-        }
+    .modal-body {
+        padding: 20px;
+    }
     </style>
 </head>
 
@@ -95,7 +96,8 @@ if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
     </div>
 
     <!-- Bootstrap Modal for Updates -->
-    <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+    <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -113,7 +115,8 @@ if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
 
     <!-- Scripts -->
     <!-- jQuery must be loaded first -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
     <!-- Bootstrap JS và Popper -->
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>

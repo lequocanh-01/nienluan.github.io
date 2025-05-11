@@ -8,13 +8,21 @@ $username = isset($_SESSION['USER']) ? $_SESSION['USER'] : (isset($_SESSION['ADM
 if (isset($_GET['req'])) {
     $request = $_GET['req'];
 
+    // Log để debug
+    error_log("Center.php - Yêu cầu truy cập module: $request, Username: $username");
+
     // Kiểm tra quyền truy cập
     if (!$phanQuyen->checkAccess($request, $username)) {
         echo '<div class="alert alert-danger">
                 <strong>Lỗi:</strong> Bạn không có quyền truy cập vào chức năng này.
+                <p>Module yêu cầu: ' . htmlspecialchars($request) . '</p>
+                <p>Tài khoản: ' . htmlspecialchars($username) . '</p>
               </div>';
+        error_log("Center.php - Từ chối quyền truy cập cho module: $request, Username: $username");
         exit;
     }
+
+    error_log("Center.php - Cho phép truy cập module: $request, Username: $username");
 
     switch ($request) {
         case 'userview':
@@ -64,6 +72,27 @@ if (isset($_GET['req'])) {
             break;
         case 'nhacungcapview':
             require './elements_LQA/mnhacungcap/nhacungcapView.php';
+            break;
+        case 'mphieunhap':
+            require './elements_LQA/mmphieunhap/mphieunhapView.php';
+            break;
+        case 'mphieunhapedit':
+            require './elements_LQA/mmphieunhap/mphieunhapEdit.php';
+            break;
+        case 'mchitietphieunhap':
+            require './elements_LQA/mmphieunhap/mchitietphieunhapView.php';
+            break;
+        case 'mchitietphieunhapedit':
+            require './elements_LQA/mmphieunhap/mchitietphieunhapEdit.php';
+            break;
+        case 'mtonkho':
+            require './elements_LQA/mmtonkho/mtonkhoView.php';
+            break;
+        case 'mtonkhoedit':
+            require './elements_LQA/mmtonkho/mtonkhoEdit.php';
+            break;
+        case 'mphieunhapfixtonkho':
+            require './elements_LQA/mmphieunhap/mphieunhapFixTonKho.php';
             break;
     }
 } else {

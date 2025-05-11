@@ -142,11 +142,6 @@ $nhanVienList = $nhanVienObj->nhanvienGetAll();
         </div>
 
         <div class="form-group">
-            <label>Số lượng:</label>
-            <input type="number" class="form-control editable-input" name="soLuong" value="<?php echo htmlspecialchars($getHangHoaUpdate->soLuong ?? '0'); ?>" min="0" />
-        </div>
-
-        <div class="form-group">
             <label>Hình ảnh ID:</label>
             <input type="number" class="form-control editable-input" name="id_hinhanh" value="<?php echo htmlspecialchars($getHangHoaUpdate->hinhanh ?? '0'); ?>" min="0" />
 
