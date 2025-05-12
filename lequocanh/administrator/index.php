@@ -27,43 +27,43 @@ if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
 
     <!-- Thêm style trực tiếp để sửa vấn đề hình ảnh -->
     <style>
-    img.iconimg {
-        width: 24px !important;
-        height: 24px !important;
-        object-fit: contain !important;
-        cursor: pointer;
-    }
+        img.iconimg {
+            width: 24px !important;
+            height: 24px !important;
+            object-fit: contain !important;
+            cursor: pointer;
+        }
 
-    img[src*="Delete.png"],
-    img[src*="Update.png"],
-    img[src*="Lock.png"],
-    img[src*="Unlock.png"],
-    img[src*="Success.png"],
-    img[src*="Fail.png"],
-    img[src*="Wait.png"] {
-        width: 24px !important;
-        height: 24px !important;
-    }
+        img[src*="Delete.png"],
+        img[src*="Update.png"],
+        img[src*="Lock.png"],
+        img[src*="Unlock.png"],
+        img[src*="Success.png"],
+        img[src*="Fail.png"],
+        img[src*="Wait.png"] {
+            width: 24px !important;
+            height: 24px !important;
+        }
 
-    .btn-sm {
-        padding: 0;
-        background: transparent;
-        border: none;
-    }
+        .btn-sm {
+            padding: 0;
+            background: transparent;
+            border: none;
+        }
 
-    /* Modal styles */
-    .modal-dialog {
-        max-width: 600px;
-    }
+        /* Modal styles */
+        .modal-dialog {
+            max-width: 600px;
+        }
 
-    .modal-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-    }
+        .modal-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
 
-    .modal-body {
-        padding: 20px;
-    }
+        .modal-body {
+            padding: 20px;
+        }
     </style>
 </head>
 
@@ -91,7 +91,7 @@ if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
     <div id="bottom_div"></div>
     <div id="signoutbutton">
         <a href="./elements_LQA/mUser/userAct.php?reqact=userlogout">
-            <img src="./img_LQA/Logout.png" class="iconimg">
+            <img src="./elements_LQA/img_LQA/Logout.png" class="iconimg">
         </a>
     </div>
 

@@ -7,6 +7,11 @@ error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
+// Thiết lập header cache để tránh tải lại liên tục
+header("Cache-Control: public, max-age=86400"); // Cache 1 ngày
+header("Pragma: public");
+header("Expires: " . gmdate('D, d M Y H:i:s \G\M\T', time() + 86400));
+
 // Ghi log để debug
 error_log("displayImage.php trong mhanghoa được gọi với ID: " . (isset($_GET['id']) ? $_GET['id'] : 'không có ID'));
 
@@ -70,16 +75,9 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
             header("Content-Type: $mime");
             header("Content-Length: " . filesize($imagePath));
 
-            // Thêm header cache nếu được yêu cầu
-            if (!isset($_GET['t'])) {
-                header("Cache-Control: public, max-age=31536000"); // Cache 1 năm
-                header("Expires: " . gmdate('D, d M Y H:i:s \G\M\T', time() + 31536000));
-            } else {
-                // Vô hiệu hóa cache nếu có tham số timestamp
-                header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-                header("Pragma: no-cache");
-                header("Expires: 0");
-            }
+            // Luôn sử dụng cache để tránh tải lại liên tục
+            header("Cache-Control: public, max-age=86400"); // Cache 1 ngày
+            header("Expires: " . gmdate('D, d M Y H:i:s \G\M\T', time() + 86400));
 
             // Đọc và xuất nội dung file
             readfile($imagePath);
@@ -89,7 +87,7 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 }
 
 // Nếu không tìm thấy ảnh hoặc có lỗi, trả về hình ảnh mặc định
-$defaultImage = "../../../img_LQA/no-image.png";
+$defaultImage = "../../../elements_LQA/img_LQA/no-image.png";
 if (file_exists($defaultImage)) {
     header("Content-Type: image/png");
     header("Content-Length: " . filesize($defaultImage));

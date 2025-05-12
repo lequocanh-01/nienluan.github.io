@@ -132,7 +132,7 @@ if (!file_exists($uploadDirAbsolute)) {
                                             <img src="./elements_LQA/mhanghoa/displayImage.php?id=<?php echo $duplicate['existing_image_id']; ?>&t=<?php echo time(); ?>"
                                                 alt="Ảnh hiện tại"
                                                 class="preview-image"
-                                                onerror="this.onerror=null; this.src='./img_LQA/no-image.png';">
+                                                onerror="this.onerror=null; this.src='./elements_LQA/img_LQA/no-image.png';">
                                         <?php else: ?>
                                             <div class="no-image">Không có ảnh</div>
                                         <?php endif; ?>
@@ -323,7 +323,7 @@ if (!file_exists($uploadDirAbsolute)) {
                             <img src="<?php echo $display_src; ?>"
                                 alt="<?php echo htmlspecialchars($img->ten_file); ?>"
                                 class="preview-image"
-                                onerror="this.src='./img_LQA/no-image.png'">
+                                onerror="this.src='./elements_LQA/img_LQA/no-image.png'">
                         </td>
                         <td><?php echo htmlspecialchars($img->ten_file); ?></td>
                         <td><?php echo htmlspecialchars($img->duong_dan); ?></td>
@@ -497,7 +497,7 @@ if (!file_exists($uploadDirAbsolute)) {
 
             // Nếu tất cả các đường dẫn đều thất bại, hiển thị ảnh mặc định
             console.log('All paths failed, showing default image');
-            img.src = './img_LQA/no-image.png';
+            img.src = './elements_LQA/img_LQA/no-image.png';
 
             // Hiển thị thông báo lỗi
             const errorMsg = document.createElement('div');

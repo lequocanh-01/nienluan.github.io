@@ -31,12 +31,11 @@ $carousel_items = array_slice($list_hanghoa, 0, 5);
                 <div class="carousel-item <?php echo $index === 0 ? 'active' : ''; ?>" data-bs-interval="3000">
                     <a href="./index.php?reqHanghoa=<?php echo $item->idhanghoa; ?>">
                         <?php if ($hinhanh && !empty($hinhanh->duong_dan)): ?>
-                            <img src="<?php echo $hinhanh->duong_dan; ?>" class="d-block" alt="<?php echo $item->tenhanghoa; ?>"
-                                onerror="this.src='img_LQA/updating-image.png'">
+                            <img src="./administrator/elements_LQA/mhanghoa/displayImage.php?id=<?php echo $item->hinhanh; ?>"
+                                class="d-block" alt="<?php echo $item->tenhanghoa; ?>">
                         <?php else: ?>
                             <div class="updating-image-container">
-                                <img src="img_LQA/updating-image.png" alt="Đang cập nhật ảnh">
-                                <p class="updating-text">Đang cập nhật ảnh</p>
+                                <img src="./administrator/elements_LQA/img_LQA/no-image.png" alt="Không có hình ảnh">
                             </div>
                         <?php endif; ?>
                     </a>
@@ -76,12 +75,11 @@ $carousel_items = array_slice($list_hanghoa, 0, 5);
         <div class="col">
             <div class="card h-100">
                 <?php if ($hinhanh && !empty($hinhanh->duong_dan)): ?>
-                    <img src="<?php echo $hinhanh->duong_dan; ?>" class="card-img-top" alt="<?php echo $v->tenhanghoa; ?>"
-                        onerror="this.src='img_LQA/updating-image.png'">
+                    <img src="./administrator/elements_LQA/mhanghoa/displayImage.php?id=<?php echo $v->hinhanh; ?>"
+                        class="card-img-top" alt="<?php echo $v->tenhanghoa; ?>">
                 <?php else: ?>
                     <div class="updating-image-container">
-                        <img src="img_LQA/updating-image.png" alt="Đang cập nhật ảnh">
-                        <p class="updating-text">Đang cập nhật ảnh</p>
+                        <img src="./administrator/elements_LQA/img_LQA/no-image.png" alt="Không có hình ảnh">
                     </div>
                 <?php endif; ?>
                 <div class="card-body">
@@ -169,5 +167,22 @@ $carousel_items = array_slice($list_hanghoa, 0, 5);
         // Xóa tham số cartAdded khỏi URL để tránh hiển thị lại thông báo khi refresh
         const newUrl = window.location.href.replace(/[&?]cartAdded=1/, '');
         window.history.replaceState({}, document.title, newUrl);
+    }
+
+    // Ngăn chặn tải lại trang liên tục
+    let reloadCount = sessionStorage.getItem('reloadCount') || 0;
+    if (reloadCount > 5) {
+        // Nếu trang đã tải lại quá nhiều lần, ngăn chặn việc tải lại tự động
+        console.log('Đã phát hiện tải lại trang quá nhiều lần, ngăn chặn tải lại tự động');
+        window.stop();
+        sessionStorage.setItem('reloadCount', 0);
+        alert('Đã phát hiện tải lại trang quá nhiều lần. Vui lòng thử lại sau.');
+    } else {
+        // Tăng số lần tải lại
+        sessionStorage.setItem('reloadCount', parseInt(reloadCount) + 1);
+        // Sau 5 giây, đặt lại bộ đếm
+        setTimeout(() => {
+            sessionStorage.setItem('reloadCount', 0);
+        }, 5000);
     }
 </script>

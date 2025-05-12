@@ -32,33 +32,18 @@ $baseUrl = $protocol . $host;
                     // Lấy thông tin hình ảnh từ bảng hinhanh
                     $hinhanh = $hanghoa->GetHinhAnhById($v->hinhanh);
 
-                    // Khởi tạo đường dẫn hình ảnh mặc định
-                    $imagePath = "img_LQA/updating-image.png";
-
-                    // Nếu có hình ảnh và có đường dẫn, sử dụng đường dẫn đó
-                    if ($hinhanh && !empty($hinhanh->duong_dan)) {
-                        $originalPath = $hinhanh->duong_dan;
-
-                        // Đảm bảo đường dẫn hình ảnh là tuyệt đối
-                        if (strpos($originalPath, 'http') === 0) {
-                            // Đường dẫn đã là URL đầy đủ
-                            $imagePath = $originalPath;
-                        } else {
-                            // Chuẩn hóa đường dẫn tương đối
-                            $relativePath = ltrim($originalPath, '/');
-
-                            // Sử dụng đường dẫn đã chuẩn hóa
-                            $imagePath = $relativePath;
-                        }
+                    // Xác định đường dẫn hình ảnh
+                    if ($v->hinhanh > 0) {
+                        $imagePath = "./administrator/elements_LQA/mhanghoa/displayImage.php?id=" . $v->hinhanh;
+                    } else {
+                        $imagePath = "./administrator/elements_LQA/img_LQA/no-image.png";
                     }
                     ?>
                     <div class="col">
                         <div class="card h-100 shadow-sm">
                             <div class="updating-image-container">
-                                <img src="<?php echo $imagePath; ?>" alt="<?php echo $v->tenhanghoa; ?>" class="card-img-top" onerror="this.src='img_LQA/updating-image.png'">
-                                <?php if ($imagePath == "img_LQA/updating-image.png"): ?>
-                                    <p class="updating-text">Đang cập nhật ảnh</p>
-                                <?php endif; ?>
+                                <img src="<?php echo $imagePath; ?>" alt="<?php echo $v->tenhanghoa; ?>" class="card-img-top">
+
                             </div>
                             <div class="card-body">
                                 <h5 class="card-title text-primary"><?php echo $v->tenhanghoa; ?></h5>

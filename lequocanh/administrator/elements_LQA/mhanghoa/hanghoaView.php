@@ -126,7 +126,7 @@ $missing_images = $hanghoaObj->FindMissingImages();
                                 <img src="<?php echo $imageSrc; ?>" class="preview-img" data-id="<?php echo $img->id; ?>"
                                     alt="<?php echo htmlspecialchars($img->ten_file); ?>"
                                     title="<?php echo htmlspecialchars($img->ten_file); ?>"
-                                    onerror="this.src='./img_LQA/no-image.png'">
+                                    onerror="this.src='./elements_LQA/img_LQA/no-image.png'">
                                 <div class="preview-info">
                                     <span class="preview-name"><?php echo htmlspecialchars($img->ten_file); ?></span>
                                 </div>
@@ -308,13 +308,13 @@ $l = count($list_hanghoa);
                                 $imageSrc = "./elements_LQA/mhanghoa/displayImage.php?id=" . $u->hinhanh;
                             ?>
                                 <img class="iconbutton" src="<?php echo $imageSrc; ?>" alt="Product Image"
-                                    onerror="this.src='./img_LQA/no-image.png'">
+                                    onerror="this.src='./elements_LQA/img_LQA/no-image.png'">
                                 <?php
                                 // Không hiển thị số lượng hình ảnh ở đây vì mỗi sản phẩm chỉ có một hình ảnh chính
                                 ?>
                             <?php
                             } else {
-                                echo '<img class="iconbutton" src="./img_LQA/no-image.png" alt="No image">';
+                                echo '<img class="iconbutton" src="./elements_LQA/img_LQA/no-image.png" alt="No image">';
                             }
                             ?>
                         </td>
@@ -327,16 +327,16 @@ $l = count($list_hanghoa);
                             ?>
                                 <a
                                     href="./elements_LQA/mhanghoa/hanghoaAct.php?reqact=deletehanghoa&idhanghoa=<?php echo $u->idhanghoa; ?>">
-                                    <img src="./img_LQA/Delete.png" class="iconimg">
+                                    <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php
                             } else {
                             ?>
-                                <img src="./img_LQA/Delete.png" class="iconimg">
+                                <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                             <?php
                             }
                             ?>
-                            <img src="./img_LQA/Update.png"
+                            <img src="./elements_LQA/img_LQA/Update.png"
                                 class="iconimg generic-update-btn"
                                 data-module="mhanghoa"
                                 data-update-url="./elements_LQA/mhanghoa/hanghoaUpdate.php"

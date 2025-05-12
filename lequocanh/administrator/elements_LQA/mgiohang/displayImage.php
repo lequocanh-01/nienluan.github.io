@@ -21,13 +21,22 @@ header('Cache-Control: max-age=86400, public'); // Cache 1 ngày
 header('Pragma: public');
 header('Expires: ' . gmdate('D, d M Y H:i:s \G\M\T', time() + 86400));
 
+// Kiểm tra nếu trình duyệt đã có bản sao trong cache
+$etag = md5(isset($_GET['id']) ? $_GET['id'] : '0');
+header('ETag: "' . $etag . '"');
+
+if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && $_SERVER['HTTP_IF_NONE_MATCH'] === '"' . $etag . '"') {
+    header('HTTP/1.1 304 Not Modified');
+    exit;
+}
+
 if ($imageId <= 0) {
     // Nếu không có ID hợp lệ, hiển thị hình ảnh mặc định
     header('Content-Type: image/png');
-    if (file_exists('../../img_LQA/no-image.png')) {
-        readfile('../../img_LQA/no-image.png');
-    } else if (file_exists('../../../img_LQA/no-image.png')) {
-        readfile('../../../img_LQA/no-image.png');
+    if (file_exists('../../elements_LQA/img_LQA/no-image.png')) {
+        readfile('../../elements_LQA/img_LQA/no-image.png');
+    } else if (file_exists('../../../elements_LQA/img_LQA/no-image.png')) {
+        readfile('../../../elements_LQA/img_LQA/no-image.png');
     } else {
         // Fallback nếu không tìm thấy hình mặc định
         header("HTTP/1.0 404 Not Found");
@@ -125,10 +134,10 @@ if ($hinhanh && !empty($hinhanh->duong_dan)) {
 
 // Nếu không tìm thấy hình ảnh, hiển thị hình mặc định
 header('Content-Type: image/png');
-if (file_exists('../../img_LQA/no-image.png')) {
-    readfile('../../img_LQA/no-image.png');
-} else if (file_exists('../../../img_LQA/no-image.png')) {
-    readfile('../../../img_LQA/no-image.png');
+if (file_exists('../../elements_LQA/img_LQA/no-image.png')) {
+    readfile('../../elements_LQA/img_LQA/no-image.png');
+} else if (file_exists('../../../elements_LQA/img_LQA/no-image.png')) {
+    readfile('../../../elements_LQA/img_LQA/no-image.png');
 } else {
     // Fallback nếu không tìm thấy hình mặc định
     header("HTTP/1.0 404 Not Found");

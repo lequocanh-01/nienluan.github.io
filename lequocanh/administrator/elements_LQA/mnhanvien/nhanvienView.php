@@ -38,11 +38,11 @@ foreach ($list_lh as $employee) {
                     <select name="iduser" id="iduser" class="form-control">
                         <option value="">-- Chọn người dùng --</option>
                         <?php foreach ($listUsers as $user): ?>
-                            <option value="<?php echo $user->iduser; ?>"
-                                <?php echo in_array($user->iduser, $existingUserIds) ? 'style="color: grey;"' : ''; ?>>
-                                <?php echo htmlspecialchars($user->username) . ' (' . htmlspecialchars($user->hoten) . ') - ' . htmlspecialchars($user->dienthoai); ?>
-                                <?php echo in_array($user->iduser, $existingUserIds) ? ' [Đã có nhân viên]' : ''; ?>
-                            </option>
+                        <option value="<?php echo $user->iduser; ?>"
+                            <?php echo in_array($user->iduser, $existingUserIds) ? 'style="color: grey;"' : ''; ?>>
+                            <?php echo htmlspecialchars($user->username) . ' (' . htmlspecialchars($user->hoten) . ') - ' . htmlspecialchars($user->dienthoai); ?>
+                            <?php echo in_array($user->iduser, $existingUserIds) ? ' [Đã có nhân viên]' : ''; ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </td>
@@ -104,34 +104,30 @@ foreach ($list_lh as $employee) {
             if ($l > 0) {
                 foreach ($list_lh as $u) {
             ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($u->idNhanVien); ?></td>
-                        <td><?php echo htmlspecialchars($u->tenNV); ?></td>
-                        <td><?php echo htmlspecialchars($u->SDT); ?></td>
-                        <td><?php echo htmlspecialchars($u->email); ?></td>
-                        <td><?php echo number_format($u->luongCB, 0, ',', '.'); ?> đ</td>
-                        <td><?php echo number_format($u->phuCap, 0, ',', '.'); ?> đ</td>
-                        <td><?php echo htmlspecialchars($u->chucVu); ?></td>
-                        <td><?php echo isset($u->ten_user) ? htmlspecialchars($u->ten_user) : ''; ?></td>
-                        <td align="center">
-                            <?php if (isset($_SESSION['ADMIN'])) { ?>
-                                <a href="./elements_LQA/mnhanvien/nhanvienAct.php?reqact=deletenhanvien&idNhanVien=<?php echo htmlspecialchars($u->idNhanVien); ?>"
-                                    onclick="return confirm('Bạn có chắc muốn xóa không?');">
-                                    <img src="./img_LQA/Delete.png" class="iconimg">
-                                </a>
-                            <?php } else { ?>
-                                <img src="./img_LQA/Delete.png" class="iconimg" />
-                            <?php } ?>
-                            <img src="./img_LQA/Update.png"
-                                class="iconimg generic-update-btn"
-                                data-module="mnhanvien"
-                                data-update-url="./elements_LQA/mnhanvien/nhanvienUpdate.php"
-                                data-id-param="idNhanVien"
-                                data-title="Cập nhật Nhân viên"
-                                data-id="<?php echo htmlspecialchars($u->idNhanVien); ?>"
-                                alt="Update">
-                        </td>
-                    </tr>
+            <tr>
+                <td><?php echo htmlspecialchars($u->idNhanVien); ?></td>
+                <td><?php echo htmlspecialchars($u->tenNV); ?></td>
+                <td><?php echo htmlspecialchars($u->SDT); ?></td>
+                <td><?php echo htmlspecialchars($u->email); ?></td>
+                <td><?php echo number_format($u->luongCB, 0, ',', '.'); ?> đ</td>
+                <td><?php echo number_format($u->phuCap, 0, ',', '.'); ?> đ</td>
+                <td><?php echo htmlspecialchars($u->chucVu); ?></td>
+                <td><?php echo isset($u->ten_user) ? htmlspecialchars($u->ten_user) : ''; ?></td>
+                <td align="center">
+                    <?php if (isset($_SESSION['ADMIN'])) { ?>
+                    <a href="./elements_LQA/mnhanvien/nhanvienAct.php?reqact=deletenhanvien&idNhanVien=<?php echo htmlspecialchars($u->idNhanVien); ?>"
+                        onclick="return confirm('Bạn có chắc muốn xóa không?');">
+                        <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
+                    </a>
+                    <?php } else { ?>
+                    <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg" />
+                    <?php } ?>
+                    <img src="./elements_LQA/img_LQA/Update.png" class="iconimg generic-update-btn"
+                        data-module="mnhanvien" data-update-url="./elements_LQA/mnhanvien/nhanvienUpdate.php"
+                        data-id-param="idNhanVien" data-title="Cập nhật Nhân viên"
+                        data-id="<?php echo htmlspecialchars($u->idNhanVien); ?>" alt="Update">
+                </td>
+            </tr>
             <?php
                 }
             }
@@ -148,52 +144,54 @@ foreach ($list_lh as $employee) {
 <!-- Thêm JavaScript để xử lý chọn user -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function() {
-        // Lưu danh sách user đã là nhân viên
-        var existingUserIds = <?php echo json_encode($existingUserIds); ?>;
+$(document).ready(function() {
+    // Lưu danh sách user đã là nhân viên
+    var existingUserIds = <?php echo json_encode($existingUserIds); ?>;
 
-        // Xử lý khi thay đổi user trong dropdown
-        $('#iduser').change(function() {
-            var userId = $(this).val();
-            $('#noteForm').text('');
+    // Xử lý khi thay đổi user trong dropdown
+    $('#iduser').change(function() {
+        var userId = $(this).val();
+        $('#noteForm').text('');
 
-            if (userId) {
-                // Kiểm tra xem user đã là nhân viên chưa
-                if (existingUserIds.includes(parseInt(userId))) {
-                    $('#noteForm').html('<span style="color: orange;">Lưu ý: Người dùng này đã được gán cho một nhân viên khác.</span>');
-                }
-
-                // Lấy thông tin user qua AJAX
-                $.ajax({
-                    url: './elements_LQA/mUser/getUserInfo.php',
-                    type: 'GET',
-                    data: {
-                        iduser: userId
-                    },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response.success) {
-                            // Điền thông tin vào form
-                            var userData = response.data;
-                            $('#tenNV').val(userData.hoten);
-                            $('#SDT').val(userData.dienthoai);
-                            if (userData.email) {
-                                $('#email').val(userData.email);
-                            }
-                        } else {
-                            alert('Không thể lấy thông tin người dùng: ' + response.message);
-                        }
-                    },
-                    error: function() {
-                        alert('Đã xảy ra lỗi khi kết nối đến máy chủ');
-                    }
-                });
-            } else {
-                // Xóa dữ liệu nếu không chọn user
-                $('#tenNV').val('');
-                $('#SDT').val('');
-                $('#email').val('');
+        if (userId) {
+            // Kiểm tra xem user đã là nhân viên chưa
+            if (existingUserIds.includes(parseInt(userId))) {
+                $('#noteForm').html(
+                    '<span style="color: orange;">Lưu ý: Người dùng này đã được gán cho một nhân viên khác.</span>'
+                );
             }
-        });
+
+            // Lấy thông tin user qua AJAX
+            $.ajax({
+                url: './elements_LQA/mUser/getUserInfo.php',
+                type: 'GET',
+                data: {
+                    iduser: userId
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Điền thông tin vào form
+                        var userData = response.data;
+                        $('#tenNV').val(userData.hoten);
+                        $('#SDT').val(userData.dienthoai);
+                        if (userData.email) {
+                            $('#email').val(userData.email);
+                        }
+                    } else {
+                        alert('Không thể lấy thông tin người dùng: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Đã xảy ra lỗi khi kết nối đến máy chủ');
+                }
+            });
+        } else {
+            // Xóa dữ liệu nếu không chọn user
+            $('#tenNV').val('');
+            $('#SDT').val('');
+            $('#email').val('');
+        }
     });
+});
 </script>

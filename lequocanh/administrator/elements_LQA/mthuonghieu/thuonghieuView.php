@@ -77,12 +77,12 @@ $l = count($list_lh);
                             <?php if (isset($_SESSION['ADMIN'])) { ?>
                                 <a href="./elements_LQA/mthuonghieu/thuonghieuAct.php?reqact=deletethuonghieu&idThuongHieu=<?php echo htmlspecialchars($u->idThuongHieu); ?>"
                                     onclick="return confirm('Bạn có chắc muốn xóa không?');">
-                                    <img src="./img_LQA/Delete.png" class="iconimg">
+                                    <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php } else { ?>
-                                <img src="./img_LQA/Delete.png" class="iconimg">
+                                <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                             <?php } ?>
-                            <img src="./img_LQA/Update.png"
+                            <img src="./elements_LQA/img_LQA/Update.png"
                                 class="iconimg w_update_btn_open_th"
                                 value="<?php echo htmlspecialchars($u->idThuongHieu); ?>"
                                 alt="Update">
@@ -103,9 +103,9 @@ $l = count($list_lh);
 </div>
 
 <script>
-    /* 
+    /*
      * This custom script is no longer needed as the modal-handler.js
-     * now handles all updates centrally. 
+     * now handles all updates centrally.
      * Delete this script and use the global handler instead.
      */
 </script>

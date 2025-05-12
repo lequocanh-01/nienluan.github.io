@@ -62,15 +62,14 @@ if (isset($_GET['reqHanghoa'])) {
             $hinhanh = $hanghoa->GetHinhAnhById($obj->hinhanh);
 
             if ($hinhanh && !empty($hinhanh->duong_dan)) {
-                // If we have a valid image path, use it directly
-                echo '<img src="' . $hinhanh->duong_dan . '" class="img-fluid rounded-start"
-                    alt="' . htmlspecialchars($obj->tenhanghoa) . '" onerror="this.src=\'img_LQA/updating-image.png\'">';
+                // Sử dụng displayImage.php để hiển thị hình ảnh
+                echo '<img src="./administrator/elements_LQA/mhanghoa/displayImage.php?id=' . $obj->hinhanh . '"
+                    class="img-fluid rounded-start" alt="' . htmlspecialchars($obj->tenhanghoa) . '">';
             } else {
-                // Hiển thị ảnh "Đang cập nhật" thay vì cố gắng tải hình ảnh không tồn tại
+                // Hiển thị ảnh "no-image" thay vì cố gắng tải hình ảnh không tồn tại
                 echo '<div class="text-center p-3 border rounded" style="height: 100%;">
-                        <img src="img_LQA/updating-image.png" class="img-fluid rounded-start" style="max-height: 200px"
-                            alt="Đang cập nhật ảnh">
-                        <p class="mt-2 text-muted">Đang cập nhật ảnh</p>
+                        <img src="./administrator/elements_LQA/img_LQA/no-image.png" class="img-fluid rounded-start" style="max-height: 200px"
+                            alt="Không có hình ảnh">
                       </div>';
             }
             ?>

@@ -17,16 +17,16 @@ echo '</br>';
 if (isset($_GET['result'])) {
     if ($_GET['result'] == 'ok') {
 ?>
-        <img src="../img_LQA/Success.png" class="iconimg" height="50px">
+        <img src="./elements_LQA/img_LQA/Success.png" class="iconimg" height="50px">
     <?php
     } else {
     ?>
-        <img src="../img_LQA/Fail.png" class="iconimg" height="50px">
+        <img src="./elements_LQA/img_LQA/Fail.png" class="iconimg" height="50px">
     <?php
     }
 } else {
     ?>
-    <img src="../img_LQA/Wait.png" class="iconimg" height="50px">
+    <img src="./elements_LQA/img_LQA/Wait.png" class="iconimg" height="50px">
 <?php
 }
 ?>

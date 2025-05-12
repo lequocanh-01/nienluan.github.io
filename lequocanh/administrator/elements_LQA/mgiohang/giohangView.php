@@ -280,14 +280,14 @@ if (!empty($cart)) {
                                     error_log("Giỏ hàng - Hiển thị hình ảnh ID: " . $item['hinhanh'] . " cho sản phẩm: " . $item['name'] . " với đường dẫn: " . $imageSrc);
                                 } else {
                                     // Nếu không có hình ảnh hợp lệ, sử dụng ngay hình ảnh mặc định
-                                    $imageSrc = "../../img_LQA/no-image.png";
+                                    $imageSrc = "../../elements_LQA/img_LQA/no-image.png";
                                     error_log("Giỏ hàng - Không có hình ảnh hợp lệ cho sản phẩm: " . $item['name']);
                                 }
                                 ?>
                                 <img src="<?php echo $imageSrc; ?>"
                                     alt="<?php echo htmlspecialchars($item['name']); ?>"
                                     class="product-image"
-                                    onerror="this.onerror=null; this.src='../../img_LQA/no-image.png'; console.log('Lỗi tải hình ảnh: ' + this.alt);">
+                                    onerror="this.onerror=null; this.src='../../elements_LQA/img_LQA/no-image.png'; console.log('Lỗi tải hình ảnh: ' + this.alt);">
                                 <span class="product-name"><?php echo htmlspecialchars($item['name']); ?></span>
                                 <?php if (isset($item['hinhanh']) && is_numeric($item['hinhanh']) && $item['hinhanh'] > 0): ?>
                                     <!-- Thông tin debug hình ảnh (chỉ hiển thị trong chế độ phát triển) -->

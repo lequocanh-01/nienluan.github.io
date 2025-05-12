@@ -65,12 +65,12 @@ $l = count($list_lh);
                             <?php if (isset($_SESSION['ADMIN'])) { ?>
                                 <a
                                     href="./elements_LQA/mthuoctinh/thuoctinhAct.php?reqact=deletethuoctinh&idThuocTinh=<?php echo $u->idThuocTinh; ?>">
-                                    <img src="./img_LQA/Delete.png" class="iconimg">
+                                    <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php } else { ?>
-                                <img src="./img_LQA/Delete.png" class="iconimg">
+                                <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                             <?php } ?>
-                            <img src="./img_LQA/Update.png"
+                            <img src="./elements_LQA/img_LQA/Update.png"
                                 class="iconimg w_update_btn_open_tt"
                                 data-id="<?php echo htmlspecialchars($u->idThuocTinh); ?>"
                                 alt="Update">

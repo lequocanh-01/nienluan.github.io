@@ -193,11 +193,11 @@
                                     <?php if (isset($_SESSION['ADMIN'])) { ?>
                                         <a href='./elements_LQA/mUser/userAct.php?reqact=setlock&iduser=<?php echo $u->iduser; ?>&setlock=<?php echo $u->setlock; ?>'
                                             class="status-icon">
-                                            <img src="<?php echo $u->setlock == 1 ? './img_LQA/Unlock.png' : './img_LQA/Lock.png'; ?>"
+                                            <img src="<?php echo $u->setlock == 1 ? './elements_LQA/img_LQA/Unlock.png' : './elements_LQA/img_LQA/Lock.png'; ?>"
                                                 class="iconimg" alt="Trạng thái">
                                         </a>
                                     <?php } else { ?>
-                                        <img src="<?php echo $u->setlock == 1 ? './img_LQA/Unlock.png' : './img_LQA/Lock.png'; ?>"
+                                        <img src="<?php echo $u->setlock == 1 ? './elements_LQA/img_LQA/Unlock.png' : './elements_LQA/img_LQA/Lock.png'; ?>"
                                             class="iconimg" alt="Trạng thái">
                                     <?php } ?>
                                 </td>
@@ -206,20 +206,20 @@
                                         <a href='./elements_LQA/mUser/userAct.php?reqact=deleteuser&iduser=<?php echo $u->iduser; ?>'
                                             class="admin-action" data-username="<?php echo $u->username; ?>"
                                             onclick="return confirmDelete('<?php echo $u->username; ?>');">
-                                            <img src="./img_LQA/Delete.png" class="iconimg">
+                                            <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                         </a>
                                     <?php } else { ?>
-                                        <img src="./img_LQA/Delete.png" class="iconimg">
+                                        <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                     <?php } ?>
 
                                     <?php if (isset($_SESSION['ADMIN']) || (isset($_SESSION['USER']) && $_SESSION['USER'] == $u->username)) { ?>
                                         <a href='javascript:void(0);' class="update-user"
                                             data-username="<?php echo htmlspecialchars($u->username); ?>"
                                             data-userid="<?php echo $u->iduser; ?>">
-                                            <img src="./img_LQA/Update.png" class="iconimg" alt="Update">
+                                            <img src="./elements_LQA/img_LQA/Update.png" class="iconimg" alt="Update">
                                         </a>
                                     <?php } else { ?>
-                                        <img src="./img_LQA/Update.png" class="iconimg disabled" alt="Update">
+                                        <img src="./elements_LQA/img_LQA/Update.png" class="iconimg disabled" alt="Update">
                                     <?php } ?>
                                 </td>
                             </tr>

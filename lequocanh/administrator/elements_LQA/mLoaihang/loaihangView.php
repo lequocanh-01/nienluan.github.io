@@ -62,16 +62,16 @@
                                 ?>
                                     <a
                                         href="./elements_LQA/mloaihang/loaihangAct.php?reqact=deleteloaihang&idloaihang=<?php echo $u->idloaihang; ?>">
-                                        <img src="img_LQA/Delete.png" class="iconimg">
+                                        <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                     </a>
                                 <?php
                                 } else {
                                 ?>
-                                    <img src="./img_LQA/Delete.png" class="iconimg">
+                                    <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                 <?php
                                 }
                                 ?>
-                                <img src="./img_LQA/Update.png"
+                                <img src="./elements_LQA/img_LQA/Update.png"
                                     class="iconimg generic-update-btn"
                                     data-module="mloaihang"
                                     data-update-url="./elements_LQA/mLoaihang/loaihangUpdate.php"
