@@ -2,11 +2,13 @@
 // Add error logging for debugging
 error_log("Search suggestions request received: " . date('Y-m-d H:i:s'));
 
-// Prevent PHP errors/warnings from breaking JSON output
-error_reporting(0);
+// Bật báo cáo lỗi để debug
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 ob_start();
 
-require_once 'core/init.php';
+// Không cần file core/init.php, chỉ cần kết nối database
+require_once './administrator/elements_LQA/mod/database.php';
 require_once './administrator/elements_LQA/mod/hanghoaCls.php';
 
 // Check if we received a search query
@@ -21,7 +23,8 @@ if (!isset($_GET['query']) || empty($_GET['query'])) {
 // Get and sanitize the search query
 $searchQuery = trim($_GET['query']);
 error_log("Search query: " . $searchQuery);
-$searchQuery = filter_var($searchQuery, FILTER_SANITIZE_STRING);
+// Sử dụng htmlspecialchars thay vì FILTER_SANITIZE_STRING đã bị deprecated
+$searchQuery = htmlspecialchars($searchQuery, ENT_QUOTES, 'UTF-8');
 
 // Return empty array if query is too short
 if (strlen($searchQuery) < 2) {
@@ -51,12 +54,9 @@ if (empty($results)) {
             error_log("Found " . count($hanghoaResults) . " results in hanghoa");
             foreach ($hanghoaResults as $item) {
                 // Get image information if available
-                $imagePath = 'img_LQA/updating-image.png'; // Default fallback image
-                if (isset($item->hinhanh)) {
-                    $imageInfo = $hanghoa->GetHinhAnhById($item->hinhanh);
-                    if ($imageInfo && !empty($imageInfo->duong_dan)) {
-                        $imagePath = $imageInfo->duong_dan;
-                    }
+                $imagePath = './administrator/elements_LQA/img_LQA/no-image.png'; // Default fallback image
+                if (isset($item->hinhanh) && $item->hinhanh > 0) {
+                    $imagePath = "./administrator/elements_LQA/mhanghoa/displayImage.php?id=" . $item->hinhanh;
                 }
 
                 // Format price - assuming giathamkhao is the price
@@ -86,7 +86,9 @@ echo json_encode($results);
 // Function to search using the 'products' table
 function searchProducts($searchQuery)
 {
-    global $pdo;
+    // Sử dụng Database class thay vì biến $pdo global
+    $db = Database::getInstance();
+    $pdo = $db->getConnection();
     $results = [];
 
     try {
@@ -94,20 +96,20 @@ function searchProducts($searchQuery)
         $searchParam = '%' . $searchQuery . '%';
 
         // SQL query to search products by name, description, or brand
-        $sql = "SELECT 
-                    p.id, 
-                    p.name, 
-                    p.price, 
-                    p.sale_price, 
+        $sql = "SELECT
+                    p.id,
+                    p.name,
+                    p.price,
+                    p.sale_price,
                     (SELECT image FROM product_images WHERE product_id = p.id LIMIT 1) as image,
                     b.name as brand_name
-                FROM 
+                FROM
                     products p
-                LEFT JOIN 
+                LEFT JOIN
                     brands b ON p.brand_id = b.id
-                WHERE 
-                    p.name LIKE ? OR 
-                    p.description LIKE ? OR 
+                WHERE
+                    p.name LIKE ? OR
+                    p.description LIKE ? OR
                     b.name LIKE ?
                 LIMIT 8";
 

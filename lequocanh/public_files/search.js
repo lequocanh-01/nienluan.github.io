@@ -30,6 +30,14 @@ $(document).ready(function () {
         console.error("Search endpoint test failed:", error);
         console.log("XHR status:", status);
         console.log("XHR response:", xhr.responseText);
+        // Hiển thị lỗi trong console để debug
+        console.error("Detailed error information:", {
+          error: error,
+          status: status,
+          responseText: xhr.responseText,
+          readyState: xhr.readyState,
+          statusText: xhr.statusText
+        });
       },
     });
   }
@@ -40,6 +48,7 @@ $(document).ready(function () {
   // Function to handle search input
   function handleSearchInput() {
     const term = searchInput.val().trim();
+    console.log("Search term:", term); // Debug log
 
     // Clear previous results
     searchResults.empty();
@@ -55,6 +64,8 @@ $(document).ready(function () {
 
     // Set a small timeout to prevent searching on every keystroke
     searchTimeout = setTimeout(function () {
+      console.log("Executing search for:", term); // Debug log
+
       // Show loading indicator
       searchResults.html(
         '<div class="text-center p-2"><i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm...</div>'
@@ -68,13 +79,16 @@ $(document).ready(function () {
         data: { query: term },
         dataType: "json",
         success: function (data) {
+          console.log("Search results received:", data); // Debug log
+
           // Clear previous results
           searchResults.empty();
 
-          if (data.length === 0) {
+          if (!data || data.length === 0) {
             searchResults.html(
               '<div class="text-center p-3">Không tìm thấy sản phẩm nào</div>'
             );
+            searchResults.show();
             return;
           }
 
@@ -83,14 +97,22 @@ $(document).ready(function () {
 
           // Add each item to results
           data.forEach(function (item) {
+            console.log("Processing item:", item); // Debug log
+
+            // Đảm bảo các thuộc tính tồn tại
+            const id = item.id || '';
+            const name = item.name || 'Sản phẩm không tên';
+            const price = item.price || 'Liên hệ';
+            const image = item.image || 'administrator/elements_LQA/img_LQA/no-image.png';
+
             const resultItem = `
-                            <a href="index.php?reqHanghoa=${item.id}" class="search-item">
+                            <a href="index.php?reqHanghoa=${id}" class="search-item">
                                 <div class="search-item-image">
-                                    <img src="${item.image}" alt="${item.name}" onerror="this.src='uploads/products/default.jpg'">
+                                    <img src="${image}" alt="${name}" onerror="this.src='administrator/elements_LQA/img_LQA/no-image.png'">
                                 </div>
                                 <div class="search-item-info">
-                                    <div class="search-item-name">${item.name}</div>
-                                    <div class="search-item-price">${item.price}</div>
+                                    <div class="search-item-name">${name}</div>
+                                    <div class="search-item-price">${price}</div>
                                 </div>
                             </a>
                         `;
@@ -100,15 +122,30 @@ $(document).ready(function () {
           // Append results to container
           searchResults.append(resultsList);
           searchResults.show();
+          console.log("Search results displayed"); // Debug log
         },
         error: function (xhr, status, error) {
           console.error("Search error:", error);
           console.log("XHR status:", status);
           console.log("XHR response:", xhr.responseText);
 
+          // Hiển thị thông tin lỗi chi tiết trong console
+          console.error("Detailed search error:", {
+            error: error,
+            status: status,
+            responseText: xhr.responseText,
+            readyState: xhr.readyState,
+            statusText: xhr.statusText
+          });
+
+          // Hiển thị thông báo lỗi với thêm thông tin để debug
           searchResults.html(
-            '<div class="text-center p-3 text-danger">Có lỗi xảy ra khi tìm kiếm</div>'
+            `<div class="text-center p-3 text-danger">
+              <div>Có lỗi xảy ra khi tìm kiếm</div>
+              <div class="small text-muted mt-2">${xhr.statusText || 'Unknown error'}</div>
+            </div>`
           );
+          searchResults.show();
         },
       });
     }, 300); // 300ms delay

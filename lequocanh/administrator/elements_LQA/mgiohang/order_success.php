@@ -11,6 +11,17 @@ if (!isset($_SESSION['payment_success']) || !isset($_GET['order_id'])) {
 // Lấy ID đơn hàng
 $orderId = $_GET['order_id'];
 
+// Kết nối database để lấy thông tin đơn hàng
+require_once '../../elements_LQA/mod/database.php';
+$db = Database::getInstance();
+$conn = $db->getConnection();
+
+// Lấy thông tin đơn hàng
+$orderSql = "SELECT * FROM orders WHERE id = ?";
+$orderStmt = $conn->prepare($orderSql);
+$orderStmt->execute([$orderId]);
+$order = $orderStmt->fetch(PDO::FETCH_ASSOC);
+
 // Xóa thông báo thành công khỏi session
 unset($_SESSION['payment_success']);
 ?>
@@ -56,18 +67,22 @@ unset($_SESSION['payment_success']);
         </div>
         <h2 class="mb-3">Đặt hàng thành công!</h2>
         <p class="lead">Cảm ơn bạn đã đặt hàng. Chúng tôi đã nhận được thông tin thanh toán của bạn.</p>
-        
+
         <div class="order-info">
             <h5>Thông tin đơn hàng:</h5>
             <p><strong>Mã đơn hàng:</strong> #<?php echo $orderId; ?></p>
+            <p><strong>Mã tham chiếu:</strong> <?php echo $order['order_code']; ?></p>
+            <p><strong>Tổng tiền:</strong> <?php echo number_format($order['total_amount'], 0, ',', '.'); ?> đ</p>
+            <p><strong>Địa chỉ giao hàng:</strong> <?php echo htmlspecialchars($order['shipping_address']); ?></p>
+            <p><strong>Trạng thái:</strong> <?php echo $order['status'] == 'pending' ? 'Chờ xử lý' : $order['status']; ?></p>
             <p>Đơn hàng của bạn đang được xử lý. Chúng tôi sẽ liên hệ với bạn trong thời gian sớm nhất.</p>
         </div>
-        
+
         <div class="mt-4">
             <a href="<?php echo isset($_SESSION['ADMIN']) ? '../../index.php' : '../../../index.php'; ?>" class="btn btn-primary">Tiếp tục mua hàng</a>
         </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

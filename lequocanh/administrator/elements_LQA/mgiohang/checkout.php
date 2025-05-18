@@ -35,6 +35,17 @@ $giohang = new GioHang();
 $hanghoa = new hanghoa();
 $tonkho = new MTonKho();
 
+// Lấy thông tin người dùng nếu đã đăng nhập
+$userAddress = '';
+if (isset($_SESSION['USER'])) {
+    require_once '../../elements_LQA/mod/userCls.php';
+    $userObj = new user();
+    $currentUser = $userObj->UserGetbyUsername($_SESSION['USER']);
+    if ($currentUser && !empty($currentUser->diachi)) {
+        $userAddress = $currentUser->diachi;
+    }
+}
+
 // Lấy thông tin chi tiết của các sản phẩm đã chọn
 $orderDetails = [];
 $totalAmount = 0;
@@ -202,6 +213,20 @@ $transferContent = $orderCode;
     <div class="checkout-container">
         <h2 class="mb-4">Thanh toán đơn hàng</h2>
 
+        <!-- Thông tin địa chỉ giao hàng -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Địa chỉ giao hàng</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="shipping-address" class="form-label">Địa chỉ nhận hàng</label>
+                    <textarea class="form-control" id="shipping-address" rows="3" placeholder="Nhập địa chỉ giao hàng"><?php echo htmlspecialchars($userAddress); ?></textarea>
+                    <div class="form-text">Vui lòng nhập địa chỉ đầy đủ để chúng tôi giao hàng đến bạn.</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Thông tin đơn hàng -->
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
@@ -367,9 +392,21 @@ $transferContent = $orderCode;
                 confirmPaymentBtn.disabled = true;
                 processingPayment.style.display = 'block';
 
+                // Lấy địa chỉ giao hàng
+                const shippingAddress = document.getElementById('shipping-address').value.trim();
+
+                // Kiểm tra địa chỉ giao hàng
+                if (!shippingAddress) {
+                    alert('Vui lòng nhập địa chỉ giao hàng');
+                    confirmPaymentBtn.disabled = false;
+                    processingPayment.style.display = 'none';
+                    return;
+                }
+
                 // Tạo form data
                 const formData = new FormData();
                 formData.append('order_code', '<?php echo $orderCode; ?>');
+                formData.append('shipping_address', shippingAddress);
 
                 // Gửi request bằng fetch API
                 fetch('payment_confirm.php', {

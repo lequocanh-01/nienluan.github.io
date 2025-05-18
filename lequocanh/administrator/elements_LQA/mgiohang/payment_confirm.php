@@ -33,6 +33,17 @@ if (!isset($_POST['order_code']) || $_POST['order_code'] !== $_SESSION['order_co
     exit();
 }
 
+// Kiểm tra xem có địa chỉ giao hàng không
+if (!isset($_POST['shipping_address']) || empty($_POST['shipping_address'])) {
+    // Nếu không có địa chỉ giao hàng, chuyển hướng về trang giỏ hàng
+    $_SESSION['checkout_error'] = 'Vui lòng nhập địa chỉ giao hàng';
+    header('Location: giohangView.php');
+    exit();
+}
+
+// Lấy địa chỉ giao hàng
+$shippingAddress = trim($_POST['shipping_address']);
+
 // Lấy thông tin đơn hàng từ session
 $orderDetails = $_SESSION['order_details'];
 $totalAmount = $_SESSION['total_amount'];
@@ -75,6 +86,23 @@ if ($checkTableStmt->rowCount() == 0) {
     $conn->exec($createOrderItemsTableSql);
 }
 
+// Kiểm tra xem bảng orders có cột shipping_address không
+$checkShippingAddressColumnSql = "SHOW COLUMNS FROM orders LIKE 'shipping_address'";
+$checkShippingAddressColumnStmt = $conn->prepare($checkShippingAddressColumnSql);
+$checkShippingAddressColumnStmt->execute();
+$hasShippingAddressColumn = ($checkShippingAddressColumnStmt->rowCount() > 0);
+
+// Nếu không có cột shipping_address, thêm cột này vào bảng orders
+if (!$hasShippingAddressColumn) {
+    try {
+        $addShippingAddressColumnSql = "ALTER TABLE orders ADD COLUMN shipping_address TEXT AFTER user_id";
+        $conn->exec($addShippingAddressColumnSql);
+        error_log("Đã thêm cột shipping_address vào bảng orders");
+    } catch (PDOException $e) {
+        error_log("Lỗi khi thêm cột shipping_address: " . $e->getMessage());
+    }
+}
+
 // Bắt đầu transaction
 $conn->beginTransaction();
 
@@ -82,36 +110,64 @@ try {
     // Lấy user_id từ session (nếu đã đăng nhập)
     $userId = isset($_SESSION['USER']) ? $_SESSION['USER'] : null;
 
+    // Ghi log để debug
+    error_log("Bắt đầu tạo đơn hàng: order_code=" . $orderCode . ", user_id=" . $userId . ", total_amount=" . $totalAmount);
+
     // Thêm đơn hàng vào bảng orders
-    $insertOrderSql = "INSERT INTO orders (order_code, user_id, total_amount, status, payment_method)
-                      VALUES (?, ?, ?, 'pending', 'bank_transfer')";
+    $insertOrderSql = "INSERT INTO orders (order_code, user_id, shipping_address, total_amount, status, payment_method)
+                      VALUES (?, ?, ?, ?, 'pending', 'bank_transfer')";
     $insertOrderStmt = $conn->prepare($insertOrderSql);
-    $insertOrderStmt->execute([$orderCode, $userId, $totalAmount]);
+    $insertOrderStmt->execute([$orderCode, $userId, $shippingAddress, $totalAmount]);
 
     // Lấy ID của đơn hàng vừa thêm
     $orderId = $conn->lastInsertId();
 
+    error_log("Đã tạo đơn hàng thành công: order_id=" . $orderId);
+
     // Thêm các sản phẩm vào bảng order_items
     foreach ($orderDetails as $item) {
-        $insertOrderItemSql = "INSERT INTO order_items (order_id, product_id, quantity, price)
-                              VALUES (?, ?, ?, ?)";
-        $insertOrderItemStmt = $conn->prepare($insertOrderItemSql);
-        $insertOrderItemStmt->execute([$orderId, $item['id'], $item['quantity'], $item['price']]);
+        try {
+            error_log("Thêm sản phẩm vào đơn hàng: product_id=" . $item['id'] . ", quantity=" . $item['quantity'] . ", price=" . $item['price']);
 
-        // Cập nhật số lượng tồn kho (giảm số lượng)
-        $tonkhoInfo = $tonkho->getTonKhoByIdHangHoa($item['id']);
-        if ($tonkhoInfo) {
-            // Sử dụng hàm updateSoLuong với isIncrement = false để giảm số lượng
-            $tonkho->updateSoLuong($item['id'], $item['quantity'], false);
+            $insertOrderItemSql = "INSERT INTO order_items (order_id, product_id, quantity, price)
+                                  VALUES (?, ?, ?, ?)";
+            $insertOrderItemStmt = $conn->prepare($insertOrderItemSql);
+            $insertOrderItemStmt->execute([$orderId, $item['id'], $item['quantity'], $item['price']]);
 
-            // Ghi log để debug
-            error_log("Đã cập nhật tồn kho cho sản phẩm ID: " . $item['id'] . ", giảm: " . $item['quantity']);
-        } else {
-            error_log("Không tìm thấy thông tin tồn kho cho sản phẩm ID: " . $item['id']);
+            error_log("Đã thêm sản phẩm vào đơn hàng thành công");
+
+            // Cập nhật số lượng tồn kho (giảm số lượng)
+            $tonkhoInfo = $tonkho->getTonKhoByIdHangHoa($item['id']);
+            if ($tonkhoInfo) {
+                error_log("Tồn kho hiện tại của sản phẩm ID " . $item['id'] . ": " . $tonkhoInfo->soLuong);
+
+                // Sử dụng hàm updateSoLuong với isIncrement = false để giảm số lượng
+                $updateResult = $tonkho->updateSoLuong($item['id'], $item['quantity'], false);
+
+                if ($updateResult) {
+                    error_log("Đã cập nhật tồn kho thành công cho sản phẩm ID: " . $item['id'] . ", giảm: " . $item['quantity']);
+
+                    // Kiểm tra lại tồn kho sau khi cập nhật
+                    $updatedTonkhoInfo = $tonkho->getTonKhoByIdHangHoa($item['id']);
+                    if ($updatedTonkhoInfo) {
+                        error_log("Tồn kho sau khi cập nhật của sản phẩm ID " . $item['id'] . ": " . $updatedTonkhoInfo->soLuong);
+                    }
+                } else {
+                    error_log("Cập nhật tồn kho thất bại cho sản phẩm ID: " . $item['id']);
+                }
+            } else {
+                error_log("Không tìm thấy thông tin tồn kho cho sản phẩm ID: " . $item['id'] . ", tạo mới tồn kho");
+                // Tạo mới tồn kho với số lượng ban đầu là số lượng đặt hàng (để trừ đi)
+                $tonkho->updateSoLuong($item['id'], $item['quantity'], false);
+            }
+
+            // Xóa sản phẩm khỏi giỏ hàng
+            $giohang->removeFromCart($item['id']);
+            error_log("Đã xóa sản phẩm ID: " . $item['id'] . " khỏi giỏ hàng");
+        } catch (Exception $e) {
+            error_log("Lỗi khi xử lý sản phẩm ID: " . $item['id'] . ": " . $e->getMessage());
+            throw $e; // Ném lại ngoại lệ để rollback transaction
         }
-
-        // Xóa sản phẩm khỏi giỏ hàng
-        $giohang->removeFromCart($item['id']);
     }
 
     // Commit transaction

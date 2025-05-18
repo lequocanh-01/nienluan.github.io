@@ -81,9 +81,9 @@ class user
     public function UserUpdate($username, $password, $hoten, $gioitinh, $ngaysinh, $diachi, $dienthoai, $iduser)
     {
         try {
-            $sql = "UPDATE user SET 
-                    username=?, 
-                    password=?, 
+            $sql = "UPDATE user SET
+                    username=?,
+                    password=?,
                     hoten=?,
                     gioitinh=?,
                     ngaysinh=?,
@@ -158,6 +158,18 @@ class user
         $getAll->execute();
 
         return $getAll->fetchAll();
+    }
+
+    public function UserGetbyUsername($username)
+    {
+        $sql = 'SELECT * FROM user WHERE username = ?';
+        $data = array($username);
+
+        $getOne = $this->db->prepare($sql);
+        $getOne->setFetchMode(PDO::FETCH_OBJ);
+        $getOne->execute($data);
+
+        return $getOne->fetch();
     }
 }
 // Removed direct instantiation of user class

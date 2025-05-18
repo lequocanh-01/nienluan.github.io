@@ -299,20 +299,58 @@ if ($checkTableStmt->rowCount() == 0) {
         $checkUserTableStmt->execute();
         $hasUserTable = ($checkUserTableStmt->rowCount() > 0);
 
-        // Đơn giản hóa truy vấn để tránh lỗi
-        $ordersSql = "SELECT * FROM orders ORDER BY created_at DESC";
+        // Kiểm tra các cột trong bảng orders
+        $columnsQuery = "SHOW COLUMNS FROM orders";
+        $columnsStmt = $conn->prepare($columnsQuery);
+        $columnsStmt->execute();
+        $columns = $columnsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        error_log("Các cột trong bảng orders: " . implode(", ", $columns));
+
+        // Xây dựng truy vấn dựa trên các cột có sẵn
+        $selectColumns = "id, order_code, user_id";
+
+        // Thêm các cột tùy chọn nếu chúng tồn tại
+        if (in_array('shipping_address', $columns)) {
+            $selectColumns .= ", shipping_address";
+        }
+
+        if (in_array('total_amount', $columns)) {
+            $selectColumns .= ", total_amount";
+        } else {
+            $selectColumns .= ", 0 as total_amount";
+        }
+
+        if (in_array('status', $columns)) {
+            $selectColumns .= ", status";
+        } else {
+            $selectColumns .= ", 'pending' as status";
+        }
+
+        if (in_array('payment_method', $columns)) {
+            $selectColumns .= ", payment_method";
+        } else {
+            $selectColumns .= ", 'bank_transfer' as payment_method";
+        }
+
+        if (in_array('payment_status', $columns)) {
+            $selectColumns .= ", payment_status";
+        }
+
+        if (in_array('created_at', $columns)) {
+            $selectColumns .= ", created_at";
+        }
+
+        if (in_array('updated_at', $columns)) {
+            $selectColumns .= ", updated_at";
+        }
+
+        // Truy vấn an toàn
+        $ordersSql = "SELECT $selectColumns FROM orders ORDER BY created_at DESC";
+        error_log("SQL query: " . $ordersSql);
+
         $ordersStmt = $conn->prepare($ordersSql);
         $ordersStmt->execute();
-
-        // Kiểm tra lỗi sau khi thực thi truy vấn
-        $errorInfo = $ordersStmt->errorInfo();
-        if ($errorInfo[0] !== '00000') {
-            // Lỗi SQL khi lấy danh sách đơn hàng
-            // Thử truy vấn khác
-            $ordersSql = "SELECT id, order_code, total_amount, status, payment_method, payment_status, created_at, updated_at FROM orders ORDER BY created_at DESC";
-            $ordersStmt = $conn->prepare($ordersSql);
-            $ordersStmt->execute();
-        }
 
         $orders = $ordersStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -399,6 +437,16 @@ if ($checkTableStmt->rowCount() == 0) {
                     <?php else: ?>
                         <p><strong>Khách hàng:</strong> Khách vãng lai</p>
                     <?php endif; ?>
+
+                    <!-- Hiển thị địa chỉ giao hàng -->
+                    <?php if (isset($order['shipping_address']) && !empty($order['shipping_address'])): ?>
+                        <div class="mt-3">
+                            <p><strong>Địa chỉ giao hàng:</strong></p>
+                            <div class="p-2 bg-light rounded">
+                                <?php echo nl2br(htmlspecialchars($order['shipping_address'])); ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -457,6 +505,7 @@ if ($checkTableStmt->rowCount() == 0) {
                                 <th>ID</th>
                                 <th>Mã đơn hàng</th>
                                 <th>Khách hàng</th>
+                                <th>Địa chỉ</th>
                                 <th>Tổng tiền</th>
                                 <th>Trạng thái</th>
                                 <th>Ngày đặt</th>
@@ -475,6 +524,20 @@ if ($checkTableStmt->rowCount() == 0) {
                                             echo 'Khách vãng lai';
                                         }
                                         ?></td>
+                                    <td>
+                                        <?php if (isset($order['shipping_address']) && !empty($order['shipping_address'])): ?>
+                                            <?php
+                                                // Hiển thị tối đa 30 ký tự đầu tiên của địa chỉ
+                                                $shortAddress = mb_substr(htmlspecialchars($order['shipping_address']), 0, 30);
+                                                if (mb_strlen($order['shipping_address']) > 30) {
+                                                    $shortAddress .= '...';
+                                                }
+                                                echo $shortAddress;
+                                            ?>
+                                        <?php else: ?>
+                                            <span class="text-muted">Không có</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo number_format($order['total_amount'], 0, ',', '.'); ?> ₫</td>
                                     <td>
                                         <?php

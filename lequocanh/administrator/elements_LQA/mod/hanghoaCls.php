@@ -245,6 +245,27 @@ class hanghoa
     public function searchHanghoa($keyword)
     {
         try {
+            // Ghi log để debug
+            error_log("searchHanghoa - Bắt đầu tìm kiếm với từ khóa: " . $keyword);
+
+            // Kiểm tra kết nối database
+            if (!$this->db || !($this->db instanceof PDO)) {
+                error_log("searchHanghoa - Lỗi: Không có kết nối database hợp lệ");
+                return [];
+            }
+
+            // Kiểm tra bảng hanghoa có tồn tại không
+            try {
+                $checkTable = $this->db->query("SHOW TABLES LIKE 'hanghoa'");
+                if ($checkTable->rowCount() == 0) {
+                    error_log("searchHanghoa - Bảng hanghoa không tồn tại");
+                    return [];
+                }
+            } catch (PDOException $e) {
+                error_log("searchHanghoa - Lỗi khi kiểm tra bảng hanghoa: " . $e->getMessage());
+                return [];
+            }
+
             $select = "SELECT * FROM hanghoa
                        WHERE LOWER(tenhanghoa) LIKE LOWER(:keyword)
                        ORDER BY tenhanghoa ASC
@@ -252,9 +273,13 @@ class hanghoa
             $stmt = $this->db->prepare($select);
             $stmt->bindValue(':keyword', '%' . $keyword . '%', PDO::PARAM_STR);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            $results = $stmt->fetchAll(PDO::FETCH_OBJ);
+            error_log("searchHanghoa - Tìm thấy " . count($results) . " kết quả");
+
+            return $results;
         } catch (PDOException $e) {
-            error_log("Search error: " . $e->getMessage());
+            error_log("searchHanghoa - Lỗi: " . $e->getMessage());
             return [];
         }
     }
