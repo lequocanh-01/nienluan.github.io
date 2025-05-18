@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng dẫn sửa lỗi tổng tiền đơn hàng</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #16a085;
+        }
+        code {
+            background-color: #f8f9fa;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+        .note {
+            background-color: #f8f4e5;
+            border-left: 4px solid #f0ad4e;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hướng dẫn sửa lỗi tổng tiền đơn hàng</h1>
+        
+        <div class="note">
+            <p><strong>Vấn đề:</strong> Tổng tiền hiển thị trong bảng đơn hàng (200.000 đ) không khớp với tổng giá trị thực tế của các sản phẩm trong đơn hàng (24.000.000 đ).</p>
+        </div>
+        
+        <h2>1. Nguyên nhân của vấn đề</h2>
+        
+        <p>Sau khi phân tích mã nguồn, chúng tôi đã xác định được các nguyên nhân sau:</p>
+        
+        <ul>
+            <li><strong>Dữ liệu mẫu không chính xác:</strong> Trong nhiều file tạo dữ liệu mẫu, giá trị <code>total_amount</code> được đặt cứng là 100.000 hoặc 200.000 đồng, không phản ánh tổng giá trị thực tế của các sản phẩm trong đơn hàng.</li>
+            <li><strong>Không tính lại tổng tiền từ chi tiết đơn hàng:</strong> Khi hiển thị chi tiết đơn hàng, hệ thống không tính lại tổng tiền từ các sản phẩm trong đơn hàng, mà sử dụng giá trị <code>total_amount</code> đã lưu trong bảng <code>orders</code>.</li>
+        </ul>
+        
+        <h2>2. Giải pháp</h2>
+        
+        <p>Chúng tôi đã tạo hai script để khắc phục vấn đề này:</p>
+        
+        <h3>2.1. Cập nhật lại tổng tiền cho các đơn hàng hiện có</h3>
+        
+        <p>Script <code>fix_order_total.php</code> sẽ:</p>
+        <ul>
+            <li>Lấy danh sách tất cả các đơn hàng hiện có</li>
+            <li>Tính lại tổng tiền từ các sản phẩm trong bảng <code>order_items</code></li>
+            <li>Cập nhật giá trị <code>total_amount</code> trong bảng <code>orders</code></li>
+        </ul>
+        
+        <div class="success">
+            <p><strong>Cách sử dụng:</strong> Truy cập vào đường dẫn <a href="fix_order_total.php">fix_order_total.php</a> để chạy script cập nhật.</p>
+        </div>
+        
+        <h3>2.2. Kiểm tra và sửa lỗi trong quá trình tạo đơn hàng</h3>
+        
+        <p>Script <code>fix_order_creation.php</code> sẽ:</p>
+        <ul>
+            <li>Kiểm tra cấu trúc bảng <code>orders</code> và <code>order_items</code></li>
+            <li>Tạo một đơn hàng mẫu với tổng tiền được tính chính xác</li>
+            <li>Kiểm tra xem tổng tiền có khớp với tổng giá trị các sản phẩm không</li>
+        </ul>
+        
+        <div class="success">
+            <p><strong>Cách sử dụng:</strong> Truy cập vào đường dẫn <a href="fix_order_creation.php">fix_order_creation.php</a> để chạy script kiểm tra.</p>
+        </div>
+        
+        <h2>3. Cấu trúc bảng dữ liệu</h2>
+        
+        <h3>3.1. Bảng orders</h3>
+        
+        <table>
+            <tr>
+                <th>Tên cột</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Mô tả</th>
+            </tr>
+            <tr>
+                <td>id</td>
+                <td>INT</td>
+                <td>ID đơn hàng (khóa chính)</td>
+            </tr>
+            <tr>
+                <td>order_code</td>
+                <td>VARCHAR(50)</td>
+                <td>Mã đơn hàng</td>
+            </tr>
+            <tr>
+                <td>user_id</td>
+                <td>VARCHAR(50)</td>
+                <td>ID người dùng (có thể NULL nếu là khách vãng lai)</td>
+            </tr>
+            <tr>
+                <td>total_amount</td>
+                <td>DECIMAL(15,2)</td>
+                <td>Tổng tiền đơn hàng</td>
+            </tr>
+            <tr>
+                <td>status</td>
+                <td>ENUM</td>
+                <td>Trạng thái đơn hàng (pending, approved, cancelled)</td>
+            </tr>
+            <tr>
+                <td>payment_method</td>
+                <td>VARCHAR(50)</td>
+                <td>Phương thức thanh toán</td>
+            </tr>
+            <tr>
+                <td>created_at</td>
+                <td>TIMESTAMP</td>
+                <td>Thời gian tạo đơn hàng</td>
+            </tr>
+        </table>
+        
+        <h3>3.2. Bảng order_items</h3>
+        
+        <table>
+            <tr>
+                <th>Tên cột</th>
+                <th>Kiểu dữ liệu</th>
+                <th>Mô tả</th>
+            </tr>
+            <tr>
+                <td>id</td>
+                <td>INT</td>
+                <td>ID chi tiết đơn hàng (khóa chính)</td>
+            </tr>
+            <tr>
+                <td>order_id</td>
+                <td>INT</td>
+                <td>ID đơn hàng (khóa ngoại)</td>
+            </tr>
+            <tr>
+                <td>product_id</td>
+                <td>INT</td>
+                <td>ID sản phẩm (khóa ngoại)</td>
+            </tr>
+            <tr>
+                <td>quantity</td>
+                <td>INT</td>
+                <td>Số lượng sản phẩm</td>
+            </tr>
+            <tr>
+                <td>price</td>
+                <td>DECIMAL(15,2)</td>
+                <td>Đơn giá sản phẩm</td>
+            </tr>
+            <tr>
+                <td>created_at</td>
+                <td>TIMESTAMP</td>
+                <td>Thời gian tạo chi tiết đơn hàng</td>
+            </tr>
+        </table>
+        
+        <h2>4. Cách tính tổng tiền đơn hàng</h2>
+        
+        <p>Tổng tiền đơn hàng được tính bằng tổng giá trị của tất cả các sản phẩm trong đơn hàng:</p>
+        
+        <pre><code>$totalAmount = 0;
+foreach ($orderItems as $item) {
+    $totalAmount += $item['quantity'] * $item['price'];
+}</code></pre>
+        
+        <div class="warning">
+            <p><strong>Lưu ý:</strong> Khi tạo đơn hàng mới, cần đảm bảo rằng tổng tiền được tính chính xác từ tổng giá trị các sản phẩm trước khi lưu vào cơ sở dữ liệu.</p>
+        </div>
+        
+        <h2>5. Kết luận</h2>
+        
+        <p>Vấn đề tổng tiền không khớp đã được xác định và khắc phục. Sau khi chạy các script sửa lỗi, tổng tiền đơn hàng sẽ được cập nhật chính xác và phản ánh đúng tổng giá trị của các sản phẩm trong đơn hàng.</p>
+        
+        <p>Nếu bạn gặp bất kỳ vấn đề nào khác, vui lòng liên hệ với đội ngũ phát triển để được hỗ trợ.</p>
+        
+        <a href="administrator/index.php?req=orders" class="btn">Quay lại trang quản lý đơn hàng</a>
+    </div>
+</body>
+</html>

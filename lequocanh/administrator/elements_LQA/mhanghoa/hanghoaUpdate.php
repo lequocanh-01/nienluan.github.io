@@ -149,6 +149,9 @@ $nhanVienList = $nhanVienObj->nhanvienGetAll();
                 <div class="mt-2">
                     <img src="./elements_LQA/mhanghoa/displayImage.php?id=<?php echo $getHangHoaUpdate->hinhanh; ?>" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Hình ảnh hiện tại" onerror="this.src='./img_LQA/no-image.png';" />
                     <p>Hình ảnh hiện tại (ID: <?php echo $getHangHoaUpdate->hinhanh; ?>)</p>
+                    <button type="button" id="remove-image-btn" class="btn btn-danger btn-sm mt-2" data-id="<?php echo $idhanghoa; ?>">
+                        <i class="fas fa-trash"></i> Xóa hình ảnh
+                    </button>
                 </div>
             <?php endif; ?>
             <p class="hint">Nhập ID hình ảnh từ quản lý hình ảnh (để 0 nếu không có hình ảnh)</p>
@@ -343,6 +346,51 @@ $nhanVienList = $nhanVienObj->nhanvienGetAll();
             parentElement.style.display = 'none';
         }
     });
+
+    // Xử lý nút xóa hình ảnh
+    const removeImageBtn = document.getElementById('remove-image-btn');
+    if (removeImageBtn) {
+        removeImageBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Hiển thị hộp thoại xác nhận
+            if (confirm('Bạn có chắc chắn muốn xóa hình ảnh này khỏi sản phẩm không?')) {
+                // Lấy ID sản phẩm
+                const idhanghoa = this.getAttribute('data-id');
+
+                // Hiển thị trạng thái đang xử lý
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
+                this.disabled = true;
+
+                // Gửi yêu cầu xóa hình ảnh
+                fetch('./elements_LQA/mhanghoa/hanghoaAct.php?reqact=remove_image&idhanghoa=' + idhanghoa, {
+                        method: 'GET'
+                    })
+                    .then(response => {
+                        // Xử lý kết quả
+                        if (response.ok) {
+                            // Cập nhật giao diện
+                            const imageContainer = this.closest('.mt-2');
+                            imageContainer.innerHTML = '<p class="text-success">Đã xóa hình ảnh thành công!</p>';
+
+                            // Cập nhật giá trị input
+                            document.querySelector('input[name="id_hinhanh"]').value = '0';
+                        } else {
+                            // Hiển thị lỗi
+                            alert('Có lỗi xảy ra khi xóa hình ảnh. Vui lòng thử lại.');
+                            this.innerHTML = '<i class="fas fa-trash"></i> Xóa hình ảnh';
+                            this.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Có lỗi xảy ra khi xóa hình ảnh. Vui lòng thử lại.');
+                        this.innerHTML = '<i class="fas fa-trash"></i> Xóa hình ảnh';
+                        this.disabled = false;
+                    });
+            }
+        });
+    }
 
     // Xử lý form submission
     document.getElementById('updatehanghoa').addEventListener('submit', function(e) {

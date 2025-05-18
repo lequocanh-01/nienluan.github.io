@@ -20,101 +20,217 @@ class Dongia
     }
 
     // Lấy tất cả các đơn giá
-    public function dongiaGetAll()
+    public function DongiaGetAll()
     {
-        $sql = 'SELECT * FROM dongia';
-        $getAll = $this->db->prepare($sql);
-        $getAll->setFetchMode(PDO::FETCH_OBJ);
-
-        if (!$getAll->execute()) {
-            error_log(print_r($getAll->errorInfo(), true));
-            return false;
+        try {
+            $sql = 'SELECT d.*, h.tenhanghoa
+                   FROM dongia d
+                   LEFT JOIN hanghoa h ON d.idHangHoa = h.idhanghoa
+                   ORDER BY d.idHangHoa, d.apDung DESC, d.ngayApDung DESC';
+            $getAll = $this->db->prepare($sql);
+            $getAll->setFetchMode(PDO::FETCH_OBJ);
+            $getAll->execute();
+            return $getAll->fetchAll();
+        } catch (PDOException $e) {
+            error_log("DongiaGetAll Error: " . $e->getMessage());
+            return [];
         }
-
-        return $getAll->fetchAll();
     }
 
     // Thêm đơn giá mới
-    public function dongiaAdd($idhanghoa, $ngaycapnhat, $dongia)
+    public function DongiaAdd($idHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien = '', $ghiChu = '')
     {
-        $sql = "INSERT INTO dongia (idhanghoa, ngaycapnhat, dongia) VALUES (?, ?, ?)";
-        $data = array($idhanghoa, $ngaycapnhat, $dongia);
+        try {
+            // Đặt tất cả các đơn giá hiện tại của sản phẩm này thành không áp dụng
+            $this->DongiaSetAllToFalse($idHangHoa);
 
-        $add = $this->db->prepare($sql);
+            // Thêm đơn giá mới và đặt nó thành đang áp dụng
+            $sql = "INSERT INTO dongia (idHangHoa, giaBan, ngayApDung, ngayKetThuc, dieuKien, ghiChu, apDung)
+                   VALUES (?, ?, ?, ?, ?, ?, 1)";
+            $data = array($idHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu);
 
-        if (!$add->execute($data)) {
-            error_log(print_r($add->errorInfo(), true));
+            $add = $this->db->prepare($sql);
+            $add->execute($data);
+
+            // Cập nhật giá tham khảo trong bảng hanghoa
+            $this->HanghoaUpdatePrice($idHangHoa, $giaBan);
+
+            return $this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log("DongiaAdd Error: " . $e->getMessage());
             return false;
         }
-
-        return $add->rowCount();
     }
 
     // Xóa đơn giá theo ID
-    public function dongiaDelete($idDongia)
+    public function DongiaDelete($idDonGia)
     {
-        $sql = "DELETE FROM dongia WHERE idDongia = ?";
-        $data = array($idDongia);
+        try {
+            // Lấy thông tin đơn giá trước khi xóa
+            $dongia = $this->DongiaGetbyId($idDonGia);
+            if (!$dongia) {
+                return false;
+            }
 
-        $del = $this->db->prepare($sql);
+            $sql = "DELETE FROM dongia WHERE idDonGia = ?";
+            $data = array($idDonGia);
 
-        if (!$del->execute($data)) {
-            error_log(print_r($del->errorInfo(), true));
+            $del = $this->db->prepare($sql);
+            $result = $del->execute($data);
+
+            // Nếu đơn giá đang được áp dụng, tìm đơn giá mới nhất để áp dụng
+            if ($dongia->apDung) {
+                $this->UpdateLatestPriceForProduct($dongia->idHangHoa);
+            }
+
+            return $result;
+        } catch (PDOException $e) {
+            error_log("DongiaDelete Error: " . $e->getMessage());
             return false;
         }
-
-        return $del->rowCount();
     }
 
     // Cập nhật thông tin đơn giá
-    public function dongiaUpdate($idhanghoa, $ngaycapnhat, $dongia, $idDongia)
+    public function DongiaUpdate($idDonGia, $idHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien = '', $ghiChu = '')
     {
-        $sql = "UPDATE dongia 
-                SET idhanghoa = ?, ngaycapnhat = ?, dongia = ? 
-                WHERE idDongia = ?";
-        $data = array($idhanghoa, $ngaycapnhat, $dongia, $idDongia);
+        try {
+            $sql = "UPDATE dongia
+                   SET idHangHoa = ?, giaBan = ?, ngayApDung = ?, ngayKetThuc = ?, dieuKien = ?, ghiChu = ?
+                   WHERE idDonGia = ?";
+            $data = array($idHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu, $idDonGia);
 
-        $update = $this->db->prepare($sql);
+            $update = $this->db->prepare($sql);
+            $result = $update->execute($data);
 
-        if (!$update->execute($data)) {
-            error_log(print_r($update->errorInfo(), true));
+            // Nếu đơn giá đang được áp dụng, cập nhật giá tham khảo trong bảng hanghoa
+            $dongia = $this->DongiaGetbyId($idDonGia);
+            if ($dongia && $dongia->apDung) {
+                $this->HanghoaUpdatePrice($idHangHoa, $giaBan);
+            }
+
+            return $result;
+        } catch (PDOException $e) {
+            error_log("DongiaUpdate Error: " . $e->getMessage());
             return false;
         }
-
-        return $update->rowCount();
     }
 
     // Lấy thông tin đơn giá theo ID
-    public function dongiaGetbyId($idDongia)
+    public function DongiaGetbyId($idDonGia)
     {
-        $sql = 'SELECT * FROM dongia WHERE idDongia = ?';
-        $data = array($idDongia);
+        try {
+            $sql = 'SELECT d.*, h.tenhanghoa
+                   FROM dongia d
+                   LEFT JOIN hanghoa h ON d.idHangHoa = h.idhanghoa
+                   WHERE d.idDonGia = ?';
+            $data = array($idDonGia);
 
-        $getOne = $this->db->prepare($sql);
-        $getOne->setFetchMode(PDO::FETCH_OBJ);
+            $getOne = $this->db->prepare($sql);
+            $getOne->setFetchMode(PDO::FETCH_OBJ);
+            $getOne->execute($data);
 
-        if (!$getOne->execute($data)) {
-            error_log(print_r($getOne->errorInfo(), true));
+            return $getOne->fetch();
+        } catch (PDOException $e) {
+            error_log("DongiaGetbyId Error: " . $e->getMessage());
             return false;
         }
-
-        return $getOne->fetch();
     }
 
     // Lấy đơn giá theo ID hàng hóa
-    public function dongiaGetbyIdHanghoa($idhanghoa)
+    public function DongiaGetbyIdHanghoa($idHangHoa)
     {
-        $sql = 'SELECT * FROM dongia WHERE idhanghoa = ? ORDER BY ngaycapnhat DESC';
-        $data = array($idhanghoa);
+        try {
+            $sql = 'SELECT d.*, h.tenhanghoa
+                   FROM dongia d
+                   LEFT JOIN hanghoa h ON d.idHangHoa = h.idhanghoa
+                   WHERE d.idHangHoa = ?
+                   ORDER BY d.apDung DESC, d.ngayApDung DESC';
+            $data = array($idHangHoa);
 
-        $getOne = $this->db->prepare($sql);
-        $getOne->setFetchMode(PDO::FETCH_OBJ);
+            $getAll = $this->db->prepare($sql);
+            $getAll->setFetchMode(PDO::FETCH_OBJ);
+            $getAll->execute($data);
 
-        if (!$getOne->execute($data)) {
-            error_log(print_r($getOne->errorInfo(), true));
+            return $getAll->fetchAll();
+        } catch (PDOException $e) {
+            error_log("DongiaGetbyIdHanghoa Error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    // Đặt tất cả đơn giá của một sản phẩm thành không áp dụng
+    public function DongiaSetAllToFalse($idHangHoa)
+    {
+        try {
+            $sql = "UPDATE dongia SET apDung = 0 WHERE idHangHoa = ?";
+            $data = array($idHangHoa);
+
+            $update = $this->db->prepare($sql);
+            return $update->execute($data);
+        } catch (PDOException $e) {
+            error_log("DongiaSetAllToFalse Error: " . $e->getMessage());
             return false;
         }
+    }
 
-        return $getOne->fetchAll();
+    // Cập nhật trạng thái áp dụng của đơn giá
+    public function DongiaUpdateStatus($idDonGia, $apDung)
+    {
+        try {
+            $sql = "UPDATE dongia SET apDung = ? WHERE idDonGia = ?";
+            $data = array($apDung ? 1 : 0, $idDonGia);
+
+            $update = $this->db->prepare($sql);
+            return $update->execute($data);
+        } catch (PDOException $e) {
+            error_log("DongiaUpdateStatus Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Cập nhật giá tham khảo trong bảng hanghoa
+    public function HanghoaUpdatePrice($idHangHoa, $giaBan)
+    {
+        try {
+            $sql = "UPDATE hanghoa SET giathamkhao = ? WHERE idhanghoa = ?";
+            $data = array($giaBan, $idHangHoa);
+
+            $update = $this->db->prepare($sql);
+            return $update->execute($data);
+        } catch (PDOException $e) {
+            error_log("HanghoaUpdatePrice Error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Cập nhật đơn giá mới nhất cho sản phẩm
+    public function UpdateLatestPriceForProduct($idHangHoa)
+    {
+        try {
+            // Tìm đơn giá mới nhất
+            $sql = "SELECT * FROM dongia WHERE idHangHoa = ? ORDER BY ngayApDung DESC LIMIT 1";
+            $data = array($idHangHoa);
+
+            $getLatest = $this->db->prepare($sql);
+            $getLatest->setFetchMode(PDO::FETCH_OBJ);
+            $getLatest->execute($data);
+
+            $latestPrice = $getLatest->fetch();
+
+            if ($latestPrice) {
+                // Đặt đơn giá mới nhất thành đang áp dụng
+                $this->DongiaUpdateStatus($latestPrice->idDonGia, true);
+
+                // Cập nhật giá tham khảo trong bảng hanghoa
+                $this->HanghoaUpdatePrice($idHangHoa, $latestPrice->giaBan);
+
+                return true;
+            }
+
+            return false;
+        } catch (PDOException $e) {
+            error_log("UpdateLatestPriceForProduct Error: " . $e->getMessage());
+            return false;
+        }
     }
 }

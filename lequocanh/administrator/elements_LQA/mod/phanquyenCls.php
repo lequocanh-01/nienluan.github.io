@@ -90,7 +90,9 @@ class PhanQuyen
                 'mtonkhoedit',
                 'mphieunhapfixtonkho',
                 'userprofile',
-                'userUpdateProfile'
+                'userUpdateProfile',
+                'orders',
+                'payment_config'
             ];
 
             $hasAccess = in_array($module, $allowedModules);

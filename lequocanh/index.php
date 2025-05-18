@@ -91,10 +91,25 @@ if (isset($_SESSION['USER'])) {
                             </ul>
                         </div>
                     <?php elseif (isset($_SESSION['ADMIN'])): ?>
-                        <a href="./administrator/index.php" class="btn btn-light me-2">
-                            <i class="fas fa-user-shield me-2"></i>
-                            Quản trị viên
-                        </a>
+                        <div class="dropdown me-2">
+                            <button class="btn btn-light dropdown-toggle" type="button" id="adminDropdown"
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-shield me-2"></i>
+                                Quản trị viên
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="./administrator/index.php">
+                                        <i class="fas fa-tachometer-alt me-2"></i>Bảng điều khiển
+                                    </a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item"
+                                        href="./administrator/elements_LQA/mUser/userAct.php?reqact=userlogout">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </a></li>
+                            </ul>
+                        </div>
                     <?php else: ?>
                         <a href="./administrator/userLogin.php" class="btn btn-light me-2">
                             <i class="fas fa-user me-2"></i>
@@ -102,13 +117,15 @@ if (isset($_SESSION['USER'])) {
                         </a>
                     <?php endif; ?>
 
-                    <a href="./administrator/elements_LQA/mgiohang/giohangView.php"
-                        class="btn btn-light position-relative">
-                        <i class="fas fa-shopping-cart"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                            <?php echo $cartItemCount; ?>
-                        </span>
-                    </a>
+                    <?php if (isset($_SESSION['USER'])): ?>
+                        <a href="./administrator/elements_LQA/mgiohang/giohangView.php"
+                            class="btn btn-light position-relative">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <?php echo $cartItemCount; ?>
+                            </span>
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

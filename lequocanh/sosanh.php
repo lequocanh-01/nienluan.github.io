@@ -130,10 +130,20 @@ foreach ($productIds as $id) {
                             <td>Thao tác</td>
                             <?php foreach ($products as $product): ?>
                                 <td class="text-center">
-                                    <a href="administrator/elements_LQA/mgiohang/giohangAct.php?action=add&productId=<?php echo $product->idhanghoa; ?>&quantity=1"
-                                        class="btn btn-primary btn-sm mb-2">
-                                        Thêm vào giỏ
-                                    </a>
+                                    <?php if (isset($_SESSION['USER'])): ?>
+                                        <a href="administrator/elements_LQA/mgiohang/giohangAct.php?action=add&productId=<?php echo $product->idhanghoa; ?>&quantity=1"
+                                            class="btn btn-primary btn-sm mb-2">
+                                            Thêm vào giỏ
+                                        </a>
+                                    <?php elseif (isset($_SESSION['ADMIN'])): ?>
+                                        <!-- Không hiển thị nút giỏ hàng cho admin -->
+                                    <?php else: ?>
+                                        <a href="administrator/userLogin.php"
+                                            class="btn btn-primary btn-sm mb-2"
+                                            onclick="alert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng');">
+                                            Thêm vào giỏ
+                                        </a>
+                                    <?php endif; ?>
                                     <br>
                                     <a href="./index.php?reqHanghoa=<?php echo $product->idhanghoa; ?>"
                                         class="btn btn-info btn-sm">

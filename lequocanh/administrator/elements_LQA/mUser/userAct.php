@@ -20,15 +20,34 @@ if ($requestAction) {
 
             // Kiểm tra username đã tồn tại chưa
             if ($userObj->UserCheckUsername($username)) {
-                header('Location: ../../index.php?req=userview&result=username_exists');
-                exit();
+                // Kiểm tra nếu là AJAX request
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'message' => 'Tên đăng nhập đã tồn tại']);
+                    exit();
+                } else {
+                    header('Location: ../../index.php?req=userview&result=username_exists');
+                    exit();
+                }
             }
 
             $kq = $userObj->UserAdd($username, $password, $hoten, $gioitinh, $ngaysinh, $diachi, $dienthoai);
-            if ($kq) {
-                header('Location: ../../index.php?req=userview&result=ok');
+
+            // Kiểm tra nếu là AJAX request
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                if ($kq) {
+                    echo json_encode(['success' => true, 'message' => 'Thêm người dùng thành công']);
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Thêm người dùng thất bại']);
+                }
+                exit();
             } else {
-                header('Location: ../../index.php?req=userview&result=notok');
+                if ($kq) {
+                    header('Location: ../../index.php?req=userview&result=ok');
+                } else {
+                    header('Location: ../../index.php?req=userview&result=notok');
+                }
             }
             break;
 
@@ -186,7 +205,15 @@ if ($requestAction) {
                     // Chuyển giỏ hàng từ session sang database
                     $giohang = new GioHang();
                     $giohang->migrateSessionCartToDatabase($username);
-                    header('location: ../../index.php?req=userview&result=ok');
+
+                    // Kiểm tra xem có URL chuyển hướng sau đăng nhập không
+                    if (isset($_SESSION['redirect_after_login'])) {
+                        $redirect_url = $_SESSION['redirect_after_login'];
+                        unset($_SESSION['redirect_after_login']);
+                        header('location: ' . $redirect_url);
+                    } else {
+                        header('location: ../../index.php?req=userview&result=ok');
+                    }
                 } else {
                     $_SESSION['USER'] = $username;
                     // Chuyển giỏ hàng từ session sang database
@@ -195,7 +222,15 @@ if ($requestAction) {
                     // Đặt cookie sau khi đăng nhập thành công
                     $time_login = date('h:i - d/m/Y');
                     setcookie($username, $time_login, time() + (86400 * 30), '/');
-                    header('location: ../../../index.php');
+
+                    // Kiểm tra xem có URL chuyển hướng sau đăng nhập không
+                    if (isset($_SESSION['redirect_after_login'])) {
+                        $redirect_url = $_SESSION['redirect_after_login'];
+                        unset($_SESSION['redirect_after_login']);
+                        header('location: ' . $redirect_url);
+                    } else {
+                        header('location: ../../../index.php');
+                    }
                 }
             } else {
                 header('location: ../../userLogin.php?error=1');

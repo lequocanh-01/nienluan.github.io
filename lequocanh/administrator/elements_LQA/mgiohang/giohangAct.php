@@ -5,6 +5,31 @@ if (session_status() == PHP_SESSION_NONE) {
 require_once '../../elements_LQA/mod/giohangCls.php';
 require_once '../../elements_LQA/mod/mtonkhoCls.php';
 
+$giohang = new GioHang();
+
+// Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+if (!$giohang->canUseCart()) {
+    // Nếu là yêu cầu AJAX, trả về lỗi dưới dạng JSON
+    if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
+            echo json_encode(['success' => false, 'message' => 'Vui lòng đăng nhập để sử dụng giỏ hàng', 'redirect' => '../../userLogin.php']);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Quản trị viên không có quyền sử dụng giỏ hàng', 'redirect' => '../../index.php']);
+        }
+        exit();
+    } else {
+        // Lưu URL hiện tại để chuyển hướng lại sau khi đăng nhập
+        if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
+            $_SESSION['redirect_after_login'] = $_SERVER['HTTP_REFERER'] ?? '../../../index.php';
+            header('Location: ../../userLogin.php');
+        } else {
+            header('Location: ../../index.php');
+        }
+        exit();
+    }
+}
+
 // Debug information
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -17,8 +42,6 @@ error_log("Document Root: " . $_SERVER['DOCUMENT_ROOT']);
 error_log("Script Filename: " . $_SERVER['SCRIPT_FILENAME']);
 error_log("Script Name: " . $_SERVER['SCRIPT_NAME']);
 
-// Allow cart access for all users, including guests with session IDs
-$giohang = new GioHang();
 $tonkho = new MTonKho();
 
 // Kiểm tra hành động từ GET

@@ -70,4 +70,38 @@ class Database
       return false;
     }
   }
+
+  public function addProduct($tenHangHoa, $giaHangHoa, $moTa, $hinhAnh)
+  {
+    try {
+      // Bắt đầu một giao dịch
+      $this->conn->beginTransaction();
+
+      // Chuẩn bị câu lệnh SQL để thêm hàng hóa
+      $sql = "INSERT INTO hang_hoa (ten_hang_hoa, gia_tham_khao, mo_ta, hinh_anh) 
+              VALUES (:ten_hang_hoa, :gia_tham_khao, :mo_ta, :hinh_anh)";
+
+      $stmt = $this->conn->prepare($sql);
+
+      // Thực thi với dữ liệu hàng hóa
+      $stmt->execute([
+        'ten_hang_hoa' => $tenHangHoa,
+        'gia_tham_khao' => $giaHangHoa,
+        'mo_ta' => $moTa,
+        'hinh_anh' => $hinhAnh
+      ]);
+
+      // Lấy ID của hàng hóa vừa thêm
+      $hangHoaId = $this->conn->lastInsertId();
+
+      // Hoàn tất giao dịch
+      $this->conn->commit();
+
+      return $hangHoaId;
+    } catch (PDOException $e) {
+      // Hủy giao dịch nếu có lỗi
+      $this->conn->rollBack();
+      return false;
+    }
+  }
 }

@@ -94,6 +94,12 @@ if (isset($_GET['req'])) {
         case 'mphieunhapfixtonkho':
             require './elements_LQA/mmphieunhap/mphieunhapFixTonKho.php';
             break;
+        case 'payment_config':
+            require './elements_LQA/madmin/payment_config.php';
+            break;
+        case 'orders':
+            require './elements_LQA/madmin/orders.php';
+            break;
     }
 } else {
     require './elements_LQA/default.php';

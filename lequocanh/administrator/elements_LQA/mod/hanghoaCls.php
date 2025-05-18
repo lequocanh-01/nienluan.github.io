@@ -46,18 +46,140 @@ class hanghoa
         return $getAll->fetchAll();
     }
 
-    public function HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien)
+    public function HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $ghichu = '')
     {
-        // Convert empty strings to NULL for integer fields
-        $idThuongHieu = $idThuongHieu === '' ? null : $idThuongHieu;
-        $idDonViTinh = $idDonViTinh === '' ? null : $idDonViTinh;
-        $idNhanVien = $idNhanVien === '' ? null : $idNhanVien;
+        // Tạo file log
+        $log_file = dirname(__FILE__) . '/hanghoa_class_debug.log';
 
-        $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien) VALUES (?,?,?,?,?,?,?,?)";
-        $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien);
-        $add = $this->db->prepare($sql);
-        $add->execute($data);
-        return $add->rowCount();
+        try {
+            // Ghi log chi tiết
+            $log_data = date('Y-m-d H:i:s') . " - HanghoaAdd() được gọi với các tham số:\n";
+            $log_data .= "tenhanghoa: $tenhanghoa\n";
+            $log_data .= "mota: $mota\n";
+            $log_data .= "giathamkhao: $giathamkhao\n";
+            $log_data .= "id_hinhanh: " . ($id_hinhanh ?: "NULL") . "\n";
+            $log_data .= "idloaihang: $idloaihang\n";
+            $log_data .= "idThuongHieu: " . ($idThuongHieu ?: "NULL") . "\n";
+            $log_data .= "idDonViTinh: " . ($idDonViTinh ?: "NULL") . "\n";
+            $log_data .= "idNhanVien: " . ($idNhanVien ?: "NULL") . "\n";
+            $log_data .= "ghichu: " . ($ghichu ?: "") . "\n";
+            file_put_contents($log_file, $log_data, FILE_APPEND);
+
+            // Convert empty strings to NULL for integer fields, but use 0 for id_hinhanh
+            $id_hinhanh = ($id_hinhanh === '') ? 0 : $id_hinhanh; // Use 0 instead of NULL for id_hinhanh
+            $idThuongHieu = ($idThuongHieu === '' || $idThuongHieu === 0 || $idThuongHieu === '0') ? null : $idThuongHieu;
+            $idDonViTinh = ($idDonViTinh === '' || $idDonViTinh === 0 || $idDonViTinh === '0') ? null : $idDonViTinh;
+            $idNhanVien = ($idNhanVien === '' || $idNhanVien === 0 || $idNhanVien === '0') ? null : $idNhanVien;
+
+            // Kiểm tra kết nối database
+            if (!$this->db || !($this->db instanceof PDO)) {
+                $error_msg = "Lỗi: Không có kết nối database hợp lệ";
+                file_put_contents($log_file, date('Y-m-d H:i:s') . " - $error_msg\n", FILE_APPEND);
+                return false;
+            }
+
+            // Kiểm tra các tham số bắt buộc
+            if (empty($tenhanghoa) || empty($giathamkhao) || empty($idloaihang)) {
+                $error_msg = "Lỗi: Thiếu thông tin bắt buộc (tên hàng hóa, giá tham khảo hoặc loại hàng)";
+                file_put_contents($log_file, date('Y-m-d H:i:s') . " - $error_msg\n", FILE_APPEND);
+                return false;
+            }
+
+            // Kiểm tra cấu trúc bảng hanghoa
+            try {
+                $checkColumns = $this->db->query("SHOW COLUMNS FROM hanghoa");
+                $columns = $checkColumns->fetchAll(PDO::FETCH_COLUMN);
+                $log_columns = date('Y-m-d H:i:s') . " - Các cột trong bảng hanghoa: " . implode(", ", $columns) . "\n";
+                file_put_contents($log_file, $log_columns, FILE_APPEND);
+            } catch (Exception $e) {
+                $log_column_error = date('Y-m-d H:i:s') . " - Lỗi khi kiểm tra cấu trúc bảng: " . $e->getMessage() . "\n";
+                file_put_contents($log_file, $log_column_error, FILE_APPEND);
+            }
+
+            // Chuẩn bị câu lệnh SQL với tên cột chính xác
+            // Thêm trường ghichu vào câu lệnh SQL
+            $ghichu = ""; // Giá trị mặc định cho ghichu
+
+            if (in_array('hinhanh', $columns)) {
+                $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien, ghichu) VALUES (?,?,?,?,?,?,?,?,?)";
+                $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $ghichu);
+            } else {
+                // Nếu tên cột là id_hinhanh thay vì hinhanh
+                $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, id_hinhanh, idloaihang, idThuongHieu, idDonViTinh, idNhanVien, ghichu) VALUES (?,?,?,?,?,?,?,?,?)";
+                $data = array($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $ghichu);
+            }
+
+            // Ghi log SQL và dữ liệu
+            $log_sql = date('Y-m-d H:i:s') . " - SQL: $sql\n";
+            $log_sql .= "Data: " . print_r($data, true) . "\n";
+            file_put_contents($log_file, $log_sql, FILE_APPEND);
+
+            // Thực thi câu lệnh SQL
+            $add = $this->db->prepare($sql);
+            $result = $add->execute($data);
+
+            // Kiểm tra kết quả
+            if ($result) {
+                $rowCount = $add->rowCount();
+                $lastId = $this->db->lastInsertId();
+                $log_success = date('Y-m-d H:i:s') . " - Thêm hàng hóa thành công. Rows affected: $rowCount, Last Insert ID: $lastId\n";
+                file_put_contents($log_file, $log_success, FILE_APPEND);
+
+                // Thêm vào bảng tonkho nếu có
+                try {
+                    $checkTonkhoTable = $this->db->query("SHOW TABLES LIKE 'tonkho'");
+                    if ($checkTonkhoTable->rowCount() > 0) {
+                        $insertTonkho = "INSERT INTO tonkho (idhanghoa, soLuong, soLuongToiThieu, viTri) VALUES (?, 0, 0, NULL)";
+                        $stmtTonkho = $this->db->prepare($insertTonkho);
+                        $stmtTonkho->execute([$lastId]);
+                        $log_tonkho = date('Y-m-d H:i:s') . " - Đã thêm vào bảng tonkho cho hàng hóa ID: $lastId\n";
+                        file_put_contents($log_file, $log_tonkho, FILE_APPEND);
+                    }
+                } catch (Exception $tonkhoEx) {
+                    $log_tonkho_error = date('Y-m-d H:i:s') . " - Lỗi khi thêm vào bảng tonkho: " . $tonkhoEx->getMessage() . "\n";
+                    file_put_contents($log_file, $log_tonkho_error, FILE_APPEND);
+                }
+
+                return $lastId; // Trả về ID của hàng hóa mới thêm
+            } else {
+                $error_info = print_r($add->errorInfo(), true);
+                $log_error = date('Y-m-d H:i:s') . " - Thêm hàng hóa thất bại. Error info: $error_info\n";
+                file_put_contents($log_file, $log_error, FILE_APPEND);
+
+                // Thử phương án thay thế nếu có lỗi với tên cột
+                if (strpos($error_info, "Unknown column") !== false) {
+                    // Kiểm tra cấu trúc bảng một lần nữa
+                    $describeStmt = $this->db->query("DESCRIBE hanghoa");
+                    $columns = $describeStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                    // Xác định tên cột hình ảnh chính xác
+                    $imageColumn = in_array('hinhanh', $columns) ? 'hinhanh' : 'id_hinhanh';
+
+                    // Thử lại với tên cột chính xác
+                    $sql = "INSERT INTO hanghoa (tenhanghoa, mota, giathamkhao, $imageColumn, idloaihang, idThuongHieu, idDonViTinh, idNhanVien) VALUES (?,?,?,?,?,?,?,?)";
+                    $add = $this->db->prepare($sql);
+                    $result = $add->execute($data);
+
+                    if ($result) {
+                        $lastId = $this->db->lastInsertId();
+                        $log_retry_success = date('Y-m-d H:i:s') . " - Thêm hàng hóa thành công sau khi thử lại. Last Insert ID: $lastId\n";
+                        file_put_contents($log_file, $log_retry_success, FILE_APPEND);
+                        return $lastId;
+                    } else {
+                        $retry_error_info = print_r($add->errorInfo(), true);
+                        $log_retry_error = date('Y-m-d H:i:s') . " - Thêm hàng hóa thất bại sau khi thử lại. Error info: $retry_error_info\n";
+                        file_put_contents($log_file, $log_retry_error, FILE_APPEND);
+                    }
+                }
+
+                return false;
+            }
+        } catch (Exception $e) {
+            $log_exception = date('Y-m-d H:i:s') . " - Exception: " . $e->getMessage() . "\n";
+            $log_exception .= "Stack trace: " . $e->getTraceAsString() . "\n";
+            file_put_contents($log_file, $log_exception, FILE_APPEND);
+            return false;
+        }
     }
 
     public function HanghoaDelete($idhanghoa)
@@ -70,15 +192,16 @@ class hanghoa
         return $del->rowCount();
     }
 
-    public function HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa)
+    public function HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa, $ghichu = '')
     {
-        // Convert empty strings to NULL for integer fields
+        // Convert empty strings to NULL for integer fields, but use 0 for id_hinhanh
+        $id_hinhanh = ($id_hinhanh === '') ? 0 : $id_hinhanh; // Use 0 instead of NULL for id_hinhanh
         $idThuongHieu = $idThuongHieu === '' ? null : $idThuongHieu;
         $idDonViTinh = $idDonViTinh === '' ? null : $idDonViTinh;
         $idNhanVien = $idNhanVien === '' ? null : $idNhanVien;
 
-        $sql = "UPDATE hanghoa SET tenhanghoa=?, hinhanh=?, mota=?, giathamkhao=?, idloaihang=?, idThuongHieu=?, idDonViTinh=?, idNhanVien=? WHERE idhanghoa =?";
-        $data = array($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
+        $sql = "UPDATE hanghoa SET tenhanghoa=?, hinhanh=?, mota=?, giathamkhao=?, idloaihang=?, idThuongHieu=?, idDonViTinh=?, idNhanVien=?, ghichu=? WHERE idhanghoa =?";
+        $data = array($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $ghichu, $idhanghoa);
 
         $update = $this->db->prepare($sql);
         $update->execute($data);
@@ -304,20 +427,31 @@ class hanghoa
         }
     }
 
+    // Biến static để lưu trữ trạng thái kiểm tra cột file_hash
+    private static $hasCheckedFileHashColumn = false;
+    private static $fileHashColumnExists = false;
+
     public function ThemHinhAnh($ten_file, $loai_file, $duong_dan, $file_hash = null)
     {
         try {
-            // Kiểm tra xem đã có cột file_hash trong bảng hinhanh chưa
-            $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
-            $checkColumnStmt = $this->db->prepare($checkColumnSql);
-            $checkColumnStmt->execute();
+            // Chỉ kiểm tra cột file_hash một lần trong suốt thời gian chạy ứng dụng
+            if (!self::$hasCheckedFileHashColumn) {
+                $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
+                $checkColumnStmt = $this->db->prepare($checkColumnSql);
+                $checkColumnStmt->execute();
 
-            // Nếu chưa có cột file_hash, thêm cột này vào bảng
-            if ($checkColumnStmt->rowCount() == 0) {
-                $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
-                $this->db->exec($addColumnSql);
+                self::$fileHashColumnExists = ($checkColumnStmt->rowCount() > 0);
+                self::$hasCheckedFileHashColumn = true;
+
+                // Nếu chưa có cột file_hash, thêm cột này vào bảng
+                if (!self::$fileHashColumnExists) {
+                    $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
+                    $this->db->exec($addColumnSql);
+                    self::$fileHashColumnExists = true;
+                }
             }
 
+            // Sử dụng prepared statement được tối ưu hóa
             if ($file_hash) {
                 $sql = "INSERT INTO hinhanh (ten_file, loai_file, duong_dan, trang_thai, ngay_tao, file_hash)
                         VALUES (?, ?, ?, 0, CURRENT_TIMESTAMP, ?)";
@@ -338,12 +472,6 @@ class hanghoa
     public function XoaHinhAnh($id)
     {
         try {
-            // Kiểm tra xem hình ảnh có đang được sử dụng không
-            $products = $this->GetProductsByImageId($id);
-            if (!empty($products)) {
-                return false;
-            }
-
             // Xóa record trong database
             $sql = "DELETE FROM hinhanh WHERE id = ?";
             $stmt = $this->db->prepare($sql);
@@ -518,23 +646,31 @@ class hanghoa
     public function CheckImageExistsByHash($fileHash)
     {
         try {
-            // Kiểm tra xem đã có cột file_hash trong bảng hinhanh chưa
-            $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
-            $checkColumnStmt = $this->db->prepare($checkColumnSql);
-            $checkColumnStmt->execute();
+            // Sử dụng biến static đã kiểm tra từ hàm ThemHinhAnh
+            if (!self::$hasCheckedFileHashColumn) {
+                $checkColumnSql = "SHOW COLUMNS FROM hinhanh LIKE 'file_hash'";
+                $checkColumnStmt = $this->db->prepare($checkColumnSql);
+                $checkColumnStmt->execute();
 
-            // Nếu chưa có cột file_hash, thêm cột này vào bảng
-            if ($checkColumnStmt->rowCount() == 0) {
-                $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
-                $this->db->exec($addColumnSql);
-                return false; // Vì vừa thêm cột, chắc chắn chưa có dữ liệu
+                self::$fileHashColumnExists = ($checkColumnStmt->rowCount() > 0);
+                self::$hasCheckedFileHashColumn = true;
+
+                // Nếu chưa có cột file_hash, thêm cột này vào bảng
+                if (!self::$fileHashColumnExists) {
+                    $addColumnSql = "ALTER TABLE hinhanh ADD COLUMN file_hash VARCHAR(32) NULL";
+                    $this->db->exec($addColumnSql);
+                    self::$fileHashColumnExists = true;
+                    return false; // Vì vừa thêm cột, chắc chắn chưa có dữ liệu
+                }
+            } else if (!self::$fileHashColumnExists) {
+                return false; // Nếu đã kiểm tra trước đó và biết rằng cột không tồn tại
             }
 
-            $sql = "SELECT id FROM hinhanh WHERE file_hash = :fileHash";
-            $cmd = $this->db->prepare($sql);
-            $cmd->bindValue(":fileHash", $fileHash);
-            $cmd->execute();
-            $result = $cmd->fetch(PDO::FETCH_OBJ);
+            // Sử dụng prepared statement với tham số được bind trực tiếp
+            $sql = "SELECT id FROM hinhanh WHERE file_hash = ?";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$fileHash]);
+            $result = $stmt->fetch(PDO::FETCH_OBJ);
 
             return $result ? $result->id : false;
         } catch (PDOException $e) {

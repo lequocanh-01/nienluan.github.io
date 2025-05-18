@@ -132,16 +132,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     setTimeout(function() {
-                        // Thử các đường dẫn khác nhau
-                        var primaryUrl = "/administrator/index.php?req=userprofile";
-                        var fallbackUrl = "../../index.php?req=userprofile";
-
-                        try {
-                            checkUrl(primaryUrl, fallbackUrl);
-                        } catch(e) {
-                            console.error("Lỗi khi chuyển hướng:", e);
-                            window.location.href = fallbackUrl;
-                        }
+                        // Chuyển hướng trực tiếp đến trang thông tin người dùng
+                        window.location.href = "http://localhost:8081/administrator/elements_LQA/mUser/userProfile.php";
                     }, 2000);
                 </script>';
 
@@ -153,23 +145,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Thêm script để xử lý chuyển hướng khi nhấn nút
                 echo '<script>
                     function tryRedirect() {
-                        var primaryUrl = "/administrator/index.php?req=userprofile";
-                        var fallbackUrl = "../../index.php?req=userprofile";
-                        var fallbackUrl2 = "../../../index.php?req=userprofile";
-
-                        try {
-                            // Thử đường dẫn đầu tiên
-                            window.location.href = primaryUrl;
-                        } catch(e) {
-                            console.error("Lỗi khi chuyển hướng:", e);
-                            try {
-                                // Nếu thất bại, thử đường dẫn thứ hai
-                                window.location.href = fallbackUrl;
-                            } catch(e2) {
-                                // Nếu vẫn thất bại, sử dụng đường dẫn cuối cùng
-                                window.location.href = fallbackUrl2;
-                            }
-                        }
+                        // Chuyển hướng trực tiếp đến trang thông tin người dùng
+                        window.location.href = "http://localhost:8081/administrator/elements_LQA/mUser/userProfile.php";
                     }
                 </script>';
             } else {
@@ -349,23 +326,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <script>
                 function tryRedirect() {
-                    var primaryUrl = "/administrator/index.php?req=userprofile";
-                    var fallbackUrl = "../../index.php?req=userprofile";
-                    var fallbackUrl2 = "../../../index.php?req=userprofile";
-
-                    try {
-                        // Thử đường dẫn đầu tiên
-                        window.location.href = primaryUrl;
-                    } catch (e) {
-                        console.error("Lỗi khi chuyển hướng:", e);
-                        try {
-                            // Nếu thất bại, thử đường dẫn thứ hai
-                            window.location.href = fallbackUrl;
-                        } catch (e2) {
-                            // Nếu vẫn thất bại, sử dụng đường dẫn cuối cùng
-                            window.location.href = fallbackUrl2;
-                        }
-                    }
+                    // Chuyển hướng trực tiếp đến trang thông tin người dùng
+                    window.location.href = "http://localhost:8081/administrator/elements_LQA/mUser/userProfile.php";
                 }
             </script>
 

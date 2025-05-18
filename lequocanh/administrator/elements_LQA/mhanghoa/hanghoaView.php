@@ -100,10 +100,14 @@ $missing_images = $hanghoaObj->FindMissingImages();
                 <td><input type="text" name="mota" /></td>
             </tr>
             <tr>
+                <td>Ghi chú</td>
+                <td><input type="text" name="ghichu" /></td>
+            </tr>
+            <tr>
                 <td>Hình ảnh</td>
                 <td>
-                    <select name="id_hinhanh" id="imageSelector" required>
-                        <option value="">-- Chọn hình ảnh --</option>
+                    <select name="id_hinhanh" id="imageSelector">
+                        <option value="0">-- Chọn hình ảnh (không bắt buộc) --</option>
                         <?php
                         foreach ($list_hinhanh as $img) {
                         ?>
@@ -123,10 +127,10 @@ $missing_images = $hanghoaObj->FindMissingImages();
                                 // Sử dụng displayImage.php để hiển thị ảnh theo ID
                                 $imageSrc = "./elements_LQA/mhanghoa/displayImage.php?id=" . $img->id;
                                 ?>
-                                <img src="<?php echo $imageSrc; ?>" class="preview-img" data-id="<?php echo $img->id; ?>"
+                                <img src="<?php echo $imageSrc; ?>&t=<?php echo time(); ?>" class="preview-img" data-id="<?php echo $img->id; ?>"
                                     alt="<?php echo htmlspecialchars($img->ten_file); ?>"
                                     title="<?php echo htmlspecialchars($img->ten_file); ?>"
-                                    onerror="this.src='./elements_LQA/img_LQA/no-image.png'">
+                                    onerror="this.onerror=null; this.src='./elements_LQA/img_LQA/no-image.png'">
                                 <div class="preview-info">
                                     <span class="preview-name"><?php echo htmlspecialchars($img->ten_file); ?></span>
                                 </div>
@@ -307,11 +311,15 @@ $l = count($list_hanghoa);
                                 // Sử dụng script displayImage khi hinhanh là ID
                                 $imageSrc = "./elements_LQA/mhanghoa/displayImage.php?id=" . $u->hinhanh;
                             ?>
-                                <img class="iconbutton" src="<?php echo $imageSrc; ?>" alt="Product Image"
-                                    onerror="this.src='./elements_LQA/img_LQA/no-image.png'">
-                                <?php
-                                // Không hiển thị số lượng hình ảnh ở đây vì mỗi sản phẩm chỉ có một hình ảnh chính
-                                ?>
+                                <div class="product-image-container">
+                                    <img class="iconbutton product-image" src="<?php echo $imageSrc; ?>&t=<?php echo time(); ?>" alt="Product Image"
+                                        onerror="this.onerror=null; this.src='./elements_LQA/img_LQA/no-image.png'">
+                                    <div class="image-actions">
+                                        <button type="button" class="btn btn-danger btn-sm remove-image-btn" data-id="<?php echo $u->idhanghoa; ?>">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             <?php
                             } else {
                                 echo '<img class="iconbutton" src="./elements_LQA/img_LQA/no-image.png" alt="No image">';
@@ -401,6 +409,39 @@ $l = count($list_hanghoa);
         cursor: pointer;
         z-index: 10000;
     }
+
+    /* Styles for product image container */
+    .product-image-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .product-image {
+        max-width: 100px;
+        max-height: 100px;
+    }
+
+    .image-actions {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        display: none;
+    }
+
+    .product-image-container:hover .image-actions {
+        display: block;
+    }
+
+    .remove-image-btn {
+        padding: 2px 5px;
+        font-size: 12px;
+        background-color: rgba(220, 53, 69, 0.8);
+        border: none;
+    }
+
+    .remove-image-btn:hover {
+        background-color: #dc3545;
+    }
 </style>
 
 <script>
@@ -442,9 +483,170 @@ $l = count($list_hanghoa);
                 selectedItem.classList.add('selected');
             }
         });
+
+        // Xử lý nút xóa hình ảnh trong danh sách sản phẩm
+        document.querySelectorAll('.remove-image-btn').forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Hiển thị hộp thoại xác nhận
+                if (confirm('Bạn có chắc chắn muốn xóa hình ảnh này khỏi sản phẩm không?')) {
+                    // Lấy ID sản phẩm
+                    const idhanghoa = this.getAttribute('data-id');
+
+                    // Hiển thị trạng thái đang xử lý
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                    this.disabled = true;
+
+                    // Lưu tham chiếu đến button
+                    const button = this;
+
+                    // Gửi yêu cầu xóa hình ảnh
+                    fetch('./elements_LQA/mhanghoa/hanghoaAct.php?reqact=remove_image&idhanghoa=' + idhanghoa, {
+                            method: 'GET'
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                // Cập nhật giao diện
+                                const imageContainer = button.closest('.product-image-container');
+                                imageContainer.innerHTML = '<img class="iconbutton" src="./elements_LQA/img_LQA/no-image.png" alt="No image">';
+                            } else {
+                                // Hiển thị lỗi
+                                alert('Có lỗi xảy ra khi xóa hình ảnh. Vui lòng thử lại.');
+                                button.innerHTML = '<i class="fas fa-trash"></i>';
+                                button.disabled = false;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('Có lỗi xảy ra khi xóa hình ảnh. Vui lòng thử lại.');
+                            button.innerHTML = '<i class="fas fa-trash"></i>';
+                            button.disabled = false;
+                        });
+                }
+            });
+        });
     });
 </script>
 
 <script src="./js_LQA/test-search.js"></script>
 
 <hr />
+
+<!-- Nút quay lại đầu trang -->
+<div id="back-to-top" class="back-to-top-button">
+    <i class="fas fa-arrow-up"></i>
+    <span class="tooltip">Lên đầu trang</span>
+</div>
+
+<style>
+    .back-to-top-button {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 1000;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        font-size: 20px;
+    }
+
+    .back-to-top-button:hover {
+        background-color: #0056b3;
+        transform: translateY(-3px);
+    }
+
+    .back-to-top-button.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Tooltip */
+    .back-to-top-button .tooltip {
+        position: absolute;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .back-to-top-button .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+
+    .back-to-top-button:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const backToTopButton = document.getElementById('back-to-top');
+
+        // Kiểm tra vị trí cuộn khi trang tải
+        checkScrollPosition();
+
+        // Hiển thị nút khi người dùng cuộn xuống 300px
+        window.addEventListener('scroll', checkScrollPosition);
+
+        // Xử lý sự kiện khi nhấp vào nút
+        backToTopButton.addEventListener('click', function() {
+            // Kiểm tra hỗ trợ cuộn mượt
+            if ('scrollBehavior' in document.documentElement.style) {
+                // Trình duyệt hỗ trợ cuộn mượt
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            } else {
+                // Trình duyệt không hỗ trợ cuộn mượt, sử dụng JavaScript
+                smoothScrollToTop();
+            }
+        });
+
+        // Hàm kiểm tra vị trí cuộn
+        function checkScrollPosition() {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('visible');
+            } else {
+                backToTopButton.classList.remove('visible');
+            }
+        }
+
+        // Hàm cuộn mượt cho các trình duyệt không hỗ trợ scrollBehavior
+        function smoothScrollToTop() {
+            const currentScroll = document.documentElement.scrollTop || document.body.scrollTop;
+            if (currentScroll > 0) {
+                window.requestAnimationFrame(smoothScrollToTop);
+                window.scrollTo(0, currentScroll - currentScroll / 8);
+            }
+        }
+    });
+</script>

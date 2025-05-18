@@ -9,53 +9,133 @@ function sendJsonResponse($success, $message = '')
     exit;
 }
 
+function redirectWithMessage($success, $message = '')
+{
+    $_SESSION['dongia_message'] = $message;
+    $_SESSION['dongia_success'] = $success;
+    header('location: ../../index.php?req=dongiaview');
+    exit;
+}
+
+// Kiểm tra xem yêu cầu là AJAX hay form thông thường
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+
 if (isset($_GET['reqact'])) {
     $requestAction = $_GET['reqact'];
     switch ($requestAction) {
         case 'addnew':
-            $idhanghoa = $_REQUEST['idhanghoa'];
-            $ngaycapnhat = $_REQUEST['ngaycapnhat'];
-            $dongia = $_REQUEST['dongia'];
+            // Lấy dữ liệu từ form
+            $idHangHoa = isset($_REQUEST['idhanghoa']) ? $_REQUEST['idhanghoa'] : '';
+            $giaBan = isset($_REQUEST['giaban']) ? $_REQUEST['giaban'] : 0;
+            $ngayApDung = isset($_REQUEST['ngayapdung']) ? $_REQUEST['ngayapdung'] : '';
+            $ngayKetThuc = isset($_REQUEST['ngayketthuc']) ? $_REQUEST['ngayketthuc'] : '';
+            $dieuKien = isset($_REQUEST['dieukien']) ? $_REQUEST['dieukien'] : '';
+            $ghiChu = isset($_REQUEST['ghichu']) ? $_REQUEST['ghichu'] : '';
 
+            // Kiểm tra dữ liệu đầu vào
+            if (empty($idHangHoa) || empty($giaBan) || empty($ngayApDung) || empty($ngayKetThuc)) {
+                if ($isAjax) {
+                    sendJsonResponse(false, 'Vui lòng điền đầy đủ thông tin bắt buộc');
+                } else {
+                    redirectWithMessage(false, 'Vui lòng điền đầy đủ thông tin bắt buộc');
+                }
+            }
+
+            // Thêm đơn giá mới
             $dg = new Dongia();
-            $kq = $dg->dongiaAdd($idhanghoa, $ngaycapnhat, $dongia);
+            $kq = $dg->DongiaAdd($idHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu);
+
             if ($kq) {
-                sendJsonResponse(true, 'Thêm đơn giá thành công');
+                if ($isAjax) {
+                    sendJsonResponse(true, 'Thêm đơn giá thành công');
+                } else {
+                    redirectWithMessage(true, 'Thêm đơn giá thành công');
+                }
             } else {
-                sendJsonResponse(false, 'Thêm đơn giá thất bại');
+                if ($isAjax) {
+                    sendJsonResponse(false, 'Thêm đơn giá thất bại');
+                } else {
+                    redirectWithMessage(false, 'Thêm đơn giá thất bại');
+                }
             }
             break;
 
         case 'deletedongia':
-            $idDongia = $_REQUEST['idDongia'];
+            $idDonGia = isset($_REQUEST['idDonGia']) ? $_REQUEST['idDonGia'] : '';
+
+            if (empty($idDonGia)) {
+                if ($isAjax) {
+                    sendJsonResponse(false, 'ID đơn giá không hợp lệ');
+                } else {
+                    redirectWithMessage(false, 'ID đơn giá không hợp lệ');
+                }
+            }
+
             $dg = new Dongia();
-            $kq = $dg->dongiaDelete($idDongia);
+            $kq = $dg->DongiaDelete($idDonGia);
+
             if ($kq) {
-                sendJsonResponse(true, 'Xóa đơn giá thành công');
+                if ($isAjax) {
+                    sendJsonResponse(true, 'Xóa đơn giá thành công');
+                } else {
+                    redirectWithMessage(true, 'Xóa đơn giá thành công');
+                }
             } else {
-                sendJsonResponse(false, 'Xóa đơn giá thất bại');
+                if ($isAjax) {
+                    sendJsonResponse(false, 'Xóa đơn giá thất bại');
+                } else {
+                    redirectWithMessage(false, 'Xóa đơn giá thất bại');
+                }
             }
             break;
 
         case 'updatedongia':
-            $idDongia = $_REQUEST['idDongia'];
-            $idhanghoa = $_REQUEST['idhanghoa'];
-            $ngaycapnhat = $_REQUEST['ngaycapnhat'];
-            $dongia = $_REQUEST['dongia'];
+            $idDonGia = isset($_REQUEST['idDonGia']) ? $_REQUEST['idDonGia'] : '';
+            $idHangHoa = isset($_REQUEST['idhanghoa']) ? $_REQUEST['idhanghoa'] : '';
+            $giaBan = isset($_REQUEST['giaban']) ? $_REQUEST['giaban'] : 0;
+            $ngayApDung = isset($_REQUEST['ngayapdung']) ? $_REQUEST['ngayapdung'] : '';
+            $ngayKetThuc = isset($_REQUEST['ngayketthuc']) ? $_REQUEST['ngayketthuc'] : '';
+            $dieuKien = isset($_REQUEST['dieukien']) ? $_REQUEST['dieukien'] : '';
+            $ghiChu = isset($_REQUEST['ghichu']) ? $_REQUEST['ghichu'] : '';
+
+            if (empty($idDonGia) || empty($idHangHoa) || empty($giaBan) || empty($ngayApDung) || empty($ngayKetThuc)) {
+                if ($isAjax) {
+                    sendJsonResponse(false, 'Vui lòng điền đầy đủ thông tin bắt buộc');
+                } else {
+                    redirectWithMessage(false, 'Vui lòng điền đầy đủ thông tin bắt buộc');
+                }
+            }
 
             $dg = new Dongia();
-            $kq = $dg->dongiaUpdate($idhanghoa, $ngaycapnhat, $dongia, $idDongia);
+            $kq = $dg->DongiaUpdate($idDonGia, $idHangHoa, $giaBan, $ngayApDung, $ngayKetThuc, $dieuKien, $ghiChu);
+
             if ($kq) {
-                sendJsonResponse(true, 'Cập nhật đơn giá thành công');
+                if ($isAjax) {
+                    sendJsonResponse(true, 'Cập nhật đơn giá thành công');
+                } else {
+                    redirectWithMessage(true, 'Cập nhật đơn giá thành công');
+                }
             } else {
-                sendJsonResponse(false, 'Cập nhật đơn giá thất bại');
+                if ($isAjax) {
+                    sendJsonResponse(false, 'Cập nhật đơn giá thất bại');
+                } else {
+                    redirectWithMessage(false, 'Cập nhật đơn giá thất bại');
+                }
             }
             break;
 
         default:
-            sendJsonResponse(false, 'Yêu cầu không hợp lệ');
+            if ($isAjax) {
+                sendJsonResponse(false, 'Yêu cầu không hợp lệ');
+            } else {
+                redirectWithMessage(false, 'Yêu cầu không hợp lệ');
+            }
             break;
     }
 } else {
-    sendJsonResponse(false, 'Yêu cầu không hợp lệ');
+    if ($isAjax) {
+        sendJsonResponse(false, 'Yêu cầu không hợp lệ');
+    } else {
+        redirectWithMessage(false, 'Yêu cầu không hợp lệ');
+    }
 }

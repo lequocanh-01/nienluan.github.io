@@ -3,31 +3,54 @@ session_start();
 require_once '../../elements_LQA/mod/giohangCls.php';
 require_once '../../elements_LQA/mod/hanghoaCls.php';
 
-// Remove login requirement to allow viewing cart with session ID
-// Users can have items in cart linked to their session without being logged in
+$giohang = new GioHang();
+$hanghoa = new hanghoa();
+
+// Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+if (!$giohang->canUseCart()) {
+    if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
+        // Lưu URL hiện tại để chuyển hướng lại sau khi đăng nhập
+        $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+        header('Location: ../../userLogin.php');
+    } else {
+        // Nếu là admin, chuyển hướng về trang quản trị
+        header('Location: ../../index.php');
+    }
+    exit();
+}
 
 // Enable error reporting can be kept for development
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(0);
 
-$giohang = new GioHang();
-$hanghoa = new hanghoa();
+
 
 // Get cart items
 $cart = $giohang->getCart();
 $cartDetails = [];
 $totalAmount = 0;
+$totalCartCount = 0;
+
+// Debug log để kiểm tra dữ liệu giỏ hàng
+error_log("Dữ liệu giỏ hàng: " . print_r($cart, true));
 
 if (!empty($cart)) {
     foreach ($cart as $item) {
         if (isset($item['product_id'])) {
+            // Kiểm tra và chuyển đổi hinhanh thành số nguyên nếu có giá trị
+            $hinhanhValue = null;
+            if (isset($item['hinhanh']) && $item['hinhanh'] !== null && $item['hinhanh'] !== '') {
+                $hinhanhValue = (int)$item['hinhanh'];
+                error_log("Đã chuyển đổi hinhanh trong cartDetails thành số nguyên: " . $hinhanhValue);
+            }
+
             $cartDetails[] = [
                 'id' => $item['product_id'],
                 'name' => $item['tenhanghoa'] ?? 'Unknown Product',
                 'price' => $item['giathamkhao'] ?? 0,
                 'quantity' => $item['quantity'],
-                'hinhanh' => $item['hinhanh'] ?? null,
+                'hinhanh' => $hinhanhValue,
                 'subtotal' => ($item['giathamkhao'] ?? 0) * $item['quantity']
             ];
             $totalAmount += ($item['giathamkhao'] ?? 0) * $item['quantity'];
@@ -275,32 +298,18 @@ if (!empty($cart)) {
                                 <?php
                                 // Kiểm tra xem hinhanh có phải là ID hợp lệ không
                                 if (isset($item['hinhanh']) && is_numeric($item['hinhanh']) && $item['hinhanh'] > 0) {
-                                    // Sử dụng đường dẫn tuyệt đối đến displayImage.php trong thư mục mhanghoa
-                                    $imageSrc = "../../elements_LQA/mhanghoa/displayImage.php?id=" . $item['hinhanh'] . "&t=" . time(); // Thêm timestamp để tránh cache
-                                    error_log("Giỏ hàng - Hiển thị hình ảnh ID: " . $item['hinhanh'] . " cho sản phẩm: " . $item['name'] . " với đường dẫn: " . $imageSrc);
+                                    // Sử dụng đường dẫn đến displayImage.php để hiển thị hình ảnh
+                                    $imageSrc = "../../elements_LQA/mhanghoa/displayImage.php?id=" . $item['hinhanh'];
                                 } else {
-                                    // Nếu không có hình ảnh hợp lệ, sử dụng ngay hình ảnh mặc định
+                                    // Nếu không có hình ảnh hợp lệ, sử dụng hình ảnh mặc định
                                     $imageSrc = "../../elements_LQA/img_LQA/no-image.png";
-                                    error_log("Giỏ hàng - Không có hình ảnh hợp lệ cho sản phẩm: " . $item['name']);
                                 }
                                 ?>
                                 <img src="<?php echo $imageSrc; ?>"
                                     alt="<?php echo htmlspecialchars($item['name']); ?>"
                                     class="product-image"
-                                    onerror="this.onerror=null; this.src='../../elements_LQA/img_LQA/no-image.png'; console.log('Lỗi tải hình ảnh: ' + this.alt);">
+                                    onerror="this.onerror=null; this.src='../../elements_LQA/img_LQA/no-image.png';">
                                 <span class="product-name"><?php echo htmlspecialchars($item['name']); ?></span>
-                                <?php if (isset($item['hinhanh']) && is_numeric($item['hinhanh']) && $item['hinhanh'] > 0): ?>
-                                    <!-- Thông tin debug hình ảnh (chỉ hiển thị trong chế độ phát triển) -->
-                                    <span class="d-none">Image ID: <?php echo $item['hinhanh']; ?></span>
-
-                                    <!-- Thử hiển thị hình ảnh bằng cách khác -->
-                                    <img src="../../elements_LQA/mhanghoa/displayImage.php?id=<?php echo $item['hinhanh']; ?>&t=<?php echo time(); ?>"
-                                        alt="<?php echo htmlspecialchars($item['name']); ?>"
-                                        class="product-image"
-                                        style="display: none;"
-                                        onload="if(this.previousElementSibling.previousElementSibling.naturalWidth === 0) { this.previousElementSibling.previousElementSibling.src = this.src; this.style.display = 'none'; } else { this.style.display = 'none'; }"
-                                        onerror="this.style.display = 'none';">
-                                <?php endif; ?>
                             </td>
                             <td class="price" data-price="<?php echo $item['price']; ?>">
                                 <?php echo number_format($item['price'], 0, ',', '.'); ?> ₫

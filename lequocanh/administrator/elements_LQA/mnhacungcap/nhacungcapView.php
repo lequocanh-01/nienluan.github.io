@@ -102,16 +102,16 @@ $l = count($list_ncc);
                             ?>
                                 <a href="./elements_LQA/mnhacungcap/nhacungcapAct.php?reqact=deletenhacungcap&idNCC=<?php echo $ncc->idNCC; ?>"
                                     onclick="return confirm('Bạn có chắc muốn xóa nhà cung cấp này?');">
-                                    <img src="./img_LQA/Delete.png" class="iconimg">
+                                    <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                                 </a>
                             <?php
                             } else {
                             ?>
-                                <img src="./img_LQA/Delete.png" class="iconimg">
+                                <img src="./elements_LQA/img_LQA/Delete.png" class="iconimg">
                             <?php
                             }
                             ?>
-                            <img src="./img_LQA/Update.png"
+                            <img src="./elements_LQA/img_LQA/Update.png"
                                 class="iconimg generic-update-btn"
                                 data-module="mnhacungcap"
                                 data-update-url="./elements_LQA/mnhacungcap/nhacungcapUpdate.php"
@@ -260,18 +260,18 @@ $l = count($list_ncc);
                     // Tạo modal mới
                     const modalHtml = `
                         <div id="dynamic-update-modal" style="
-                          display: block; 
-                          position: fixed; 
-                          z-index: 10000; 
-                          top: 50%; 
-                          left: 50%; 
-                          transform: translate(-50%, -50%); 
-                          background: white; 
-                          padding: 25px; 
-                          border-radius: 8px; 
-                          box-shadow: 0 5px 20px rgba(0,0,0,0.3); 
-                          width: 600px; 
-                          max-height: 90vh; 
+                          display: block;
+                          position: fixed;
+                          z-index: 10000;
+                          top: 50%;
+                          left: 50%;
+                          transform: translate(-50%, -50%);
+                          background: white;
+                          padding: 25px;
+                          border-radius: 8px;
+                          box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                          width: 600px;
+                          max-height: 90vh;
                           overflow-y: auto;
                           border: 2px solid #3498db;">
                           <button id="dynamic-close-btn" style="

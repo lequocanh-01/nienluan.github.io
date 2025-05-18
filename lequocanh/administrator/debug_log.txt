@@ -14,3 +14,11 @@ email: test@gmail.com
 luongCB: 5000000.00
 phuCap: 10000000.00
 chucVu: kiểm soát doanh thu
+idNhanVien: 14
+iduser: 6
+tenNV: quocanh sdf
+SDT: 0833055888
+email: contact@apple.com
+luongCB: 12000000.00
+phuCap: 1000000.00
+chucVu: quản lý kho

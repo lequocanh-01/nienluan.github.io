@@ -10,27 +10,123 @@ $(document).ready(function () {
 
   // Form validation and submission
   $("#formreg").submit(function (event) {
-    event.preventDefault();
+    event.preventDefault(); // Ngăn form submit theo cách thông thường
     $("#noteForm").html("");
     var isValid = true;
 
-    // Form validation logic (Username, Password, Hoten, etc.)
-    // ...
+    // Kiểm tra các trường dữ liệu
+    var username = $("input[name='username']").val();
+    var password = $("input[name='password']").val();
+    var hoten = $("input[name='hoten']").val();
+    var ngaysinh = $("input[name='ngaysinh']").val();
+    var diachi = $("input[name='diachi']").val();
+    var dienthoai = $("input[name='dienthoai']").val();
 
-    if (isValid) {
-      $.ajax({
-        url: "./elements_LQA/mUser/userAct.php?reqact=addnew",
-        type: "POST",
-        data: $("#formreg").serialize(),
-        success: function (response) {
-          console.log("Form submitted successfully:", response);
-        },
-        error: function (error) {
-          console.error("Error submitting form:", error);
-        },
-      });
+    // Kiểm tra dữ liệu
+    if (
+      !username ||
+      !password ||
+      !hoten ||
+      !ngaysinh ||
+      !diachi ||
+      !dienthoai
+    ) {
+      alert("Vui lòng điền đầy đủ thông tin!");
+      return false;
     }
+
+    // Kiểm tra số điện thoại
+    if (!/^[0-9]{10}$/.test(dienthoai)) {
+      alert("Số điện thoại phải có 10 chữ số!");
+      return false;
+    }
+
+    // Hiển thị thông báo đang xử lý
+    var loadingAlert = $('<div class="alert alert-info">Đang xử lý...</div>');
+    $(".admin-form").prepend(loadingAlert);
+
+    // Gửi dữ liệu bằng AJAX
+    $.ajax({
+      url: "./elements_LQA/mUser/userAct.php?reqact=addnew",
+      type: "POST",
+      data: $(this).serialize(),
+      success: function (response) {
+        // Xóa thông báo đang xử lý
+        loadingAlert.remove();
+
+        // Hiển thị thông báo thành công
+        var successAlert = $(
+          '<div class="alert alert-success">Thêm người dùng thành công!</div>'
+        );
+        $(".admin-form").prepend(successAlert);
+
+        // Làm mới danh sách người dùng
+        refreshUserList();
+
+        // Xóa dữ liệu trong form
+        $("#formreg")[0].reset();
+
+        // Tự động ẩn thông báo sau 3 giây
+        setTimeout(function () {
+          successAlert.fadeOut(500, function () {
+            $(this).remove();
+          });
+        }, 3000);
+      },
+      error: function (xhr, status, error) {
+        // Xóa thông báo đang xử lý
+        loadingAlert.remove();
+
+        // Hiển thị thông báo lỗi
+        var errorAlert = $(
+          '<div class="alert alert-danger">Có lỗi xảy ra: ' + error + "</div>"
+        );
+        $(".admin-form").prepend(errorAlert);
+
+        // Tự động ẩn thông báo sau 3 giây
+        setTimeout(function () {
+          errorAlert.fadeOut(500, function () {
+            $(this).remove();
+          });
+        }, 3000);
+      },
+    });
   });
+
+  // Hàm làm mới danh sách người dùng
+  function refreshUserList() {
+    $.ajax({
+      url: "./elements_LQA/mUser/getUserList.php",
+      type: "GET",
+      success: function (data) {
+        // Cập nhật bảng người dùng với dữ liệu mới
+        $(".content_user .table-responsive").html(data);
+
+        // Cập nhật số lượng người dùng
+        var userCount = $(".content-table tbody tr").length;
+        $(".admin-info b").text(userCount);
+
+        // Cập nhật thống kê trên dashboard
+        updateDashboardStats();
+      },
+    });
+  }
+
+  // Hàm cập nhật thống kê dashboard
+  function updateDashboardStats() {
+    $.ajax({
+      url: "./elements_LQA/mUser/getDashboardStats.php",
+      type: "GET",
+      dataType: "json",
+      success: function (data) {
+        // Cập nhật các thẻ thống kê
+        $(".dashboard-card.primary h2").text(data.totalUsers);
+        $(".dashboard-card.success h2").text(data.activeUsers);
+        $(".dashboard-card.info h2").text(data.last30DaysLogins);
+        $(".dashboard-card.warning h2").text(data.newUsersThisMonth);
+      },
+    });
+  }
 
   // Setup for loaihang update
   $("#w_update").hide();

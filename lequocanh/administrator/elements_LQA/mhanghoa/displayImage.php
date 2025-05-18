@@ -87,12 +87,58 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
 }
 
 // Nếu không tìm thấy ảnh hoặc có lỗi, trả về hình ảnh mặc định
-$defaultImage = "../../../elements_LQA/img_LQA/no-image.png";
-if (file_exists($defaultImage)) {
+$defaultImagePaths = [
+    "../../../elements_LQA/img_LQA/no-image.png",
+    "../../elements_LQA/img_LQA/no-image.png",
+    "../elements_LQA/img_LQA/no-image.png",
+    "./elements_LQA/img_LQA/no-image.png",
+    "../../../administrator/elements_LQA/img_LQA/no-image.png",
+    "../../administrator/elements_LQA/img_LQA/no-image.png",
+    "../administrator/elements_LQA/img_LQA/no-image.png",
+    "./administrator/elements_LQA/img_LQA/no-image.png"
+];
+
+$defaultImageFound = false;
+foreach ($defaultImagePaths as $defaultImage) {
+    if (file_exists($defaultImage)) {
+        header("Content-Type: image/png");
+        header("Content-Length: " . filesize($defaultImage));
+        readfile($defaultImage);
+        $defaultImageFound = true;
+        break;
+    }
+}
+
+// Nếu không tìm thấy file no-image.png, tạo một hình ảnh đơn giản
+if (!$defaultImageFound) {
+    // Tạo một hình ảnh đơn giản với text "No Image"
     header("Content-Type: image/png");
-    header("Content-Length: " . filesize($defaultImage));
-    readfile($defaultImage);
-} else {
-    // Nếu không tìm thấy ảnh mặc định, trả về lỗi 404
-    header("HTTP/1.0 404 Not Found");
+    $width = 200;
+    $height = 200;
+    $image = imagecreatetruecolor($width, $height);
+
+    // Màu nền và màu chữ
+    $bgColor = imagecolorallocate($image, 240, 240, 240);
+    $textColor = imagecolorallocate($image, 100, 100, 100);
+
+    // Vẽ nền
+    imagefilledrectangle($image, 0, 0, $width, $height, $bgColor);
+
+    // Vẽ viền
+    $borderColor = imagecolorallocate($image, 200, 200, 200);
+    imagerectangle($image, 0, 0, $width - 1, $height - 1, $borderColor);
+
+    // Thêm text
+    $text = "No Image";
+    $font = 5; // Font mặc định
+    $textWidth = imagefontwidth($font) * strlen($text);
+    $textHeight = imagefontheight($font);
+    $x = ($width - $textWidth) / 2;
+    $y = ($height - $textHeight) / 2;
+
+    imagestring($image, $font, $x, $y, $text, $textColor);
+
+    // Output hình ảnh
+    imagepng($image);
+    imagedestroy($image);
 }

@@ -24,6 +24,24 @@ class GioHang
         return null;
     }
 
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    public function isUserLoggedIn()
+    {
+        return isset($_SESSION['USER']); // Chỉ tính người dùng thường, không tính admin
+    }
+
+    // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không (chỉ user thường)
+    public function canUseCart()
+    {
+        return isset($_SESSION['USER']);
+    }
+
+    // Kiểm tra xem người dùng có phải là admin không
+    public function isAdmin()
+    {
+        return isset($_SESSION['ADMIN']);
+    }
+
     // Thêm phương thức để lấy session ID hiện tại
     private function getSessionId()
     {
@@ -32,6 +50,12 @@ class GioHang
 
     public function addToCart($productId, $quantity = 1)
     {
+        // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+        if (!$this->canUseCart()) {
+            error_log("Không thể thêm vào giỏ hàng: Người dùng không có quyền hoặc chưa đăng nhập");
+            return false;
+        }
+
         $userId = $this->getUserId();
         $sessionId = $this->getSessionId();
         error_log("Adding to cart - UserID: " . $userId . ", SessionID: " . $sessionId . ", ProductID: " . $productId . ", Quantity: " . $quantity);
@@ -48,16 +72,16 @@ class GioHang
             }
 
             // Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
-            $checkSql = "SELECT quantity FROM tbl_giohang WHERE (user_id = ? OR session_id = ?) AND product_id = ?";
+            $checkSql = "SELECT quantity FROM tbl_giohang WHERE user_id = ? AND product_id = ?";
             $checkStmt = $this->db->prepare($checkSql);
-            $checkStmt->execute([$userId, $sessionId, $productId]);
+            $checkStmt->execute([$userId, $productId]);
             $existingItem = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
             if ($existingItem) {
                 // Nếu sản phẩm đã tồn tại, cập nhật số lượng
-                $sql = "UPDATE tbl_giohang SET quantity = quantity + ? WHERE (user_id = ? OR session_id = ?) AND product_id = ?";
+                $sql = "UPDATE tbl_giohang SET quantity = quantity + ? WHERE user_id = ? AND product_id = ?";
                 $stmt = $this->db->prepare($sql);
-                $result = $stmt->execute([$quantity, $userId, $sessionId, $productId]);
+                $result = $stmt->execute([$quantity, $userId, $productId]);
             } else {
                 // Nếu sản phẩm chưa tồn tại, thêm mới
                 $sql = "INSERT INTO tbl_giohang (user_id, session_id, product_id, quantity) VALUES (?, ?, ?, ?)";
@@ -76,13 +100,18 @@ class GioHang
 
     public function removeFromCart($productId)
     {
+        // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+        if (!$this->canUseCart()) {
+            error_log("Không thể xóa khỏi giỏ hàng: Người dùng không có quyền hoặc chưa đăng nhập");
+            return false;
+        }
+
         $userId = $this->getUserId();
-        $sessionId = $this->getSessionId();
 
         try {
-            $sql = "DELETE FROM tbl_giohang WHERE (user_id = ? OR session_id = ?) AND product_id = ?";
+            $sql = "DELETE FROM tbl_giohang WHERE user_id = ? AND product_id = ?";
             $stmt = $this->db->prepare($sql);
-            $result = $stmt->execute([$userId, $sessionId, $productId]);
+            $result = $stmt->execute([$userId, $productId]);
 
             // Xóa cache khi xóa sản phẩm
             $this->clearCartCache();
@@ -96,14 +125,19 @@ class GioHang
 
     public function updateCart($productId, $quantity)
     {
+        // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+        if (!$this->canUseCart()) {
+            error_log("Không thể cập nhật giỏ hàng: Người dùng không có quyền hoặc chưa đăng nhập");
+            return false;
+        }
+
         $userId = $this->getUserId();
-        $sessionId = $this->getSessionId();
 
         try {
             if ($quantity > 0) {
-                $sql = "UPDATE tbl_giohang SET quantity = ? WHERE (user_id = ? OR session_id = ?) AND product_id = ?";
+                $sql = "UPDATE tbl_giohang SET quantity = ? WHERE user_id = ? AND product_id = ?";
                 $stmt = $this->db->prepare($sql);
-                return $stmt->execute([$quantity, $userId, $sessionId, $productId]);
+                return $stmt->execute([$quantity, $userId, $productId]);
             } else {
                 return $this->removeFromCart($productId);
             }
@@ -115,13 +149,18 @@ class GioHang
 
     public function getCart()
     {
+        // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+        if (!$this->canUseCart()) {
+            error_log("Không thể lấy giỏ hàng: Người dùng không có quyền hoặc chưa đăng nhập");
+            return [];
+        }
+
         // Nếu đã có cache, trả về từ cache
         if ($this->cart_cache !== null) {
             return $this->cart_cache;
         }
 
         $userId = $this->getUserId();
-        $sessionId = $this->getSessionId();
 
         try {
             // Sử dụng LEFT JOIN thay vì INNER JOIN
@@ -129,17 +168,24 @@ class GioHang
             $sql = "SELECT g.product_id, g.quantity, h.tenhanghoa, h.giathamkhao, h.hinhanh
                    FROM tbl_giohang g
                    LEFT JOIN hanghoa h ON g.product_id = h.idhanghoa
-                   WHERE g.session_id = ? OR g.user_id = ?";
+                   WHERE g.user_id = ?";
 
-            error_log("Executing cart query with sessionId: " . $sessionId . ", userId: " . $userId);
+            error_log("User: Executing cart query with userId: " . $userId);
 
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$sessionId, $userId]);
+            $stmt->execute([$userId]);
 
             $cart = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                 // Debug log để kiểm tra dữ liệu hình ảnh
                 error_log("Cart item: Product ID=" . $row['product_id'] . ", Image ID=" . ($row['hinhanh'] ?? 'NULL') . ", Name=" . ($row['tenhanghoa'] ?? 'Unknown'));
+
+                // Kiểm tra và chuyển đổi hinhanh thành số nguyên nếu có giá trị
+                $hinhanhValue = null;
+                if (isset($row['hinhanh']) && $row['hinhanh'] !== null && $row['hinhanh'] !== '') {
+                    $hinhanhValue = (int)$row['hinhanh'];
+                    error_log("Đã chuyển đổi hinhanh thành số nguyên: " . $hinhanhValue);
+                }
 
                 // Include cart items even if some fields are NULL
                 $cart[] = [
@@ -147,7 +193,7 @@ class GioHang
                     'tenhanghoa' => $row['tenhanghoa'] ?? 'Unknown Product',
                     'giathamkhao' => $row['giathamkhao'] ?? 0,
                     'quantity' => $row['quantity'],
-                    'hinhanh' => $row['hinhanh'] ?? null,
+                    'hinhanh' => $hinhanhValue,
                     'name' => $row['tenhanghoa'] ?? 'Unknown Product' // Thêm trường name để đảm bảo tương thích
                 ];
             }
@@ -164,13 +210,18 @@ class GioHang
 
     public function clearCart()
     {
+        // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+        if (!$this->canUseCart()) {
+            error_log("Không thể xóa giỏ hàng: Người dùng không có quyền hoặc chưa đăng nhập");
+            return false;
+        }
+
         $userId = $this->getUserId();
-        $sessionId = $this->getSessionId();
 
         try {
-            $sql = "DELETE FROM tbl_giohang WHERE user_id = ? OR session_id = ?";
+            $sql = "DELETE FROM tbl_giohang WHERE user_id = ?";
             $stmt = $this->db->prepare($sql);
-            $result = $stmt->execute([$userId, $sessionId]);
+            $result = $stmt->execute([$userId]);
 
             // Xóa cache khi xóa giỏ hàng
             $this->clearCartCache();
@@ -184,13 +235,19 @@ class GioHang
 
     public function getCartItemCount()
     {
+        // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+        if (!$this->canUseCart()) {
+            return 0;
+        }
+
         $userId = $this->getUserId();
-        $sessionId = $this->getSessionId();
 
         try {
-            $sql = "SELECT SUM(quantity) as total FROM tbl_giohang WHERE user_id = ? OR session_id = ?";
+            // Chỉ hiển thị giỏ hàng của user đó
+            $sql = "SELECT SUM(quantity) as total FROM tbl_giohang WHERE user_id = ?";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$userId, $sessionId]);
+            $stmt->execute([$userId]);
+
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result['total'] ?? 0;
         } catch (PDOException $e) {
@@ -202,25 +259,33 @@ class GioHang
     // Phương thức mới để chuyển giỏ hàng từ session sang database khi đăng nhập
     public function migrateSessionCartToDatabase($username)
     {
-        if (isset($_SESSION['cart']['guest_' . session_id()])) {
-            $sessionCart = $_SESSION['cart']['guest_' . session_id()];
-            foreach ($sessionCart as $productId => $quantity) {
-                $this->addToCart($productId, $quantity);
+        // Kiểm tra xem người dùng có phải là user thường không
+        if ($username && !isset($_SESSION['ADMIN'])) {
+            if (isset($_SESSION['cart']['guest_' . session_id()])) {
+                $sessionCart = $_SESSION['cart']['guest_' . session_id()];
+                foreach ($sessionCart as $productId => $quantity) {
+                    $this->addToCart($productId, $quantity);
+                }
+                unset($_SESSION['cart']['guest_' . session_id()]);
             }
-            unset($_SESSION['cart']['guest_' . session_id()]);
         }
     }
 
     public function updateQuantity($productId, $quantity)
     {
+        // Kiểm tra xem người dùng có thể sử dụng giỏ hàng không
+        if (!$this->canUseCart()) {
+            error_log("Không thể cập nhật số lượng: Người dùng không có quyền hoặc chưa đăng nhập");
+            return false;
+        }
+
         $userId = $this->getUserId();
-        $sessionId = $this->getSessionId();
 
         try {
             if ($quantity > 0) {
-                $sql = "UPDATE tbl_giohang SET quantity = ? WHERE (user_id = ? OR session_id = ?) AND product_id = ?";
+                $sql = "UPDATE tbl_giohang SET quantity = ? WHERE user_id = ? AND product_id = ?";
                 $stmt = $this->db->prepare($sql);
-                $result = $stmt->execute([$quantity, $userId, $sessionId, $productId]);
+                $result = $stmt->execute([$quantity, $userId, $productId]);
 
                 // Xóa cache khi cập nhật số lượng
                 $this->clearCartCache();

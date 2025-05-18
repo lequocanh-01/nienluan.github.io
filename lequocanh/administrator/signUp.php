@@ -3,7 +3,7 @@ require_once './elements_LQA/mod/userCls.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = new user();
-    
+
     // Lấy dữ liệu từ form
     $username = $_POST['username'];
     $password = $_POST['password'];
@@ -219,9 +219,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
 
         /* Responsive adjustments */
@@ -312,7 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div class="login-link">
-            Đã có tài khoản? <a href="http://localhost:3000/administrator/userLogin.php"><i class="fas fa-sign-in-alt me-1"></i>Đăng nhập ngay</a>
+            Đã có tài khoản? <a href="http://localhost:8081/administrator/userLogin.php"><i class="fas fa-sign-in-alt me-1"></i>Đăng nhập ngay</a>
         </div>
     </div>
 

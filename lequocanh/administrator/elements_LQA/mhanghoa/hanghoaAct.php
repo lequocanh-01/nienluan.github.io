@@ -8,17 +8,54 @@ if (isset($_REQUEST['reqact'])) {
             $tenhanghoa = $_REQUEST['tenhanghoa'];
             $mota = $_REQUEST['mota'];
             $giathamkhao = $_REQUEST['giathamkhao'];
-            $id_hinhanh = $_REQUEST['id_hinhanh'];
+            $id_hinhanh = isset($_REQUEST['id_hinhanh']) ? $_REQUEST['id_hinhanh'] : 0;
             $idloaihang = $_REQUEST['idloaihang'];
-            $idThuongHieu = $_REQUEST['idThuongHieu'];
-            $idDonViTinh = $_REQUEST['idDonViTinh'];
-            $idNhanVien = $_REQUEST['idNhanVien'];
+            $idThuongHieu = isset($_REQUEST['idThuongHieu']) ? $_REQUEST['idThuongHieu'] : '';
+            $idDonViTinh = isset($_REQUEST['idDonViTinh']) ? $_REQUEST['idDonViTinh'] : '';
+            $idNhanVien = isset($_REQUEST['idNhanVien']) ? $_REQUEST['idNhanVien'] : '';
+            $ghichu = isset($_REQUEST['ghichu']) ? $_REQUEST['ghichu'] : '';
 
-            $hanghoa->HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien);
-            if ($hanghoa) {
-                header('location: ../../index.php?req=hanghoaview&result=ok');
-            } else {
-                header('location: ../../index.php?req=hanghoaview&result=notok');
+            // Tạo file log
+            $log_file = __DIR__ . '/hanghoa_debug.log';
+
+            // Ghi log chi tiết
+            $log_data = date('Y-m-d H:i:s') . " - Thêm hàng hóa mới:\n";
+            $log_data .= "tenhanghoa: $tenhanghoa\n";
+            $log_data .= "mota: $mota\n";
+            $log_data .= "giathamkhao: $giathamkhao\n";
+            $log_data .= "id_hinhanh: $id_hinhanh\n";
+            $log_data .= "idloaihang: $idloaihang\n";
+            $log_data .= "idThuongHieu: " . ($idThuongHieu ?: "NULL") . "\n";
+            $log_data .= "idDonViTinh: " . ($idDonViTinh ?: "NULL") . "\n";
+            $log_data .= "idNhanVien: " . ($idNhanVien ?: "NULL") . "\n";
+            file_put_contents($log_file, $log_data, FILE_APPEND);
+
+            try {
+                // Lưu kết quả trả về từ hàm HanghoaAdd
+                $result = $hanghoa->HanghoaAdd($tenhanghoa, $mota, $giathamkhao, $id_hinhanh, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $ghichu);
+
+                // Ghi log kết quả
+                $log_result = date('Y-m-d H:i:s') . " - Kết quả thêm hàng hóa: " . ($result ? "thành công" : "thất bại") . "\n";
+                file_put_contents($log_file, $log_result, FILE_APPEND);
+
+                // Kiểm tra kết quả trả về từ hàm HanghoaAdd
+                if ($result) {
+                    // Nếu result là số nguyên > 0, đó là ID của hàng hóa mới thêm
+                    if (is_numeric($result) && $result > 0) {
+                        $log_success = date('Y-m-d H:i:s') . " - Thêm hàng hóa thành công với ID: $result\n";
+                        file_put_contents($log_file, $log_success, FILE_APPEND);
+                    }
+                    header('location: ../../index.php?req=hanghoaview&result=ok');
+                } else {
+                    file_put_contents($log_file, date('Y-m-d H:i:s') . " - Thêm hàng hóa thất bại, không có lỗi cụ thể\n", FILE_APPEND);
+                    header('location: ../../index.php?req=hanghoaview&result=notok');
+                }
+            } catch (Exception $e) {
+                // Ghi log lỗi
+                $log_error = date('Y-m-d H:i:s') . " - Lỗi: " . $e->getMessage() . "\n";
+                file_put_contents($log_file, $log_error, FILE_APPEND);
+
+                header('location: ../../index.php?req=hanghoaview&result=notok&error=' . urlencode($e->getMessage()));
             }
             break;
 
@@ -37,11 +74,12 @@ if (isset($_REQUEST['reqact'])) {
             $tenhanghoa = $_REQUEST['tenhanghoa'];
             $mota = $_REQUEST['mota'];
             $giathamkhao = $_REQUEST['giathamkhao'];
-            $id_hinhanh = $_REQUEST['id_hinhanh'];
+            $id_hinhanh = isset($_REQUEST['id_hinhanh']) ? $_REQUEST['id_hinhanh'] : 0;
             $idloaihang = $_REQUEST['idloaihang'];
-            $idThuongHieu = $_REQUEST['idThuongHieu'];
-            $idDonViTinh = $_REQUEST['idDonViTinh'];
-            $idNhanVien = $_REQUEST['idNhanVien'];
+            $idThuongHieu = isset($_REQUEST['idThuongHieu']) ? $_REQUEST['idThuongHieu'] : '';
+            $idDonViTinh = isset($_REQUEST['idDonViTinh']) ? $_REQUEST['idDonViTinh'] : '';
+            $idNhanVien = isset($_REQUEST['idNhanVien']) ? $_REQUEST['idNhanVien'] : '';
+            $ghichu = isset($_REQUEST['ghichu']) ? $_REQUEST['ghichu'] : '';
 
             // Debug log si se solicita
             $debug_log = isset($_REQUEST['debug_log']) && $_REQUEST['debug_log'] === 'true';
@@ -58,7 +96,7 @@ if (isset($_REQUEST['reqact'])) {
             }
 
             try {
-                $result = $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa);
+                $result = $hanghoa->HanghoaUpdate($tenhanghoa, $id_hinhanh, $mota, $giathamkhao, $idloaihang, $idThuongHieu, $idDonViTinh, $idNhanVien, $idhanghoa, $ghichu);
 
                 if ($debug_log) {
                     $log_data = date('Y-m-d H:i:s') . " - Update result: " . ($result ? "Success" : "Failed") . "\n";
@@ -166,15 +204,43 @@ if (isset($_REQUEST['reqact'])) {
                 $idhanghoa = intval($_GET['idhanghoa']);
                 $result = $hanghoa->RemoveImageFromProduct($idhanghoa);
 
-                if ($result) {
-                    // Gỡ bỏ thành công
-                    header("location: ../../index.php?req=hanghoaview&result=ok&msg=image_removed");
+                // Kiểm tra xem request có phải là AJAX không
+                $isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+                if ($isAjax) {
+                    // Trả về kết quả dạng JSON cho AJAX request
+                    header('Content-Type: application/json');
+                    if ($result) {
+                        http_response_code(200); // OK
+                        echo json_encode(['success' => true, 'message' => 'Đã xóa hình ảnh thành công']);
+                    } else {
+                        http_response_code(500); // Internal Server Error
+                        echo json_encode(['success' => false, 'message' => 'Không thể xóa hình ảnh']);
+                    }
+                    exit;
                 } else {
-                    // Gỡ bỏ thất bại
-                    header("location: ../../index.php?req=hanghoaview&result=notok&msg=image_removal_failed");
+                    // Xử lý cho non-AJAX request
+                    if ($result) {
+                        // Gỡ bỏ thành công
+                        header("location: ../../index.php?req=hanghoaview&result=ok&msg=image_removed");
+                    } else {
+                        // Gỡ bỏ thất bại
+                        header("location: ../../index.php?req=hanghoaview&result=notok&msg=image_removal_failed");
+                    }
                 }
             } else {
-                header("location: ../../index.php?req=hanghoaview&result=notok");
+                if (
+                    isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                    strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+                ) {
+                    header('Content-Type: application/json');
+                    http_response_code(400); // Bad Request
+                    echo json_encode(['success' => false, 'message' => 'Thiếu ID hàng hóa']);
+                    exit;
+                } else {
+                    header("location: ../../index.php?req=hanghoaview&result=notok");
+                }
             }
             break;
 

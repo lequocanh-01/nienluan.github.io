@@ -20,6 +20,17 @@ if (!isset($_REQUEST["reqact"]) || $_REQUEST["reqact"] !== "addnew") {
     header('Content-Type: application/json; charset=utf-8');
 }
 
+// Kiểm tra xem request có phải là AJAX không
+function isAjaxRequest()
+{
+    return (
+        !empty($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+        strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest'
+    ) || (
+        isset($_GET['ajax']) && $_GET['ajax'] === '1'
+    );
+}
+
 function deleteImageFile($imagePath)
 {
     if ($imagePath) {
@@ -328,14 +339,17 @@ try {
                 // Kiểm tra xem hình ảnh có đang được sử dụng không
                 $products = $hanghoa->GetProductsByImageId($id);
 
+                // Không cho phép xóa hình ảnh nếu đang được sử dụng bởi sản phẩm
                 if (!empty($products)) {
-                    $productNames = array_map(function ($product) {
+                    $productNames = array_map(function($product) {
                         return $product['tenhanghoa'];
                     }, $products);
 
                     echo json_encode([
                         'success' => false,
-                        'message' => 'Hình ảnh đang được sử dụng bởi các sản phẩm: ' . implode(", ", $productNames)
+                        'message' => 'Không thể xóa hình ảnh vì đang được sử dụng bởi sản phẩm: ' . implode(', ', $productNames),
+                        'inUse' => true,
+                        'products' => $products
                     ]);
                     exit;
                 }
@@ -343,14 +357,8 @@ try {
                 // Lấy đường dẫn ảnh trước khi xóa
                 $imagePath = $hanghoa->GetImagePath($id);
 
-                // Xóa file ảnh
-                if (!deleteImageFile($imagePath)) {
-                    echo json_encode([
-                        'success' => false,
-                        'message' => 'Không thể xóa file ảnh'
-                    ]);
-                    exit;
-                }
+                // Xóa file ảnh (bỏ qua lỗi nếu file không tồn tại)
+                deleteImageFile($imagePath);
 
                 // Xóa record trong database
                 $result = $hanghoa->XoaHinhAnh($id);
@@ -366,84 +374,124 @@ try {
                         'message' => 'Không thể xóa hình ảnh khỏi database'
                     ]);
                 }
-                break;
+                exit;
 
             case "deletemultiple":
-                $data = json_decode(file_get_contents('php://input'));
+                // Nhận dữ liệu JSON từ request
+                $jsonData = file_get_contents('php://input');
+                $data = json_decode($jsonData, true);
 
-                if (!$data || !isset($data->ids) || !is_array($data->ids)) {
+                if (!isset($data['ids']) || !is_array($data['ids']) || empty($data['ids'])) {
                     echo json_encode([
                         'success' => false,
-                        'message' => 'Dữ liệu không hợp lệ'
+                        'message' => 'Không có ID hình ảnh nào được cung cấp'
                     ]);
                     exit;
                 }
 
-                $success = true;
-                $failedIds = [];
-                $usedImages = [];
+                $ids = array_map('intval', $data['ids']);
+                $successCount = 0;
+                $failedCount = 0;
+                $inUseImages = [];
+                $inUseProducts = [];
 
-                foreach ($data->ids as $id) {
-                    // Kiểm tra xem hình ảnh có đang được sử dụng không
+                // Kiểm tra trước xem có hình ảnh nào đang được sử dụng không
+                foreach ($ids as $id) {
                     $products = $hanghoa->GetProductsByImageId($id);
                     if (!empty($products)) {
-                        $usedImages[] = [
-                            'id' => $id,
-                            'products' => $products
-                        ];
-                        continue;
+                        $inUseImages[] = $id;
+                        foreach ($products as $product) {
+                            if (!isset($inUseProducts[$id])) {
+                                $inUseProducts[$id] = [];
+                            }
+                            $inUseProducts[$id][] = $product['tenhanghoa'];
+                        }
+                    }
+                }
+
+                // Nếu có hình ảnh đang được sử dụng, không cho phép xóa
+                if (!empty($inUseImages)) {
+                    $inUseMessages = [];
+                    foreach ($inUseImages as $id) {
+                        $inUseMessages[] = "Hình ảnh ID: " . $id . " đang được sử dụng bởi sản phẩm: " . implode(', ', $inUseProducts[$id]);
                     }
 
+                    echo json_encode([
+                        'success' => false,
+                        'message' => "Không thể xóa hình ảnh vì một số hình ảnh đang được sử dụng bởi sản phẩm.",
+                        'inUse' => true,
+                        'inUseImages' => $inUseImages,
+                        'inUseDetails' => $inUseMessages
+                    ]);
+                    exit;
+                }
+
+                // Xử lý từng hình ảnh
+                foreach ($ids as $id) {
                     // Lấy đường dẫn ảnh trước khi xóa
                     $imagePath = $hanghoa->GetImagePath($id);
 
-                    // Xóa file ảnh
-                    if (!deleteImageFile($imagePath)) {
-                        $failedIds[] = $id;
-                        continue;
-                    }
+                    // Xóa file ảnh (bỏ qua lỗi nếu file không tồn tại)
+                    deleteImageFile($imagePath);
 
                     // Xóa record trong database
-                    if (!$hanghoa->XoaHinhAnh($id)) {
-                        $failedIds[] = $id;
+                    $result = $hanghoa->XoaHinhAnh($id);
+
+                    if ($result) {
+                        $successCount++;
+                    } else {
+                        $failedCount++;
                     }
                 }
 
-                if (!empty($usedImages)) {
-                    $message = "Một số hình ảnh không thể xóa vì đang được sử dụng:\n";
-                    foreach ($usedImages as $image) {
-                        $productNames = array_map(function ($product) {
-                            return $product['tenhanghoa'];
-                        }, $image['products']);
-                        $message .= "- Hình ảnh ID " . $image['id'] . " đang được sử dụng bởi: " . implode(", ", $productNames) . "\n";
-                    }
-                    echo json_encode([
-                        'success' => false,
-                        'message' => $message
-                    ]);
-                    exit;
-                }
-
-                if (empty($failedIds)) {
+                // Trả về kết quả
+                if ($successCount > 0) {
                     echo json_encode([
                         'success' => true,
-                        'message' => 'Xóa tất cả hình ảnh thành công'
+                        'message' => "Đã xóa thành công " . $successCount . " hình ảnh.",
+                        'successCount' => $successCount,
+                        'failedCount' => $failedCount
                     ]);
                 } else {
                     echo json_encode([
                         'success' => false,
-                        'message' => 'Không thể xóa một số hình ảnh: ' . implode(", ", $failedIds)
+                        'message' => "Không thể xóa hình ảnh. Vui lòng thử lại.",
+                        'successCount' => $successCount,
+                        'failedCount' => $failedCount
                     ]);
                 }
-                break;
+                exit;
 
             case "resolve_duplicate":
+                // Đảm bảo đây là AJAX request
+                if (!isAjaxRequest()) {
+                    // Thêm tham số ajax=1 vào URL và chuyển hướng
+                    $redirectUrl = $_SERVER['REQUEST_URI'] . (strpos($_SERVER['REQUEST_URI'], '?') !== false ? '&' : '?') . 'ajax=1';
+                    header('Location: ' . $redirectUrl);
+                    exit();
+                }
+
                 if (isset($_GET['action'], $_GET['index'])) {
                     $action = $_GET['action'];
                     $index = (int)$_GET['index'];
 
-                    if (!isset($_SESSION['duplicate_images']) || !isset($_SESSION['duplicate_images'][$index])) {
-                        echo json_encode(['success' => false, 'message' => 'Không tìm thấy thông tin ảnh trùng lặp']);
+                    // Debug thông tin session
+                    error_log("resolve_duplicate - Action: " . $action . ", Index: " . $index);
+                    error_log("resolve_duplicate - Session duplicate_images exists: " . (isset($_SESSION['duplicate_images']) ? 'Yes' : 'No'));
+                    if (isset($_SESSION['duplicate_images'])) {
+                        error_log("resolve_duplicate - Session duplicate_images count: " . count($_SESSION['duplicate_images']));
+                        error_log("resolve_duplicate - Session duplicate_images keys: " . implode(', ', array_keys($_SESSION['duplicate_images'])));
+                    }
+
+                    // Kiểm tra session
+                    if (!isset($_SESSION['duplicate_images'])) {
+                        echo json_encode(['success' => false, 'message' => 'Không tìm thấy thông tin ảnh trùng lặp trong session']);
+                        exit();
+                    }
+
+                    // Kiểm tra index
+                    if (!isset($_SESSION['duplicate_images'][$index])) {
+                        echo json_encode(['success' => false, 'message' => 'Không tìm thấy thông tin ảnh trùng lặp với index: ' . $index]);
                         exit();
                     }
 
@@ -513,15 +561,28 @@ try {
                         echo json_encode(['success' => false, 'message' => 'Hành động không hợp lệ']);
                     }
 
+                    // Debug trước khi xóa
+                    error_log("Trước khi xóa - Session duplicate_images count: " . count($_SESSION['duplicate_images']));
+                    error_log("Trước khi xóa - Session duplicate_images keys: " . implode(', ', array_keys($_SESSION['duplicate_images'])));
+
                     // Xóa thông tin ảnh này khỏi danh sách trùng lặp
                     unset($_SESSION['duplicate_images'][$index]);
 
+                    // Debug sau khi xóa
+                    error_log("Sau khi xóa - Session duplicate_images count: " . count($_SESSION['duplicate_images']));
+                    if (count($_SESSION['duplicate_images']) > 0) {
+                        error_log("Sau khi xóa - Session duplicate_images keys: " . implode(', ', array_keys($_SESSION['duplicate_images'])));
+                    }
+
                     // Nếu đã xử lý tất cả các ảnh trùng lặp, xóa mảng session
-                    if (count($_SESSION['duplicate_images']) === 0) {
-                        unset($_SESSION['duplicate_images']);
+                    if (empty($_SESSION['duplicate_images']) || count($_SESSION['duplicate_images']) === 0) {
+                        error_log("Xóa toàn bộ session duplicate_images vì không còn phần tử nào");
+                        $_SESSION['duplicate_images'] = array(); // Đặt thành mảng rỗng thay vì unset
                     } else {
                         // Sắp xếp lại mảng để các index liên tục
                         $_SESSION['duplicate_images'] = array_values($_SESSION['duplicate_images']);
+                        error_log("Sau khi sắp xếp lại - Session duplicate_images count: " . count($_SESSION['duplicate_images']));
+                        error_log("Sau khi sắp xếp lại - Session duplicate_images keys: " . implode(', ', array_keys($_SESSION['duplicate_images'])));
                     }
 
                     exit();
@@ -542,6 +603,16 @@ try {
     if ($requestAction === "addnew") {
         $_SESSION['upload_errors'] = ['Lỗi hệ thống: ' . $e->getMessage()];
         header("location: ../../index.php?req=hinhanhview&result=notok");
+    } else if ($requestAction === "resolve_duplicate") {
+        // Đảm bảo trả về JSON cho AJAX request
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Lỗi xử lý ảnh trùng lặp: ' . $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]);
     } else {
         echo json_encode([
             'success' => false,

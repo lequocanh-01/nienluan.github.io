@@ -47,39 +47,75 @@ class MTonKho
     public function updateSoLuong($idhanghoa, $soLuongThayDoi, $isIncrement = true)
     {
         try {
+            // Tạo bảng system_logs nếu chưa tồn tại
+            try {
+                $this->db->exec("CREATE TABLE IF NOT EXISTS system_logs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    message TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )");
+            } catch (PDOException $e) {
+                error_log("Error creating system_logs table: " . $e->getMessage());
+            }
+
+            // Ghi log vào bảng system_logs
+            $logMessage = "Updating tonkho for idhanghoa: " . $idhanghoa . ", soLuongThayDoi: " . $soLuongThayDoi . ", isIncrement: " . ($isIncrement ? "true" : "false");
+            $this->logToDatabase($logMessage);
+
             // Ghi log để debug
-            error_log("Updating tonkho for idhanghoa: " . $idhanghoa . ", soLuongThayDoi: " . $soLuongThayDoi . ", isIncrement: " . ($isIncrement ? "true" : "false"));
+            error_log($logMessage);
 
             // Kiểm tra xem hàng hóa đã có trong bảng tồn kho chưa
             $tonkho = $this->getTonKhoByIdHangHoa($idhanghoa);
 
             if ($tonkho) {
                 // Nếu đã có, cập nhật số lượng
+                $oldSoLuong = $tonkho->soLuong;
                 $newSoLuong = $isIncrement
-                    ? $tonkho->soLuong + $soLuongThayDoi
-                    : $tonkho->soLuong - $soLuongThayDoi;
+                    ? $oldSoLuong + $soLuongThayDoi
+                    : $oldSoLuong - $soLuongThayDoi;
 
                 // Đảm bảo số lượng không âm
                 $newSoLuong = max(0, $newSoLuong);
 
-                error_log("Updating existing tonkho: old soLuong = " . $tonkho->soLuong . ", new soLuong = " . $newSoLuong);
+                $logMessage = "Updating existing tonkho: old soLuong = " . $oldSoLuong . ", new soLuong = " . $newSoLuong;
+                $this->logToDatabase($logMessage);
+                error_log($logMessage);
+
+                // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
+                $this->db->beginTransaction();
 
                 $sql = "UPDATE tonkho SET soLuong = ?, ngayCapNhat = CURRENT_TIMESTAMP WHERE idhanghoa = ?";
                 $stmt = $this->db->prepare($sql);
                 $result = $stmt->execute([$newSoLuong, $idhanghoa]);
 
-                error_log("Update result: " . ($result ? "success" : "failed") . ", rows affected: " . $stmt->rowCount());
+                if ($result) {
+                    $this->db->commit();
+                    $logMessage = "Update result: success, rows affected: " . $stmt->rowCount() . ", idhanghoa: " . $idhanghoa . ", new soLuong: " . $newSoLuong;
+                } else {
+                    $this->db->rollBack();
+                    $logMessage = "Update result: failed, idhanghoa: " . $idhanghoa;
+                }
+
+                $this->logToDatabase($logMessage);
+                error_log($logMessage);
+
                 return $result;
             } else {
                 // Nếu chưa có, thêm mới vào bảng tồn kho
-                error_log("Creating new tonkho entry for idhanghoa: " . $idhanghoa . " with soLuong: " . $soLuongThayDoi);
+                $logMessage = "Creating new tonkho entry for idhanghoa: " . $idhanghoa . " with soLuong: " . ($isIncrement ? $soLuongThayDoi : 0);
+                $this->logToDatabase($logMessage);
+                error_log($logMessage);
 
                 // Kiểm tra xem bảng tonkho có tồn tại không
                 try {
                     $checkTable = $this->db->query("SHOW TABLES LIKE 'tonkho'");
                     if ($checkTable->rowCount() == 0) {
                         // Tạo bảng tonkho nếu chưa tồn tại
-                        error_log("Table tonkho does not exist, creating it");
+                        $logMessage = "Table tonkho does not exist, creating it";
+                        $this->logToDatabase($logMessage);
+                        error_log($logMessage);
+
                         $createTable = "CREATE TABLE IF NOT EXISTS tonkho (
                             idTonKho INT AUTO_INCREMENT PRIMARY KEY,
                             idhanghoa INT NOT NULL,
@@ -92,19 +128,52 @@ class MTonKho
                         $this->db->exec($createTable);
                     }
                 } catch (PDOException $e) {
-                    error_log("Error checking/creating tonkho table: " . $e->getMessage());
+                    $logMessage = "Error checking/creating tonkho table: " . $e->getMessage();
+                    $this->logToDatabase($logMessage);
+                    error_log($logMessage);
                 }
+
+                // Sử dụng transaction để đảm bảo tính toàn vẹn dữ liệu
+                $this->db->beginTransaction();
+
+                // Nếu là tăng số lượng, thêm mới với số lượng đã cho
+                // Nếu là giảm số lượng, thêm mới với số lượng 0 (vì không thể giảm từ không có gì)
+                $initialSoLuong = $isIncrement ? $soLuongThayDoi : 0;
 
                 $sql = "INSERT INTO tonkho (idhanghoa, soLuong, soLuongToiThieu, viTri) VALUES (?, ?, 0, '')";
                 $stmt = $this->db->prepare($sql);
-                $result = $stmt->execute([$idhanghoa, $soLuongThayDoi]);
+                $result = $stmt->execute([$idhanghoa, $initialSoLuong]);
 
-                error_log("Insert result: " . ($result ? "success" : "failed") . ", last insert ID: " . $this->db->lastInsertId());
+                if ($result) {
+                    $this->db->commit();
+                    $logMessage = "Insert result: success, last insert ID: " . $this->db->lastInsertId() . ", idhanghoa: " . $idhanghoa . ", soLuong: " . $initialSoLuong;
+                } else {
+                    $this->db->rollBack();
+                    $logMessage = "Insert result: failed, idhanghoa: " . $idhanghoa;
+                }
+
+                $this->logToDatabase($logMessage);
+                error_log($logMessage);
+
                 return $result;
             }
         } catch (PDOException $e) {
-            error_log("Error updating tonkho: " . $e->getMessage());
+            $logMessage = "Error updating tonkho: " . $e->getMessage();
+            $this->logToDatabase($logMessage);
+            error_log($logMessage);
             return false;
+        }
+    }
+
+    // Ghi log vào bảng system_logs
+    private function logToDatabase($message)
+    {
+        try {
+            $sql = "INSERT INTO system_logs (message) VALUES (?)";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$message]);
+        } catch (PDOException $e) {
+            error_log("Error logging to database: " . $e->getMessage());
         }
     }
 

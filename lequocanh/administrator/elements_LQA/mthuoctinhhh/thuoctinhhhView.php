@@ -116,3 +116,120 @@ $list_lh_thuoctinhhh = $thuocTinhHHObj->thuoctinhhhGetAll();
         </tbody>
     </table>
 </div>
+
+<!-- Nút quay lại đầu trang -->
+<div id="back-to-top" class="back-to-top-button">
+    <i class="fas fa-arrow-up"></i>
+    <span class="tooltip">Lên đầu trang</span>
+</div>
+
+<style>
+    .back-to-top-button {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 1000;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        font-size: 20px;
+    }
+
+    .back-to-top-button:hover {
+        background-color: #0056b3;
+        transform: translateY(-3px);
+    }
+
+    .back-to-top-button.visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Tooltip */
+    .back-to-top-button .tooltip {
+        position: absolute;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .back-to-top-button .tooltip::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+
+    .back-to-top-button:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const backToTopButton = document.getElementById('back-to-top');
+
+        // Kiểm tra vị trí cuộn khi trang tải
+        checkScrollPosition();
+
+        // Hiển thị nút khi người dùng cuộn xuống 300px
+        window.addEventListener('scroll', checkScrollPosition);
+
+        // Xử lý sự kiện khi nhấp vào nút
+        backToTopButton.addEventListener('click', function() {
+            // Kiểm tra hỗ trợ cuộn mượt
+            if ('scrollBehavior' in document.documentElement.style) {
+                // Trình duyệt hỗ trợ cuộn mượt
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            } else {
+                // Trình duyệt không hỗ trợ cuộn mượt, sử dụng JavaScript
+                smoothScrollToTop();
+            }
+        });
+
+        // Hàm kiểm tra vị trí cuộn
+        function checkScrollPosition() {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('visible');
+            } else {
+                backToTopButton.classList.remove('visible');
+            }
+        }
+
+        // Hàm cuộn mượt cho các trình duyệt không hỗ trợ scrollBehavior
+        function smoothScrollToTop() {
+            const currentScroll = document.documentElement.scrollTop || document.body.scrollTop;
+            if (currentScroll > 0) {
+                window.requestAnimationFrame(smoothScrollToTop);
+                window.scrollTo(0, currentScroll - currentScroll / 8);
+            }
+        }
+    });
+</script>

@@ -5,6 +5,61 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* CSS cho form thêm người dùng */
+        #formMessages {
+            margin-bottom: 15px;
+        }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        /* CSS cho nút trong bảng */
+        .btn-action {
+            display: inline-block;
+            margin-right: 5px;
+            color: #333;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .btn-edit {
+            color: #007bff;
+        }
+
+        .btn-lock {
+            color: #ffc107;
+        }
+
+        .btn-delete {
+            color: #dc3545;
+        }
+
+        .btn-action:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 
 <body>
@@ -101,6 +156,7 @@
     <hr />
     <div class="admin-form">
         <h3>Thêm người dùng mới</h3>
+        <div id="formMessages"></div>
         <form name="newuser" id="formreg" method="post" action='./elements_LQA/mUser/userAct.php?reqact=addnew'>
             <table class="form-table">
                 <tr>
@@ -143,6 +199,102 @@
             </table>
         </form>
     </div>
+
+    <script>
+        $(document).ready(function() {
+            // Hàm làm mới danh sách người dùng
+            window.refreshUserList = function() {
+                $.ajax({
+                    url: "./elements_LQA/mUser/userAjax.php?action=getUsers",
+                    type: "GET",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    success: function(data) {
+                        // Cập nhật bảng người dùng
+                        $(".content_user table tbody").html(data);
+
+                        // Cập nhật số lượng người dùng
+                        $.ajax({
+                            url: "./elements_LQA/mUser/userAjax.php?action=getUserCount",
+                            type: "GET",
+                            headers: {
+                                "X-Requested-With": "XMLHttpRequest"
+                            },
+                            success: function(count) {
+                                $(".admin-info b").text(count);
+                            }
+                        });
+                    },
+                    error: function() {
+                        console.error("Không thể làm mới danh sách người dùng");
+                    }
+                });
+            };
+
+            // Xử lý form thêm người dùng
+            $("#formreg").submit(function(e) {
+                e.preventDefault(); // Ngăn form submit theo cách thông thường
+
+                // Hiển thị thông báo đang xử lý
+                $("#formMessages").html('<div class="alert alert-info">Đang xử lý...</div>');
+
+                // Kiểm tra các trường dữ liệu
+                var username = $("input[name='username']").val();
+                var password = $("input[name='password']").val();
+                var hoten = $("input[name='hoten']").val();
+                var ngaysinh = $("input[name='ngaysinh']").val();
+                var diachi = $("input[name='diachi']").val();
+                var dienthoai = $("input[name='dienthoai']").val();
+
+                // Kiểm tra dữ liệu
+                if (!username || !password || !hoten || !ngaysinh || !diachi || !dienthoai) {
+                    $("#formMessages").html('<div class="alert alert-danger">Vui lòng điền đầy đủ thông tin!</div>');
+                    return false;
+                }
+
+                // Kiểm tra số điện thoại
+                if (!/^[0-9]{10}$/.test(dienthoai)) {
+                    $("#formMessages").html('<div class="alert alert-danger">Số điện thoại phải có 10 chữ số!</div>');
+                    return false;
+                }
+
+                // Gửi dữ liệu bằng AJAX
+                $.ajax({
+                    url: "./elements_LQA/mUser/userAct.php?reqact=addnew",
+                    type: "POST",
+                    data: $(this).serialize(),
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success) {
+                            // Hiển thị thông báo thành công
+                            $("#formMessages").html('<div class="alert alert-success">' + response.message + '</div>');
+
+                            // Xóa dữ liệu trong form
+                            $("#formreg")[0].reset();
+
+                            // Thay vì tải lại trang, chỉ hiển thị thông báo thành công
+                            // và làm mới danh sách người dùng bằng AJAX
+                            setTimeout(function() {
+                                // Thêm người dùng mới vào bảng mà không cần tải lại trang
+                                refreshUserList();
+                            }, 1000);
+                        } else {
+                            // Hiển thị thông báo lỗi
+                            $("#formMessages").html('<div class="alert alert-danger">' + response.message + '</div>');
+                        }
+                    },
+                    error: function() {
+                        // Hiển thị thông báo lỗi
+                        $("#formMessages").html('<div class="alert alert-danger">Có lỗi xảy ra, vui lòng thử lại!</div>');
+                    }
+                });
+            });
+        });
+    </script>
 
     <hr />
     <div class="content_user">
