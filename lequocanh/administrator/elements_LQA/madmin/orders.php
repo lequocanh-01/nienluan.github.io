@@ -177,8 +177,19 @@ if ($checkTableStmt->rowCount() == 0) {
 
         switch ($action) {
             case 'approve':
-                // Cập nhật trạng thái đơn hàng thành 'approved'
-                $updateOrderSql = "UPDATE orders SET status = 'approved' WHERE id = ?";
+                // Kiểm tra xem cột approved_read có tồn tại không
+                $checkApprovedReadColumnSql = "SHOW COLUMNS FROM orders LIKE 'approved_read'";
+                $checkApprovedReadColumnStmt = $conn->prepare($checkApprovedReadColumnSql);
+                $checkApprovedReadColumnStmt->execute();
+                $hasApprovedReadColumn = ($checkApprovedReadColumnStmt->rowCount() > 0);
+
+                // Cập nhật trạng thái đơn hàng thành 'approved' và đánh dấu là chưa đọc
+                if ($hasApprovedReadColumn) {
+                    $updateOrderSql = "UPDATE orders SET status = 'approved', approved_read = 0 WHERE id = ?";
+                } else {
+                    $updateOrderSql = "UPDATE orders SET status = 'approved' WHERE id = ?";
+                }
+
                 $updateOrderStmt = $conn->prepare($updateOrderSql);
                 $updateOrderStmt->execute([$orderId]);
 
@@ -205,8 +216,19 @@ if ($checkTableStmt->rowCount() == 0) {
                 break;
 
             case 'cancel':
-                // Cập nhật trạng thái đơn hàng thành 'cancelled'
-                $updateOrderSql = "UPDATE orders SET status = 'cancelled' WHERE id = ?";
+                // Kiểm tra xem cột cancelled_read có tồn tại không
+                $checkCancelledReadColumnSql = "SHOW COLUMNS FROM orders LIKE 'cancelled_read'";
+                $checkCancelledReadColumnStmt = $conn->prepare($checkCancelledReadColumnSql);
+                $checkCancelledReadColumnStmt->execute();
+                $hasCancelledReadColumn = ($checkCancelledReadColumnStmt->rowCount() > 0);
+
+                // Cập nhật trạng thái đơn hàng thành 'cancelled' và đánh dấu là chưa đọc
+                if ($hasCancelledReadColumn) {
+                    $updateOrderSql = "UPDATE orders SET status = 'cancelled', cancelled_read = 0 WHERE id = ?";
+                } else {
+                    $updateOrderSql = "UPDATE orders SET status = 'cancelled' WHERE id = ?";
+                }
+
                 $updateOrderStmt = $conn->prepare($updateOrderSql);
                 $updateOrderStmt->execute([$orderId]);
 
@@ -244,9 +266,17 @@ if ($checkTableStmt->rowCount() == 0) {
 
             case 'view':
                 // Lấy thông tin chi tiết đơn hàng
-                $orderSql = "SELECT * FROM orders WHERE id = ?";
-                $orderStmt = $conn->prepare($orderSql);
-                $orderStmt->execute([$orderId]);
+                // Nếu là người dùng thông thường, chỉ cho phép xem đơn hàng của họ
+                // Nếu là admin, cho phép xem tất cả đơn hàng
+                if (isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
+                    $orderSql = "SELECT * FROM orders WHERE id = ? AND user_id = ?";
+                    $orderStmt = $conn->prepare($orderSql);
+                    $orderStmt->execute([$orderId, $_SESSION['USER']]);
+                } else {
+                    $orderSql = "SELECT * FROM orders WHERE id = ?";
+                    $orderStmt = $conn->prepare($orderSql);
+                    $orderStmt->execute([$orderId]);
+                }
                 $order = $orderStmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($order) {
@@ -267,6 +297,50 @@ if ($checkTableStmt->rowCount() == 0) {
                         }
                     } else {
                         $orderItems = [];
+                    }
+
+                    // Nếu người dùng đang xem đơn hàng của họ, đánh dấu là đã đọc
+                    if (isset($_SESSION['USER']) && isset($order['user_id']) && $_SESSION['USER'] === $order['user_id']) {
+                        // Kiểm tra xem các cột đánh dấu đã đọc có tồn tại không
+                        $checkColumns = [
+                            'pending_read' => "SHOW COLUMNS FROM orders LIKE 'pending_read'",
+                            'approved_read' => "SHOW COLUMNS FROM orders LIKE 'approved_read'",
+                            'cancelled_read' => "SHOW COLUMNS FROM orders LIKE 'cancelled_read'"
+                        ];
+
+                        $hasReadColumns = true;
+                        foreach ($checkColumns as $column => $sql) {
+                            $stmt = $conn->prepare($sql);
+                            $stmt->execute();
+                            if ($stmt->rowCount() == 0) {
+                                $hasReadColumns = false;
+                                break;
+                            }
+                        }
+
+                        // Nếu các cột đánh dấu đã đọc tồn tại, cập nhật trạng thái đã đọc
+                        if ($hasReadColumns) {
+                            $status = $order['status'];
+                            $field = '';
+
+                            switch ($status) {
+                                case 'pending':
+                                    $field = 'pending_read';
+                                    break;
+                                case 'approved':
+                                    $field = 'approved_read';
+                                    break;
+                                case 'cancelled':
+                                    $field = 'cancelled_read';
+                                    break;
+                            }
+
+                            if (!empty($field)) {
+                                $updateReadSql = "UPDATE orders SET $field = 1 WHERE id = ?";
+                                $updateReadStmt = $conn->prepare($updateReadSql);
+                                $updateReadStmt->execute([$orderId]);
+                            }
+                        }
                     }
 
                     // Hiển thị chi tiết đơn hàng
@@ -346,11 +420,21 @@ if ($checkTableStmt->rowCount() == 0) {
         }
 
         // Truy vấn an toàn
-        $ordersSql = "SELECT $selectColumns FROM orders ORDER BY created_at DESC";
-        error_log("SQL query: " . $ordersSql);
+        // Nếu là người dùng thông thường, chỉ hiển thị đơn hàng của họ
+        // Nếu là admin, hiển thị tất cả đơn hàng
+        if (isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
+            $ordersSql = "SELECT $selectColumns FROM orders WHERE user_id = ? ORDER BY created_at DESC";
+            error_log("SQL query (user): " . $ordersSql);
 
-        $ordersStmt = $conn->prepare($ordersSql);
-        $ordersStmt->execute();
+            $ordersStmt = $conn->prepare($ordersSql);
+            $ordersStmt->execute([$_SESSION['USER']]);
+        } else {
+            $ordersSql = "SELECT $selectColumns FROM orders ORDER BY created_at DESC";
+            error_log("SQL query (admin): " . $ordersSql);
+
+            $ordersStmt = $conn->prepare($ordersSql);
+            $ordersStmt->execute();
+        }
 
         $orders = $ordersStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -382,6 +466,8 @@ if ($checkTableStmt->rowCount() == 0) {
 
 <!-- Thêm Bootstrap CSS nếu chưa có -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+
+
 
 <?php
 // Phần hiển thị lỗi PHP và thông tin debug đã được xóa
@@ -478,12 +564,17 @@ if ($checkTableStmt->rowCount() == 0) {
                 </tfoot>
             </table>
 
-            <?php if ($order['status'] == 'pending'): ?>
-                <div class="mt-4">
+            <div class="mt-4">
+                <?php if ($order['status'] == 'pending'): ?>
                     <a href="index.php?req=orders&action=approve&id=<?php echo $order['id']; ?>" class="btn btn-success" onclick="return confirm('Xác nhận duyệt đơn hàng này?');">Duyệt đơn hàng</a>
                     <a href="index.php?req=orders&action=cancel&id=<?php echo $order['id']; ?>" class="btn btn-danger" onclick="return confirm('Xác nhận hủy đơn hàng này? Số lượng tồn kho sẽ được hoàn trả.');">Hủy đơn hàng</a>
-                </div>
-            <?php endif; ?>
+                <?php endif; ?>
+
+                <!-- Nút in hóa đơn -->
+                <a href="./elements_LQA/madmin/print_invoice.php?id=<?php echo $order['id']; ?>" class="btn btn-primary" target="_blank">
+                    <i class="fas fa-print"></i> In hóa đơn
+                </a>
+            </div>
         </div>
     </div>
 <?php else: ?>
@@ -559,6 +650,9 @@ if ($checkTableStmt->rowCount() == 0) {
                                     <td><?php echo date('d/m/Y H:i', strtotime($order['created_at'])); ?></td>
                                     <td>
                                         <a href="index.php?req=orders&action=view&id=<?php echo $order['id']; ?>" class="btn btn-info btn-sm">Xem</a>
+                                        <a href="./elements_LQA/madmin/print_invoice.php?id=<?php echo $order['id']; ?>" class="btn btn-primary btn-sm" target="_blank">
+                                            <i class="fas fa-print"></i> In
+                                        </a>
                                         <?php if ($order['status'] == 'pending'): ?>
                                             <a href="index.php?req=orders&action=approve&id=<?php echo $order['id']; ?>" class="btn btn-success btn-sm" onclick="return confirm('Xác nhận duyệt đơn hàng này?');">Duyệt</a>
                                             <a href="index.php?req=orders&action=cancel&id=<?php echo $order['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Xác nhận hủy đơn hàng này? Số lượng tồn kho sẽ được hoàn trả.');">Hủy</a>

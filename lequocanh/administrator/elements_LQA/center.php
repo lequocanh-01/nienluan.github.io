@@ -34,9 +34,7 @@ if (isset($_GET['req'])) {
         case 'userupdate':
             require './elements_LQA/mUser/userUpdate.php';
             break;
-        case 'userprofile':
-            require './elements_LQA/mUser/userProfile.php';
-            break;
+
         case 'userUpdateProfile':
             require './elements_LQA/mUser/userUpdateProfile.php';
             break;
@@ -100,6 +98,31 @@ if (isset($_GET['req'])) {
         case 'orders':
             require './elements_LQA/madmin/orders.php';
             break;
+
+        case 'khachhangview':
+            require './elements_LQA/mkhachhang/khachhangController.php';
+            break;
+
+        case 'lichsumuahang':
+            require './elements_LQA/mkhachhang/lichsumuahangView.php';
+            break;
+
+        case 'baocaoview':
+            require './elements_LQA/mbaocao/baocaoView.php';
+            break;
+
+        case 'doanhThuView':
+            require './elements_LQA/mbaocao/doanhThuView.php';
+            break;
+
+        case 'sanPhamBanChayView':
+            require './elements_LQA/mbaocao/sanPhamBanChayView.php';
+            break;
+
+        case 'loiNhuanView':
+            require './elements_LQA/mbaocao/loiNhuanView.php';
+            break;
+
     }
 } else {
     require './elements_LQA/default.php';

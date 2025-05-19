@@ -33,6 +33,7 @@ if (isset($_SESSION['USER'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="public_files/mycss.css">
+    <link rel="stylesheet" href="public_files/notification.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <title>Cửa Hàng Điện Thoại</title>
@@ -118,6 +119,92 @@ if (isset($_SESSION['USER'])) {
                     <?php endif; ?>
 
                     <?php if (isset($_SESSION['USER'])): ?>
+                        <!-- Icon thông báo đơn hàng với dropdown -->
+                        <div class="position-relative me-2">
+                            <button class="btn btn-light position-relative notification-btn">
+                                <i class="fas fa-bell"></i>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge" style="display: none;">
+                                    0
+                                </span>
+                            </button>
+
+                            <!-- Dropdown thông báo -->
+                            <div class="notification-dropdown">
+                                <div class="notification-header">
+                                    <h6>Thông báo</h6>
+                                    <div class="notification-actions-header">
+                                        <button class="mark-all-read">Đánh dấu tất cả đã đọc</button>
+                                        <button class="delete-read-notifications">Xóa thông báo đã đọc</button>
+                                    </div>
+                                </div>
+                                <ul class="notification-list">
+                                    <!-- Nội dung thông báo sẽ được thêm bằng JavaScript -->
+                                    <li class="notification-empty">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                        <p>Đang tải thông báo...</p>
+                                    </li>
+                                </ul>
+                                <div class="notification-footer">
+                                    <a href="./administrator/index.php?req=orders">Xem tất cả đơn hàng</a>
+                                    <a href="./administrator/index.php?req=lichsumuahang">Lịch sử mua hàng</a>
+                                </div>
+                            </div>
+
+                            <!-- Modal chi tiết đơn hàng -->
+                            <div class="order-detail-modal">
+                                <div class="order-detail-content">
+                                    <span class="order-detail-close">&times;</span>
+                                    <div class="order-detail-header">
+                                        <h3>Chi tiết đơn hàng #<span id="order-id"></span></h3>
+                                        <span class="order-status" id="order-status"></span>
+                                    </div>
+                                    <div class="order-detail-info">
+                                        <div class="order-detail-info-col">
+                                            <div class="order-detail-info-item">
+                                                <strong>Mã đơn hàng</strong>
+                                                <div id="order-code"></div>
+                                            </div>
+                                            <div class="order-detail-info-item">
+                                                <strong>Ngày đặt</strong>
+                                                <div id="order-date"></div>
+                                            </div>
+                                            <div class="order-detail-info-item">
+                                                <strong>Phương thức thanh toán</strong>
+                                                <div id="order-payment-method"></div>
+                                            </div>
+                                        </div>
+                                        <div class="order-detail-info-col">
+                                            <div class="order-detail-info-item">
+                                                <strong>Địa chỉ giao hàng</strong>
+                                                <div id="order-address" class="order-detail-address"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="order-detail-items">
+                                        <h4>Sản phẩm</h4>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th width="60">Hình ảnh</th>
+                                                    <th>Sản phẩm</th>
+                                                    <th width="100">Đơn giá</th>
+                                                    <th width="80">Số lượng</th>
+                                                    <th width="120">Thành tiền</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="order-items">
+                                                <!-- Danh sách sản phẩm sẽ được thêm bằng JavaScript -->
+                                            </tbody>
+                                        </table>
+                                        <div class="order-detail-total">
+                                            Tổng tiền: <span id="order-total"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Icon giỏ hàng -->
                         <a href="./administrator/elements_LQA/mgiohang/giohangView.php"
                             class="btn btn-light position-relative">
                             <i class="fas fa-shopping-cart"></i>
@@ -246,6 +333,11 @@ if (isset($_SESSION['USER'])) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="administrator/js_LQA/jscript.js"></script>
     <script src="public_files/search.js"></script>
+
+    <!-- Script xử lý thông báo -->
+    <?php if (isset($_SESSION['USER'])): ?>
+    <script src="public_files/notification.js"></script>
+    <?php endif; ?>
 </body>
 
 </html>

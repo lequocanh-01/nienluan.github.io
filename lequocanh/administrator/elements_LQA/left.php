@@ -21,6 +21,7 @@ $isNhanVien = $phanQuyen->isNhanVien($username);
             $current_page = isset($_GET['req']) ? $_GET['req'] : '';
             $menu_items = [
                 'userview' => ['icon' => 'fas fa-users', 'text' => 'Tài khoản', 'admin_only' => true, 'hide_from_employee' => true],
+                'khachhangview' => ['icon' => 'fas fa-user-friends', 'text' => 'Khách hàng', 'admin_only' => false, 'hide_from_employee' => false],
                 'loaihangview' => ['icon' => 'fas fa-tags', 'text' => 'Loại hàng', 'admin_only' => false, 'hide_from_employee' => false],
                 'hanghoaview' => ['icon' => 'fas fa-box', 'text' => 'Hàng hóa', 'admin_only' => false, 'hide_from_employee' => false],
                 'thuoctinhhhview' => ['icon' => 'fas fa-list-ul', 'text' => 'Thuộc tính hàng hóa', 'admin_only' => false, 'hide_from_employee' => false],
@@ -36,7 +37,8 @@ $isNhanVien = $phanQuyen->isNhanVien($username);
                 'nhacungcapview' => ['icon' => 'fas fa-truck', 'text' => 'Nhà cung cấp', 'admin_only' => false, 'hide_from_employee' => false],
                 'mphieunhap' => ['icon' => 'fas fa-file-invoice', 'text' => 'Phiếu nhập kho', 'admin_only' => false, 'hide_from_employee' => false],
                 'mtonkho' => ['icon' => 'fas fa-warehouse', 'text' => 'Tồn kho', 'admin_only' => false, 'hide_from_employee' => false],
-                'userprofile' => ['icon' => 'fas fa-user-circle', 'text' => 'Hồ sơ cá nhân', 'admin_only' => false, 'hide_from_employee' => false],
+                'lichsumuahang' => ['icon' => 'fas fa-history', 'text' => 'Lịch sử mua hàng', 'admin_only' => false, 'hide_from_employee' => false],
+                'baocaoview' => ['icon' => 'fas fa-chart-line', 'text' => 'Báo cáo & Thống kê', 'admin_only' => false, 'hide_from_employee' => false],
             ];
 
             foreach ($menu_items as $req => $item) {

@@ -130,7 +130,6 @@ $list_hethang = $tonkhoObj->getHangHoaHetHang();
                 <th>Đơn vị tính</th>
                 <th>Số lượng tối thiểu</th>
                 <th>Vị trí</th>
-                <th>Thao tác</th>
             </tr>
         </thead>
         <tbody>
@@ -143,12 +142,6 @@ $list_hethang = $tonkhoObj->getHangHoaHetHang();
                     <td><?php echo $item->tenDonViTinh ?? 'N/A'; ?></td>
                     <td><?php echo $item->soLuongToiThieu; ?></td>
                     <td><?php echo $item->viTri; ?></td>
-                    <td align="center">
-                        <!-- Sửa thông tin tồn kho -->
-                        <a href="index.php?req=mtonkhoedit&idtk=<?php echo $item->idTonKho; ?>" class="btn-edit">
-                            <i class="fas fa-edit"></i> Sửa
-                        </a>
-                    </td>
                 </tr>
             <?php
             }

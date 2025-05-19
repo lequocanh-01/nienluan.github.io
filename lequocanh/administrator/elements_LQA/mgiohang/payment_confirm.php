@@ -103,6 +103,35 @@ if (!$hasShippingAddressColumn) {
     }
 }
 
+// Kiểm tra xem bảng orders có các cột thông báo không
+$notificationColumns = [
+    'pending_read' => "SHOW COLUMNS FROM orders LIKE 'pending_read'",
+    'approved_read' => "SHOW COLUMNS FROM orders LIKE 'approved_read'",
+    'cancelled_read' => "SHOW COLUMNS FROM orders LIKE 'cancelled_read'"
+];
+
+$missingColumns = [];
+foreach ($notificationColumns as $column => $sql) {
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+    if ($stmt->rowCount() == 0) {
+        $missingColumns[] = $column;
+    }
+}
+
+// Nếu thiếu các cột thông báo, thêm vào
+if (!empty($missingColumns)) {
+    try {
+        foreach ($missingColumns as $column) {
+            $addColumnSql = "ALTER TABLE orders ADD COLUMN $column TINYINT(1) NOT NULL DEFAULT 0";
+            $conn->exec($addColumnSql);
+            error_log("Đã thêm cột $column vào bảng orders");
+        }
+    } catch (PDOException $e) {
+        error_log("Lỗi khi thêm các cột thông báo: " . $e->getMessage());
+    }
+}
+
 // Bắt đầu transaction
 $conn->beginTransaction();
 
@@ -113,9 +142,26 @@ try {
     // Ghi log để debug
     error_log("Bắt đầu tạo đơn hàng: order_code=" . $orderCode . ", user_id=" . $userId . ", total_amount=" . $totalAmount);
 
-    // Thêm đơn hàng vào bảng orders
-    $insertOrderSql = "INSERT INTO orders (order_code, user_id, shipping_address, total_amount, status, payment_method)
-                      VALUES (?, ?, ?, ?, 'pending', 'bank_transfer')";
+    // Kiểm tra xem các cột thông báo có tồn tại không
+    $hasNotificationColumns = true;
+    foreach ($notificationColumns as $column => $sql) {
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        if ($stmt->rowCount() == 0) {
+            $hasNotificationColumns = false;
+            break;
+        }
+    }
+
+    // Thêm đơn hàng vào bảng orders với trạng thái thông báo
+    if ($hasNotificationColumns) {
+        $insertOrderSql = "INSERT INTO orders (order_code, user_id, shipping_address, total_amount, status, payment_method, pending_read)
+                          VALUES (?, ?, ?, ?, 'pending', 'bank_transfer', 0)";
+    } else {
+        $insertOrderSql = "INSERT INTO orders (order_code, user_id, shipping_address, total_amount, status, payment_method)
+                          VALUES (?, ?, ?, ?, 'pending', 'bank_transfer')";
+    }
+
     $insertOrderStmt = $conn->prepare($insertOrderSql);
     $insertOrderStmt->execute([$orderCode, $userId, $shippingAddress, $totalAmount]);
 

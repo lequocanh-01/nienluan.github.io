@@ -45,10 +45,12 @@ class PhanQuyen
 
         // Nếu là user thông thường (không phải admin và không phải nhân viên)
         if (isset($_SESSION['USER']) && !$this->isNhanVien($username)) {
-            // Chỉ cho phép xem hồ sơ cá nhân
+            // Chỉ cho phép xem hồ sơ cá nhân và các chức năng liên quan đến người dùng
             $userAllowedModules = [
                 'userprofile',
-                'userUpdateProfile'
+                'userUpdateProfile',
+                'thongbao',
+                'lichsumuahang'
             ];
 
             $hasAccess = in_array($module, $userAllowedModules);
@@ -92,7 +94,13 @@ class PhanQuyen
                 'userprofile',
                 'userUpdateProfile',
                 'orders',
-                'payment_config'
+                'payment_config',
+                'thongbao',
+                'lichsumuahang',
+                'baocaoview',
+                'doanhThuView',
+                'sanPhamBanChayView',
+                'loiNhuanView'
             ];
 
             $hasAccess = in_array($module, $allowedModules);
