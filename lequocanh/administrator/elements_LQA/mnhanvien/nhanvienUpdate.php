@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../mod/nhanvienCls.php';
 require_once __DIR__ . '/../mod/userCls.php';
+require_once __DIR__ . '/../mod/phanHeQuanLyCls.php';
 
 // Debugging - show all input
 $debug = [];
@@ -107,6 +108,51 @@ $listUsers = $userObj->UserGetAll();
             <input type="text" name="chucVu" value="<?php echo htmlspecialchars($getNhanVienUpdate->chucVu); ?>" />
         </div>
 
+        <div class="form-group">
+            <label>Phân quyền quản lý:</label>
+            <div class="phan-quyen-container">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="selectAllPhanHe">
+                    <label class="form-check-label" for="selectAllPhanHe"><strong>Chọn tất cả</strong></label>
+                </div>
+                <div class="phan-he-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-top: 10px;">
+                    <?php
+                    // Lấy danh sách phần hệ quản lý
+                    $phanHeObj = new PhanHeQuanLy();
+                    $listPhanHe = $phanHeObj->getAllPhanHe();
+
+                    // Lấy danh sách phần hệ đã được gán cho nhân viên
+                    $assignedPhanHe = $phanHeObj->getPhanHeByNhanVienId($idNhanVien);
+                    $assignedPhanHeIds = [];
+
+                    foreach ($assignedPhanHe as $ph) {
+                        $assignedPhanHeIds[] = $ph->idPhanHe;
+                    }
+
+                    if (count($listPhanHe) > 0) {
+                        foreach ($listPhanHe as $phanHe) {
+                            $isChecked = in_array($phanHe->idPhanHe, $assignedPhanHeIds);
+                    ?>
+                            <div class="form-check">
+                                <input class="form-check-input phan-he-checkbox" type="checkbox"
+                                    name="phanHe[]" id="phanHe<?php echo $phanHe->idPhanHe; ?>"
+                                    value="<?php echo $phanHe->idPhanHe; ?>"
+                                    <?php echo $isChecked ? 'checked' : ''; ?>>
+                                <label class="form-check-label" for="phanHe<?php echo $phanHe->idPhanHe; ?>">
+                                    <?php echo htmlspecialchars($phanHe->tenPhanHe); ?>
+                                    <small class="text-muted">(<?php echo htmlspecialchars($phanHe->maPhanHe); ?>)</small>
+                                </label>
+                            </div>
+                    <?php
+                        }
+                    } else {
+                        echo '<p class="text-muted">Không có phần hệ quản lý nào.</p>';
+                    }
+                    ?>
+                </div>
+            </div>
+        </div>
+
         <div class="form-actions">
             <input type="submit" id="btnsubmit" value="Cập nhật" class="btn-update" />
             <div id="noteForm" style="margin-top: 10px;"></div>
@@ -202,6 +248,25 @@ $listUsers = $userObj->UserGetAll();
             }
         });
 
+        // Xử lý chọn tất cả phần hệ
+        $('#selectAllPhanHe').change(function() {
+            var isChecked = $(this).prop('checked');
+            $('.phan-he-checkbox').prop('checked', isChecked);
+        });
+
+        // Cập nhật trạng thái "Chọn tất cả" khi thay đổi các checkbox riêng lẻ
+        $('.phan-he-checkbox').change(function() {
+            var totalCheckboxes = $('.phan-he-checkbox').length;
+            var checkedCheckboxes = $('.phan-he-checkbox:checked').length;
+
+            $('#selectAllPhanHe').prop('checked', totalCheckboxes === checkedCheckboxes);
+        });
+
+        // Kiểm tra ban đầu xem tất cả các checkbox đã được chọn chưa
+        var totalCheckboxes = $('.phan-he-checkbox').length;
+        var checkedCheckboxes = $('.phan-he-checkbox:checked').length;
+        $('#selectAllPhanHe').prop('checked', totalCheckboxes === checkedCheckboxes && totalCheckboxes > 0);
+
         // Xử lý submit form cập nhật
         $('#updatenhanvien').submit(function(e) {
             e.preventDefault(); // Ngăn chặn form submit bình thường
@@ -221,6 +286,13 @@ $listUsers = $userObj->UserGetAll();
                 chucVu: $('input[name="chucVu"]').val(),
                 iduser: $('#iduser_update').val() || null
             };
+
+            // Thu thập dữ liệu phần hệ quản lý
+            var selectedPhanHe = [];
+            $('input[name="phanHe[]"]:checked').each(function() {
+                selectedPhanHe.push($(this).val());
+            });
+            formData.phanHe = selectedPhanHe;
 
             // Hiển thị thông tin debug trong console
             console.log('Sending data:', formData);

@@ -28,11 +28,11 @@ class BaoCao
     public function getDoanhThuNgay($date)
     {
         try {
-            $sql = "SELECT COALESCE(SUM(total_amount), 0) as doanh_thu
-                    FROM orders
-                    WHERE DATE(created_at) = :date
-                    AND status = 'approved'
-                    AND payment_status = 'paid'";
+            $sql = "SELECT COALESCE(SUM(tong_tien), 0) as doanh_thu
+                    FROM don_hang
+                    WHERE DATE(ngay_tao) = :date
+                    AND trang_thai = 'approved'
+                    AND trang_thai_thanh_toan = 'paid'";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['date' => $date]);
             return $stmt->fetch(PDO::FETCH_ASSOC)['doanh_thu'];
@@ -51,12 +51,12 @@ class BaoCao
     public function getDoanhThuThang($month, $year)
     {
         try {
-            $sql = "SELECT COALESCE(SUM(total_amount), 0) as doanh_thu
-                    FROM orders
-                    WHERE MONTH(created_at) = :month
-                    AND YEAR(created_at) = :year
-                    AND status = 'approved'
-                    AND payment_status = 'paid'";
+            $sql = "SELECT COALESCE(SUM(tong_tien), 0) as doanh_thu
+                    FROM don_hang
+                    WHERE MONTH(ngay_tao) = :month
+                    AND YEAR(ngay_tao) = :year
+                    AND trang_thai = 'approved'
+                    AND trang_thai_thanh_toan = 'paid'";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['month' => $month, 'year' => $year]);
             return $stmt->fetch(PDO::FETCH_ASSOC)['doanh_thu'];
@@ -81,11 +81,11 @@ class BaoCao
                 return 0;
             }
 
-            $sql = "SELECT COALESCE(SUM(total_amount), 0) as doanh_thu,
+            $sql = "SELECT COALESCE(SUM(tong_tien), 0) as doanh_thu,
                            COUNT(*) as so_don_hang
-                    FROM orders
-                    WHERE YEAR(created_at) = :year
-                    AND status = 'approved'";
+                    FROM don_hang
+                    WHERE YEAR(ngay_tao) = :year
+                    AND trang_thai = 'approved'";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['year' => $year]);
 
@@ -124,10 +124,10 @@ class BaoCao
                 error_log("Đã đổi vị trí startDate và endDate vì startDate > endDate");
             }
 
-            $sql = "SELECT COALESCE(SUM(total_amount), 0) as doanh_thu
-                    FROM orders
-                    WHERE DATE(created_at) BETWEEN :startDate AND :endDate
-                    AND status = 'approved'";
+            $sql = "SELECT COALESCE(SUM(tong_tien), 0) as doanh_thu
+                    FROM don_hang
+                    WHERE DATE(ngay_tao) BETWEEN :startDate AND :endDate
+                    AND trang_thai = 'approved'";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['startDate' => $startDateFormatted, 'endDate' => $endDateFormatted]);
 
@@ -167,13 +167,13 @@ class BaoCao
             }
 
             // Truy vấn dữ liệu
-            $sql = "SELECT DATE(created_at) as ngay,
-                           COALESCE(SUM(total_amount), 0) as doanh_thu,
+            $sql = "SELECT DATE(ngay_tao) as ngay,
+                           COALESCE(SUM(tong_tien), 0) as doanh_thu,
                            COUNT(*) as so_don_hang
-                    FROM orders
-                    WHERE DATE(created_at) BETWEEN :startDate AND :endDate
-                    AND status = 'approved'
-                    GROUP BY DATE(created_at)
+                    FROM don_hang
+                    WHERE DATE(ngay_tao) BETWEEN :startDate AND :endDate
+                    AND trang_thai = 'approved'
+                    GROUP BY DATE(ngay_tao)
                     ORDER BY ngay";
 
             $stmt = $this->conn->prepare($sql);
@@ -271,13 +271,13 @@ class BaoCao
                 return [];
             }
 
-            $sql = "SELECT MONTH(created_at) as thang,
-                           COALESCE(SUM(total_amount), 0) as doanh_thu,
+            $sql = "SELECT MONTH(ngay_tao) as thang,
+                           COALESCE(SUM(tong_tien), 0) as doanh_thu,
                            COUNT(*) as so_don_hang
-                    FROM orders
-                    WHERE YEAR(created_at) = :year
-                    AND status = 'approved'
-                    GROUP BY MONTH(created_at)
+                    FROM don_hang
+                    WHERE YEAR(ngay_tao) = :year
+                    AND trang_thai = 'approved'
+                    GROUP BY MONTH(ngay_tao)
                     ORDER BY thang";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['year' => $year]);
@@ -319,14 +319,14 @@ class BaoCao
             }
 
             $sql = "SELECT h.idhanghoa, h.tenhanghoa, h.hinhanh,
-                           SUM(oi.quantity) as so_luong_ban,
-                           SUM(oi.price * oi.quantity) as doanh_thu,
+                           SUM(oi.so_luong) as so_luong_ban,
+                           SUM(oi.gia * oi.so_luong) as doanh_thu,
                            COUNT(DISTINCT o.id) as so_don_hang
-                    FROM orders o
-                    JOIN order_items oi ON o.id = oi.order_id
-                    JOIN hanghoa h ON oi.product_id = h.idhanghoa
-                    WHERE DATE(o.created_at) BETWEEN :startDate AND :endDate
-                    AND o.status = 'approved'
+                    FROM don_hang o
+                    JOIN chi_tiet_don_hang oi ON o.id = oi.ma_don_hang
+                    JOIN hanghoa h ON oi.ma_san_pham = h.idhanghoa
+                    WHERE DATE(o.ngay_tao) BETWEEN :startDate AND :endDate
+                    AND o.trang_thai = 'approved'
                     GROUP BY h.idhanghoa
                     ORDER BY so_luong_ban DESC
                     LIMIT :limit";
@@ -380,12 +380,12 @@ class BaoCao
             $doanhThu = $this->getDoanhThuTheoKhoangThoiGian($startDateFormatted, $endDateFormatted);
 
             // Lấy tổng giá vốn (giá nhập) của sản phẩm đã bán
-            $sql = "SELECT COALESCE(SUM(h.giathamkhao * oi.quantity), 0) as tong_gia_von
-                    FROM orders o
-                    JOIN order_items oi ON o.id = oi.order_id
-                    JOIN hanghoa h ON oi.product_id = h.idhanghoa
-                    WHERE DATE(o.created_at) BETWEEN :startDate AND :endDate
-                    AND o.status = 'approved'";
+            $sql = "SELECT COALESCE(SUM(h.giathamkhao * oi.so_luong), 0) as tong_gia_von
+                    FROM don_hang o
+                    JOIN chi_tiet_don_hang oi ON o.id = oi.ma_don_hang
+                    JOIN hanghoa h ON oi.ma_san_pham = h.idhanghoa
+                    WHERE DATE(o.ngay_tao) BETWEEN :startDate AND :endDate
+                    AND o.trang_thai = 'approved'";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['startDate' => $startDateFormatted, 'endDate' => $endDateFormatted]);
             $giaVon = floatval($stmt->fetch(PDO::FETCH_ASSOC)['tong_gia_von']);
@@ -438,16 +438,16 @@ class BaoCao
             }
 
             $sql = "SELECT h.idhanghoa, h.tenhanghoa, h.hinhanh,
-                           SUM(oi.quantity) as so_luong_ban,
-                           SUM(oi.price * oi.quantity) as doanh_thu,
-                           SUM(h.giathamkhao * oi.quantity) as gia_von,
-                           SUM(oi.price * oi.quantity) - SUM(h.giathamkhao * oi.quantity) as loi_nhuan,
-                           (SUM(oi.price * oi.quantity) - SUM(h.giathamkhao * oi.quantity)) / SUM(oi.price * oi.quantity) * 100 as ti_le_loi_nhuan
-                    FROM orders o
-                    JOIN order_items oi ON o.id = oi.order_id
-                    JOIN hanghoa h ON oi.product_id = h.idhanghoa
-                    WHERE DATE(o.created_at) BETWEEN :startDate AND :endDate
-                    AND o.status = 'approved'
+                           SUM(oi.so_luong) as so_luong_ban,
+                           SUM(oi.gia * oi.so_luong) as doanh_thu,
+                           SUM(h.giathamkhao * oi.so_luong) as gia_von,
+                           SUM(oi.gia * oi.so_luong) - SUM(h.giathamkhao * oi.so_luong) as loi_nhuan,
+                           (SUM(oi.gia * oi.so_luong) - SUM(h.giathamkhao * oi.so_luong)) / SUM(oi.gia * oi.so_luong) * 100 as ti_le_loi_nhuan
+                    FROM don_hang o
+                    JOIN chi_tiet_don_hang oi ON o.id = oi.ma_don_hang
+                    JOIN hanghoa h ON oi.ma_san_pham = h.idhanghoa
+                    WHERE DATE(o.ngay_tao) BETWEEN :startDate AND :endDate
+                    AND o.trang_thai = 'approved'
                     GROUP BY h.idhanghoa
                     ORDER BY loi_nhuan DESC
                     LIMIT :limit";
@@ -488,19 +488,19 @@ class BaoCao
                 error_log("Đã đổi vị trí startDate và endDate vì startDate > endDate");
             }
 
-            $sql = "SELECT status, COUNT(*) as so_luong, SUM(total_amount) as tong_tien
-                    FROM orders
-                    WHERE DATE(created_at) BETWEEN :startDate AND :endDate
-                    GROUP BY status";
+            $sql = "SELECT trang_thai, COUNT(*) as so_luong, SUM(tong_tien) as tong_tien
+                    FROM don_hang
+                    WHERE DATE(ngay_tao) BETWEEN :startDate AND :endDate
+                    GROUP BY trang_thai";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['startDate' => $startDateFormatted, 'endDate' => $endDateFormatted]);
 
             $result = [];
             while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $status = $row['status'];
+                $trang_thai = $row['trang_thai'];
                 $statusText = '';
 
-                switch ($status) {
+                switch ($trang_thai) {
                     case 'pending':
                         $statusText = 'Chờ xử lý';
                         break;
@@ -511,12 +511,12 @@ class BaoCao
                         $statusText = 'Đã hủy';
                         break;
                     default:
-                        $statusText = $status;
+                        $statusText = $trang_thai;
                         break;
                 }
 
                 $result[] = [
-                    'status' => $status,
+                    'trang_thai' => $trang_thai,
                     'status_text' => $statusText,
                     'so_luong' => $row['so_luong'],
                     'tong_tien' => $row['tong_tien']
@@ -556,16 +556,16 @@ class BaoCao
                 error_log("Đã đổi vị trí startDate và endDate vì startDate > endDate");
             }
 
-            $sql = "SELECT DATE(created_at) as ngay,
+            $sql = "SELECT DATE(ngay_tao) as ngay,
                            COUNT(*) as tong_don,
-                           SUM(CASE WHEN status = 'approved' THEN 1 ELSE 0 END) as don_duyet,
-                           SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as don_huy,
-                           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as don_cho,
-                           SUM(total_amount) as tong_tien,
-                           SUM(CASE WHEN status = 'approved' THEN total_amount ELSE 0 END) as tien_duyet
-                    FROM orders
-                    WHERE DATE(created_at) BETWEEN :startDate AND :endDate
-                    GROUP BY DATE(created_at)
+                           SUM(CASE WHEN trang_thai = 'approved' THEN 1 ELSE 0 END) as don_duyet,
+                           SUM(CASE WHEN trang_thai = 'cancelled' THEN 1 ELSE 0 END) as don_huy,
+                           SUM(CASE WHEN trang_thai = 'pending' THEN 1 ELSE 0 END) as don_cho,
+                           SUM(tong_tien) as tong_tien,
+                           SUM(CASE WHEN trang_thai = 'approved' THEN tong_tien ELSE 0 END) as tien_duyet
+                    FROM don_hang
+                    WHERE DATE(ngay_tao) BETWEEN :startDate AND :endDate
+                    GROUP BY DATE(ngay_tao)
                     ORDER BY ngay";
             $stmt = $this->conn->prepare($sql);
             $stmt->execute(['startDate' => $startDateFormatted, 'endDate' => $endDateFormatted]);

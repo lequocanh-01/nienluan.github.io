@@ -7,7 +7,9 @@ services:
     volumes:
       - D:/php_ws/lequocanh:/var/www/html
     ports:
-      - "8081:80"
+      - "80:80"
+    environment:
+      - TZ=Asia/Bangkok
     networks:
       - app-network
 
@@ -17,6 +19,7 @@ services:
       - D:/php_ws/DB:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: pw
+      TZ: Asia/Bangkok
     networks:
       - app-network
 
@@ -26,8 +29,9 @@ services:
       PMA_HOST: mysql
       PMA_PORT: 3306
       UPLOAD_LIMIT: 100M
+      TZ: Asia/Bangkok
     ports:
-      - "8082:80"
+      - "8888:80"
     depends_on:
       - mysql
     networks:

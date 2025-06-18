@@ -7,7 +7,15 @@ class loaihang
 
     public function __construct()
     {
-        $this->db = Database::getInstance()->getConnection();
+        try {
+            $this->db = Database::getInstance()->getConnection();
+            if (!$this->db) {
+                throw new Exception("Không thể lấy kết nối cơ sở dữ liệu");
+            }
+        } catch (Exception $e) {
+            error_log("Lỗi trong loaihangCls constructor: " . $e->getMessage());
+            throw new Exception("Lỗi kết nối cơ sở dữ liệu: " . $e->getMessage());
+        }
     }
 
     public function LoaihangGetAll()

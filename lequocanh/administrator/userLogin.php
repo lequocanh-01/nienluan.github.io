@@ -118,9 +118,19 @@
         }
 
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
         }
 
         /* Thêm style cho thông báo lỗi */
@@ -143,8 +153,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -156,10 +173,11 @@
             <p>Vui lòng đăng nhập để tiếp tục</p>
         </div>
 
-        <form name="login" method="post" action="./elements_LQA/mUser/userAct.php?reqact=checklogin">
+        <form name="login" method="post" action="./elements_LQA/mUser/userAct.php?reqact=checklogin" id="loginForm">
             <?php if (isset($_GET['register']) && $_GET['register'] == 'success'): ?>
                 <div class="alert alert-success" role="alert">
-                    Đăng ký thành công! Vui lòng đăng nhập.
+                    <i class="fas fa-check-circle me-2"></i>
+                    Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.
                 </div>
             <?php endif; ?>
 
@@ -171,12 +189,12 @@
             <?php endif; ?>
 
             <div class="form-floating">
-                <input type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập" autocomplete="username">
                 <label for="username"><i class="fas fa-user me-2"></i>Tên đăng nhập</label>
             </div>
 
             <div class="form-floating">
-                <input type="password" class="form-control" id="password" name="password" placeholder="Mật khẩu">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Mật khẩu" autocomplete="current-password">
                 <label for="password"><i class="fas fa-lock me-2"></i>Mật khẩu</label>
             </div>
 
@@ -191,12 +209,15 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         $(document).ready(function() {
-            $('form').on('submit', function(e) {
+            $('#loginForm').on('submit', function(e) {
                 let isValid = true;
                 $('.form-control').removeClass('is-invalid');
 
                 // Validate username
-                if ($('#username').val().trim() === '') {
+                let username = $('#username').val().trim();
+                $('#username').val(username); // Cập nhật giá trị đã trim vào input
+
+                if (username === '') {
                     $('#username').addClass('is-invalid');
                     isValid = false;
                 }
@@ -210,6 +231,9 @@
                 if (!isValid) {
                     e.preventDefault();
                     alert('Vui lòng điền đầy đủ thông tin đăng nhập');
+                } else {
+                    // Ghi log thông tin đăng nhập (chỉ để debug)
+                    console.log('Đang đăng nhập với username: ' + username);
                 }
             });
 
@@ -217,6 +241,9 @@
             $('.form-control').on('input', function() {
                 $(this).removeClass('is-invalid');
             });
+
+            // Tự động focus vào trường username khi trang tải xong
+            $('#username').focus();
         });
     </script>
 </body>

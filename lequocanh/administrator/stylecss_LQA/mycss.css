@@ -88,8 +88,8 @@ img[class*="product"] {
 
 #signoutbutton {
   position: fixed;
-  z-index: 2;
-  top: 10px;
+  z-index: 3;
+  top: 50px;
   right: 10px;
   opacity: 0.75;
 }
@@ -150,8 +150,8 @@ a:hover {
 
 #signoutbutton {
   position: fixed;
-  z-index: 2;
-  top: 10px;
+  z-index: 3;
+  top: 50px;
   right: 10px;
   opacity: 0.75;
 }

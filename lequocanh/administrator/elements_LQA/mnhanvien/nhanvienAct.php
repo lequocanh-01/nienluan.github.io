@@ -1,6 +1,8 @@
 <?php
 session_start();
 require '../../elements_LQA/mod/nhanvienCls.php';
+require '../../elements_LQA/mod/userRoleCls.php';
+require '../../elements_LQA/mod/phanHeQuanLyCls.php';
 
 function sendJsonResponse($success, $message = '')
 {
@@ -27,6 +29,7 @@ if (isset($_GET['reqact'])) {
             $phuCap = isset($_REQUEST['phuCap']) ? $_REQUEST['phuCap'] : null;
             $chucVu = isset($_REQUEST['chucVu']) ? $_REQUEST['chucVu'] : null;
             $iduser = isset($_REQUEST['iduser']) ? $_REQUEST['iduser'] : null;
+            $phanHeList = isset($_REQUEST['phanHe']) ? $_REQUEST['phanHe'] : [];
 
             $nv = new NhanVien();
 
@@ -46,6 +49,24 @@ if (isset($_GET['reqact'])) {
             // Tiếp tục thêm mới nhân viên
             $kq = $nv->nhanvienAdd($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $iduser);
 
+            // Lấy ID nhân viên vừa thêm
+            $idNhanVien = $nv->getLastInsertId();
+
+            // Nếu thêm thành công và có phần hệ được chọn, gán phần hệ cho nhân viên
+            if ($kq && $idNhanVien && !empty($phanHeList)) {
+                $phanHeObj = new PhanHeQuanLy();
+
+                foreach ($phanHeList as $idPhanHe) {
+                    $phanHeObj->assignPhanHeToNhanVien($idNhanVien, $idPhanHe);
+                }
+            }
+
+            // Nếu thêm thành công và có liên kết với user, gán vai trò nhân viên
+            if ($kq && !empty($iduser)) {
+                $userRole = new UserRole();
+                $userRole->assignStaffRole($iduser);
+            }
+
             // Check if it's an AJAX request
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                 if ($isUserAlreadyAssigned) {
@@ -64,7 +85,31 @@ if (isset($_GET['reqact'])) {
             $idNhanVien = isset($_REQUEST['idNhanVien']) ? $_REQUEST['idNhanVien'] : null;
             if ($idNhanVien) {
                 $nv = new NhanVien();
+
+                // Lấy thông tin nhân viên trước khi xóa để biết iduser
+                $staffInfo = $nv->nhanvienGetbyId($idNhanVien);
+                $iduser = $staffInfo ? $staffInfo->iduser : null;
+
                 $kq = $nv->nhanvienDelete($idNhanVien);
+
+                // Nếu xóa thành công và có liên kết với user, xóa vai trò staff
+                if ($kq && !empty($iduser)) {
+                    $userRole = new UserRole();
+                    // Kiểm tra xem user này còn là nhân viên ở chỗ khác không
+                    $allStaff = $nv->nhanvienGetAll();
+                    $stillStaff = false;
+                    foreach ($allStaff as $staff) {
+                        if ($staff->iduser == $iduser) {
+                            $stillStaff = true;
+                            break;
+                        }
+                    }
+
+                    // Nếu không còn là nhân viên, gán lại vai trò customer (sẽ thay thế vai trò staff)
+                    if (!$stillStaff) {
+                        $userRole->assignDefaultRole($iduser, 'customer');
+                    }
+                }
 
                 // Check if it's an AJAX request
                 if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -87,10 +132,32 @@ if (isset($_GET['reqact'])) {
             $phuCap = isset($_REQUEST['phuCap']) ? $_REQUEST['phuCap'] : 0;
             $chucVu = isset($_REQUEST['chucVu']) ? $_REQUEST['chucVu'] : null;
             $iduser = isset($_REQUEST['iduser']) && $_REQUEST['iduser'] !== '' ? $_REQUEST['iduser'] : null;
+            $phanHeList = isset($_REQUEST['phanHe']) ? $_REQUEST['phanHe'] : [];
 
             if ($idNhanVien) {
                 $nv = new NhanVien();
                 $kq = $nv->nhanvienUpdate($tenNV, $SDT, $email, $luongCB, $phuCap, $chucVu, $idNhanVien, $iduser);
+
+                // Cập nhật phần hệ quản lý cho nhân viên
+                if ($kq) {
+                    $phanHeObj = new PhanHeQuanLy();
+
+                    // Xóa tất cả phần hệ hiện tại của nhân viên
+                    $phanHeObj->removeAllPhanHeFromNhanVien($idNhanVien);
+
+                    // Thêm lại các phần hệ mới được chọn
+                    if (!empty($phanHeList)) {
+                        foreach ($phanHeList as $idPhanHe) {
+                            $phanHeObj->assignPhanHeToNhanVien($idNhanVien, $idPhanHe);
+                        }
+                    }
+                }
+
+                // Nếu cập nhật thành công và có liên kết với user, gán vai trò nhân viên
+                if ($kq && !empty($iduser)) {
+                    $userRole = new UserRole();
+                    $userRole->assignStaffRole($iduser);
+                }
 
                 // Always send JSON for updatenhanvien
                 sendJsonResponse(true, 'Cập nhật nhân viên thành công');

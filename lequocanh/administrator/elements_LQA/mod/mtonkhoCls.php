@@ -201,14 +201,14 @@ class MTonKho
         return $stmt->fetchColumn() > 0;
     }
 
-    // Lấy danh sách hàng hóa sắp hết (số lượng dưới mức tối thiểu)
+    // Lấy danh sách hàng hóa sắp hết (số lượng dưới mức tối thiểu nhưng chưa hết hàng)
     public function getHangHoaSapHet()
     {
         $sql = "SELECT t.*, h.tenhanghoa, h.mota, dvt.tenDonViTinh
                 FROM tonkho t
                 LEFT JOIN hanghoa h ON t.idhanghoa = h.idhanghoa
                 LEFT JOIN donvitinh dvt ON h.idDonViTinh = dvt.idDonViTinh
-                WHERE t.soLuong <= t.soLuongToiThieu AND t.soLuongToiThieu > 0
+                WHERE t.soLuong > 0 AND t.soLuong <= t.soLuongToiThieu AND t.soLuongToiThieu > 0
                 ORDER BY t.soLuong ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->setFetchMode(PDO::FETCH_OBJ);

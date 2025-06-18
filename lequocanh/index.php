@@ -71,7 +71,15 @@ if (isset($_SESSION['USER'])) {
                             <button class="btn btn-light dropdown-toggle" type="button" id="userDropdown"
                                 data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user me-2"></i>
-                                <?php echo $_SESSION['USER']; ?>
+                                <?php
+                                // Lấy tên người dùng từ database
+                                $username = $_SESSION['USER'];
+                                $db = Database::getInstance()->getConnection();
+                                $stmt = $db->prepare("SELECT hoten FROM user WHERE username = ?");
+                                $stmt->execute([$username]);
+                                $user = $stmt->fetch(PDO::FETCH_OBJ);
+                                echo $user ? $user->hoten : $username;
+                                ?>
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="./administrator/elements_LQA/mUser/userProfile.php">
@@ -145,7 +153,7 @@ if (isset($_SESSION['USER'])) {
                                     </li>
                                 </ul>
                                 <div class="notification-footer">
-                                    <a href="./administrator/index.php?req=orders">Xem tất cả đơn hàng</a>
+                                    <a href="./administrator/index.php?req=don_hang">Đơn hàng của tôi</a>
                                     <a href="./administrator/index.php?req=lichsumuahang">Lịch sử mua hàng</a>
                                 </div>
                             </div>
@@ -336,7 +344,7 @@ if (isset($_SESSION['USER'])) {
 
     <!-- Script xử lý thông báo -->
     <?php if (isset($_SESSION['USER'])): ?>
-    <script src="public_files/notification.js"></script>
+        <script src="public_files/notification.js"></script>
     <?php endif; ?>
 </body>
 

@@ -105,25 +105,31 @@ $_SESSION['total_amount'] = $totalAmount;
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
-// Kiểm tra xem bảng payment_config đã tồn tại chưa
-$checkTableSql = "SHOW TABLES LIKE 'payment_config'";
+// Kiểm tra xem bảng cau_hinh_thanh_toan đã tồn tại chưa
+$checkTableSql = "SHOW TABLES LIKE 'cau_hinh_thanh_toan'";
 $checkTableStmt = $conn->prepare($checkTableSql);
 $checkTableStmt->execute();
 
 $paymentConfig = [
-    'bank_name' => '',
-    'account_number' => '',
-    'account_name' => ''
+    'ten_ngan_hang' => '',
+    'so_tai_khoan' => '',
+    'ten_tai_khoan' => ''
 ];
 
 if ($checkTableStmt->rowCount() > 0) {
     // Bảng đã tồn tại, lấy thông tin cấu hình
-    $configSql = "SELECT * FROM payment_config LIMIT 1";
+    $configSql = "SELECT * FROM cau_hinh_thanh_toan LIMIT 1";
     $configStmt = $conn->prepare($configSql);
     $configStmt->execute();
 
     if ($configStmt->rowCount() > 0) {
-        $paymentConfig = $configStmt->fetch(PDO::FETCH_ASSOC);
+        $config = $configStmt->fetch(PDO::FETCH_ASSOC);
+        // Map tên cột mới sang tên cũ để tương thích với code hiển thị
+        $paymentConfig = [
+            'bank_name' => $config['ten_ngan_hang'],
+            'account_number' => $config['so_tai_khoan'],
+            'account_name' => $config['ten_tai_khoan']
+        ];
     }
 }
 
@@ -146,66 +152,66 @@ $transferContent = $orderCode;
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../../public_files/mycss.css">
     <style>
-        .checkout-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
-        }
+    .checkout-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    }
 
-        .product-image {
-            width: 80px;
-            height: 80px;
-            object-fit: cover;
-            border-radius: 8px;
-        }
+    .product-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
 
-        .payment-methods {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-        }
+    .payment-methods {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+    }
 
-        .payment-method {
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    .payment-method {
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
 
-        .payment-method.active {
-            border-color: #0d6efd;
-            background-color: rgba(13, 110, 253, 0.05);
-        }
+    .payment-method.active {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.05);
+    }
 
-        .payment-method img {
-            height: 40px;
-            margin-bottom: 10px;
-        }
+    .payment-method img {
+        height: 40px;
+        margin-bottom: 10px;
+    }
 
-        .qr-container {
-            text-align: center;
-            margin-top: 20px;
-            padding: 20px;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            background-color: #f8f9fa;
-        }
+    .qr-container {
+        text-align: center;
+        margin-top: 20px;
+        padding: 20px;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        background-color: #f8f9fa;
+    }
 
-        .qr-code {
-            max-width: 300px;
-            margin: 0 auto;
-        }
+    .qr-code {
+        max-width: 300px;
+        margin: 0 auto;
+    }
 
-        .bank-info {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #e9ecef;
-            border-radius: 10px;
-        }
+    .bank-info {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+    }
     </style>
 </head>
 
@@ -221,7 +227,8 @@ $transferContent = $orderCode;
             <div class="card-body">
                 <div class="mb-3">
                     <label for="shipping-address" class="form-label">Địa chỉ nhận hàng</label>
-                    <textarea class="form-control" id="shipping-address" rows="3" placeholder="Nhập địa chỉ giao hàng"><?php echo htmlspecialchars($userAddress); ?></textarea>
+                    <textarea class="form-control" id="shipping-address" rows="3"
+                        placeholder="Nhập địa chỉ giao hàng"><?php echo htmlspecialchars($userAddress); ?></textarea>
                     <div class="form-text">Vui lòng nhập địa chỉ đầy đủ để chúng tôi giao hàng đến bạn.</div>
                 </div>
             </div>
@@ -245,18 +252,18 @@ $transferContent = $orderCode;
                     </thead>
                     <tbody>
                         <?php foreach ($orderDetails as $item): ?>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="<?php echo $item['image']; ?>"
-                                            alt="<?php echo htmlspecialchars($item['name']); ?>" class="product-image me-3">
-                                        <span><?php echo htmlspecialchars($item['name']); ?></span>
-                                    </div>
-                                </td>
-                                <td><?php echo number_format($item['price'], 0, ',', '.'); ?> ₫</td>
-                                <td><?php echo $item['quantity']; ?></td>
-                                <td><?php echo number_format($item['subtotal'], 0, ',', '.'); ?> ₫</td>
-                            </tr>
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="<?php echo $item['image']; ?>"
+                                        alt="<?php echo htmlspecialchars($item['name']); ?>" class="product-image me-3">
+                                    <span><?php echo htmlspecialchars($item['name']); ?></span>
+                                </div>
+                            </td>
+                            <td><?php echo number_format($item['price'], 0, ',', '.'); ?> ₫</td>
+                            <td><?php echo $item['quantity']; ?></td>
+                            <td><?php echo number_format($item['subtotal'], 0, ',', '.'); ?> ₫</td>
+                        </tr>
                         <?php endforeach; ?>
                     </tbody>
                     <tfoot>
@@ -286,9 +293,9 @@ $transferContent = $orderCode;
                 <!-- Thông tin thanh toán qua VietQR -->
                 <div class="qr-container" id="bank-transfer-details">
                     <?php if (!empty($paymentConfig['account_number']) && !empty($paymentConfig['bank_name'])): ?>
-                        <h5>Quét mã QR để thanh toán</h5>
-                        <div class="qr-code">
-                            <?php
+                    <h5>Quét mã QR để thanh toán</h5>
+                    <div class="qr-code">
+                        <?php
                             // Tạo URL VietQR
                             $bankCode = ''; // Mã ngân hàng, cần cập nhật theo ngân hàng thực tế
                             $amount = $totalAmount;
@@ -344,23 +351,23 @@ $transferContent = $orderCode;
                             // Debug
                             error_log("VietQR URL: " . $vietQrUrl);
                             ?>
-                            <img src="<?php echo $vietQrUrl; ?>" alt="QR Code" class="img-fluid">
-                        </div>
-                        <div class="bank-info mt-3">
-                            <p><strong>Ngân hàng:</strong> <?php echo htmlspecialchars($paymentConfig['bank_name']); ?></p>
-                            <p><strong>Số tài khoản:</strong>
-                                <?php echo htmlspecialchars($paymentConfig['account_number']); ?></p>
-                            <p><strong>Chủ tài khoản:</strong>
-                                <?php echo htmlspecialchars($paymentConfig['account_name']); ?></p>
-                            <p><strong>Nội dung chuyển khoản:</strong> <?php echo $transferContent; ?></p>
-                        </div>
-                        <div class="alert alert-info mt-3">
-                            <p>Sau khi thanh toán, vui lòng nhấn nút "Xác nhận đã thanh toán" bên dưới.</p>
-                        </div>
+                        <img src="<?php echo $vietQrUrl; ?>" alt="QR Code" class="img-fluid">
+                    </div>
+                    <div class="bank-info mt-3">
+                        <p><strong>Ngân hàng:</strong> <?php echo htmlspecialchars($paymentConfig['bank_name']); ?></p>
+                        <p><strong>Số tài khoản:</strong>
+                            <?php echo htmlspecialchars($paymentConfig['account_number']); ?></p>
+                        <p><strong>Chủ tài khoản:</strong>
+                            <?php echo htmlspecialchars($paymentConfig['account_name']); ?></p>
+                        <p><strong>Nội dung chuyển khoản:</strong> <?php echo $transferContent; ?></p>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <p>Sau khi thanh toán, vui lòng nhấn nút "Xác nhận đã thanh toán" bên dưới.</p>
+                    </div>
                     <?php else: ?>
-                        <div class="alert alert-warning">
-                            <p>Chưa có thông tin tài khoản ngân hàng. Vui lòng liên hệ quản trị viên để cập nhật.</p>
-                        </div>
+                    <div class="alert alert-warning">
+                        <p>Chưa có thông tin tài khoản ngân hàng. Vui lòng liên hệ quản trị viên để cập nhật.</p>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -383,33 +390,33 @@ $transferContent = $orderCode;
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
-            const processingPayment = document.getElementById('processingPayment');
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmPaymentBtn = document.getElementById('confirmPaymentBtn');
+        const processingPayment = document.getElementById('processingPayment');
 
-            confirmPaymentBtn.addEventListener('click', function() {
-                // Hiển thị thông báo đang xử lý
-                confirmPaymentBtn.disabled = true;
-                processingPayment.style.display = 'block';
+        confirmPaymentBtn.addEventListener('click', function() {
+            // Hiển thị thông báo đang xử lý
+            confirmPaymentBtn.disabled = true;
+            processingPayment.style.display = 'block';
 
-                // Lấy địa chỉ giao hàng
-                const shippingAddress = document.getElementById('shipping-address').value.trim();
+            // Lấy địa chỉ giao hàng
+            const shippingAddress = document.getElementById('shipping-address').value.trim();
 
-                // Kiểm tra địa chỉ giao hàng
-                if (!shippingAddress) {
-                    alert('Vui lòng nhập địa chỉ giao hàng');
-                    confirmPaymentBtn.disabled = false;
-                    processingPayment.style.display = 'none';
-                    return;
-                }
+            // Kiểm tra địa chỉ giao hàng
+            if (!shippingAddress) {
+                alert('Vui lòng nhập địa chỉ giao hàng');
+                confirmPaymentBtn.disabled = false;
+                processingPayment.style.display = 'none';
+                return;
+            }
 
-                // Tạo form data
-                const formData = new FormData();
-                formData.append('order_code', '<?php echo $orderCode; ?>');
-                formData.append('shipping_address', shippingAddress);
+            // Tạo form data
+            const formData = new FormData();
+            formData.append('order_code', '<?php echo $orderCode; ?>');
+            formData.append('shipping_address', shippingAddress);
 
-                // Gửi request bằng fetch API
-                fetch('payment_confirm.php', {
+            // Gửi request bằng fetch API
+            fetch('payment_confirm.php', {
                     method: 'POST',
                     body: formData
                 })
@@ -423,9 +430,11 @@ $transferContent = $orderCode;
                             // Kiểm tra nếu response chứa URL chuyển hướng
                             if (text.includes('order_success.php')) {
                                 // Trích xuất order_id từ text
-                                const match = text.match(/order_success\.php\?order_id=(\d+)/);
+                                const match = text.match(
+                                    /order_success\.php\?order_id=(\d+)/);
                                 if (match && match[1]) {
-                                    window.location.href = 'order_success.php?order_id=' + match[1];
+                                    window.location.href = 'order_success.php?order_id=' +
+                                        match[1];
                                 } else {
                                     window.location.href = 'giohangView.php';
                                 }
@@ -442,8 +451,8 @@ $transferContent = $orderCode;
                     confirmPaymentBtn.disabled = false;
                     processingPayment.style.display = 'none';
                 });
-            });
         });
+    });
     </script>
 </body>
 

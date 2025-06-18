@@ -95,7 +95,13 @@ if (isset($_GET['req'])) {
         case 'payment_config':
             require './elements_LQA/madmin/payment_config.php';
             break;
+        case 'cau_hinh_thanh_toan':
+            require './elements_LQA/madmin/payment_config.php';
+            break;
         case 'orders':
+            require './elements_LQA/madmin/orders.php';
+            break;
+        case 'don_hang':
             require './elements_LQA/madmin/orders.php';
             break;
 
@@ -123,6 +129,31 @@ if (isset($_GET['req'])) {
             require './elements_LQA/mbaocao/loiNhuanView.php';
             break;
 
+        case 'roleview':
+            require './elements_LQA/mrole/roleView.php';
+            break;
+
+        case 'vaiTroView':
+            require './elements_LQA/mphanquyen/vaiTroView.php';
+            break;
+
+        case 'nguoiDungVaiTroView':
+            require './elements_LQA/mphanquyen/nguoiDungVaiTroView.php';
+            break;
+
+        case 'danhSachVaiTroView':
+            require './elements_LQA/mphanquyen/danhSachVaiTroView.php';
+            break;
+
+
+
+        case 'nhatKyHoatDongTichHop':
+            require './elements_LQA/mnhatkyhoatdong/nhatKyHoatDongTichHop.php';
+            break;
+
+        case 'thongKeNhanVienCaiThien':
+            require './elements_LQA/mnhatkyhoatdong/thongKeNhanVienCaiThien.php';
+            break;
     }
 } else {
     require './elements_LQA/default.php';

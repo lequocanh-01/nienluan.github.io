@@ -55,59 +55,61 @@ $conn = $db->getConnection();
 $giohang = new GioHang();
 $tonkho = new MTonKho();
 
-// Kiểm tra xem bảng orders đã tồn tại chưa
-$checkTableSql = "SHOW TABLES LIKE 'orders'";
+// Kiểm tra xem bảng don_hang đã tồn tại chưa
+$checkTableSql = "SHOW TABLES LIKE 'don_hang'";
 $checkTableStmt = $conn->prepare($checkTableSql);
 $checkTableStmt->execute();
 
 if ($checkTableStmt->rowCount() == 0) {
-    // Bảng chưa tồn tại, tạo bảng orders
-    $createOrdersTableSql = "CREATE TABLE orders (
+    // Bảng chưa tồn tại, tạo bảng don_hang
+    $createOrdersTableSql = "CREATE TABLE don_hang (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        order_code VARCHAR(50) NOT NULL,
-        user_id VARCHAR(50),
-        total_amount DECIMAL(15,2) NOT NULL,
-        status VARCHAR(20) NOT NULL DEFAULT 'pending',
-        payment_method VARCHAR(50) NOT NULL DEFAULT 'bank_transfer',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ma_don_hang_text VARCHAR(50) NOT NULL,
+        ma_nguoi_dung VARCHAR(50),
+        tong_tien DECIMAL(15,2) NOT NULL,
+        trang_thai ENUM('pending', 'approved', 'cancelled') NOT NULL DEFAULT 'pending',
+        phuong_thuc_thanh_toan VARCHAR(50) NOT NULL DEFAULT 'bank_transfer',
+        trang_thai_thanh_toan ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )";
     $conn->exec($createOrdersTableSql);
 
-    // Tạo bảng order_items
-    $createOrderItemsTableSql = "CREATE TABLE order_items (
+    // Tạo bảng chi_tiet_don_hang
+    $createOrderItemsTableSql = "CREATE TABLE chi_tiet_don_hang (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        order_id INT NOT NULL,
-        product_id INT NOT NULL,
-        quantity INT NOT NULL,
-        price DECIMAL(15,2) NOT NULL,
-        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+        ma_don_hang INT NOT NULL,
+        ma_san_pham INT NOT NULL,
+        so_luong INT NOT NULL,
+        gia DECIMAL(15,2) NOT NULL,
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (ma_don_hang) REFERENCES don_hang(id) ON DELETE CASCADE
     )";
     $conn->exec($createOrderItemsTableSql);
 }
 
-// Kiểm tra xem bảng orders có cột shipping_address không
-$checkShippingAddressColumnSql = "SHOW COLUMNS FROM orders LIKE 'shipping_address'";
+// Kiểm tra xem bảng don_hang có cột dia_chi_giao_hang không
+$checkShippingAddressColumnSql = "SHOW COLUMNS FROM don_hang LIKE 'dia_chi_giao_hang'";
 $checkShippingAddressColumnStmt = $conn->prepare($checkShippingAddressColumnSql);
 $checkShippingAddressColumnStmt->execute();
 $hasShippingAddressColumn = ($checkShippingAddressColumnStmt->rowCount() > 0);
 
-// Nếu không có cột shipping_address, thêm cột này vào bảng orders
+// Nếu không có cột dia_chi_giao_hang, thêm cột này vào bảng don_hang
 if (!$hasShippingAddressColumn) {
     try {
-        $addShippingAddressColumnSql = "ALTER TABLE orders ADD COLUMN shipping_address TEXT AFTER user_id";
+        $addShippingAddressColumnSql = "ALTER TABLE don_hang ADD COLUMN dia_chi_giao_hang TEXT AFTER ma_nguoi_dung";
         $conn->exec($addShippingAddressColumnSql);
-        error_log("Đã thêm cột shipping_address vào bảng orders");
+        error_log("Đã thêm cột dia_chi_giao_hang vào bảng don_hang");
     } catch (PDOException $e) {
-        error_log("Lỗi khi thêm cột shipping_address: " . $e->getMessage());
+        error_log("Lỗi khi thêm cột dia_chi_giao_hang: " . $e->getMessage());
     }
 }
 
-// Kiểm tra xem bảng orders có các cột thông báo không
+// Kiểm tra xem bảng don_hang có các cột thông báo không
 $notificationColumns = [
-    'pending_read' => "SHOW COLUMNS FROM orders LIKE 'pending_read'",
-    'approved_read' => "SHOW COLUMNS FROM orders LIKE 'approved_read'",
-    'cancelled_read' => "SHOW COLUMNS FROM orders LIKE 'cancelled_read'"
+    'pending_read' => "SHOW COLUMNS FROM don_hang LIKE 'pending_read'",
+    'approved_read' => "SHOW COLUMNS FROM don_hang LIKE 'approved_read'",
+    'cancelled_read' => "SHOW COLUMNS FROM don_hang LIKE 'cancelled_read'"
 ];
 
 $missingColumns = [];
@@ -123,9 +125,9 @@ foreach ($notificationColumns as $column => $sql) {
 if (!empty($missingColumns)) {
     try {
         foreach ($missingColumns as $column) {
-            $addColumnSql = "ALTER TABLE orders ADD COLUMN $column TINYINT(1) NOT NULL DEFAULT 0";
+            $addColumnSql = "ALTER TABLE don_hang ADD COLUMN $column TINYINT(1) NOT NULL DEFAULT 0";
             $conn->exec($addColumnSql);
-            error_log("Đã thêm cột $column vào bảng orders");
+            error_log("Đã thêm cột $column vào bảng don_hang");
         }
     } catch (PDOException $e) {
         error_log("Lỗi khi thêm các cột thông báo: " . $e->getMessage());
@@ -153,13 +155,13 @@ try {
         }
     }
 
-    // Thêm đơn hàng vào bảng orders với trạng thái thông báo
+    // Thêm đơn hàng vào bảng don_hang với trạng thái thông báo
     if ($hasNotificationColumns) {
-        $insertOrderSql = "INSERT INTO orders (order_code, user_id, shipping_address, total_amount, status, payment_method, pending_read)
-                          VALUES (?, ?, ?, ?, 'pending', 'bank_transfer', 0)";
+        $insertOrderSql = "INSERT INTO don_hang (ma_don_hang_text, ma_nguoi_dung, dia_chi_giao_hang, tong_tien, trang_thai, phuong_thuc_thanh_toan, trang_thai_thanh_toan, pending_read, ngay_tao, ngay_cap_nhat)
+                          VALUES (?, ?, ?, ?, 'pending', 'bank_transfer', 'pending', 0, NOW(), NOW())";
     } else {
-        $insertOrderSql = "INSERT INTO orders (order_code, user_id, shipping_address, total_amount, status, payment_method)
-                          VALUES (?, ?, ?, ?, 'pending', 'bank_transfer')";
+        $insertOrderSql = "INSERT INTO don_hang (ma_don_hang_text, ma_nguoi_dung, dia_chi_giao_hang, tong_tien, trang_thai, phuong_thuc_thanh_toan, trang_thai_thanh_toan, ngay_tao, ngay_cap_nhat)
+                          VALUES (?, ?, ?, ?, 'pending', 'bank_transfer', 'pending', NOW(), NOW())";
     }
 
     $insertOrderStmt = $conn->prepare($insertOrderSql);
@@ -175,8 +177,8 @@ try {
         try {
             error_log("Thêm sản phẩm vào đơn hàng: product_id=" . $item['id'] . ", quantity=" . $item['quantity'] . ", price=" . $item['price']);
 
-            $insertOrderItemSql = "INSERT INTO order_items (order_id, product_id, quantity, price)
-                                  VALUES (?, ?, ?, ?)";
+            $insertOrderItemSql = "INSERT INTO chi_tiet_don_hang (ma_don_hang, ma_san_pham, so_luong, gia, ngay_tao)
+                                  VALUES (?, ?, ?, ?, NOW())";
             $insertOrderItemStmt = $conn->prepare($insertOrderItemSql);
             $insertOrderItemStmt->execute([$orderId, $item['id'], $item['quantity'], $item['price']]);
 

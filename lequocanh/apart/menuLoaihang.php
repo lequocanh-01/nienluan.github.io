@@ -15,23 +15,42 @@ $current_id = isset($_GET['reqView']) ? $_GET['reqView'] : null;
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="nav nav-pills main-menu">
                 <?php
-                $obj = new loaihang();
-                $list_lh = $obj->LoaihangGetAll();
+                try {
+                    $obj = new loaihang();
+                    $list_lh = $obj->LoaihangGetAll();
 
-                // Hiển thị tất cả các mục
-                foreach ($list_lh as $v) {
-                    $active_class = ($current_id == $v->idloaihang) ? 'active' : '';
+                    // Hiển thị tất cả các mục
+                    foreach ($list_lh as $v) {
+                        $active_class = ($current_id == $v->idloaihang) ? 'active' : '';
                 ?>
-                    <li class="nav-item">
-                        <a class="nav-link <?php echo $active_class; ?> d-flex align-items-center"
-                            href="./index.php?reqView=<?php echo $v->idloaihang; ?>">
-                            <img src="data:image/png;base64,<?php echo $v->hinhanh; ?>"
-                                alt="<?php echo $v->tenloaihang; ?>"
-                                width="20" height="20" class="me-2">
-                            <span><?php echo $v->tenloaihang; ?></span>
-                        </a>
-                    </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php echo $active_class; ?> d-flex align-items-center"
+                                href="./index.php?reqView=<?php echo $v->idloaihang; ?>">
+                                <img src="data:image/png;base64,<?php echo $v->hinhanh; ?>"
+                                    alt="<?php echo $v->tenloaihang; ?>"
+                                    width="20" height="20" class="me-2">
+                                <span><?php echo $v->tenloaihang; ?></span>
+                            </a>
+                        </li>
                 <?php
+                    }
+                } catch (Exception $e) {
+                    // Hiển thị thông báo lỗi thân thiện
+                    echo '<li class="nav-item">';
+                    echo '<span class="nav-link text-danger">';
+                    echo '<i class="fas fa-exclamation-triangle me-2"></i>';
+                    echo 'Lỗi kết nối cơ sở dữ liệu';
+                    echo '</span>';
+                    echo '</li>';
+                    echo '<li class="nav-item">';
+                    echo '<a class="nav-link text-info" href="./kiem_tra_ket_noi.php" target="_blank">';
+                    echo '<i class="fas fa-tools me-2"></i>';
+                    echo 'Kiểm tra kết nối';
+                    echo '</a>';
+                    echo '</li>';
+
+                    // Ghi log lỗi
+                    error_log("Lỗi trong menuLoaihang.php: " . $e->getMessage());
                 }
                 ?>
             </ul>

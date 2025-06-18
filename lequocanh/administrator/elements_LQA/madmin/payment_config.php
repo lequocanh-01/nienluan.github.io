@@ -12,71 +12,95 @@ require_once './elements_LQA/mod/database.php';
 $db = Database::getInstance();
 $conn = $db->getConnection();
 
-// Kiểm tra xem bảng payment_config đã tồn tại chưa
-$checkTableSql = "SHOW TABLES LIKE 'payment_config'";
-$checkTableStmt = $conn->prepare($checkTableSql);
-$checkTableStmt->execute();
-
-if ($checkTableStmt->rowCount() == 0) {
-    // Bảng chưa tồn tại, tạo bảng payment_config
-    $createTableSql = "CREATE TABLE payment_config (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        bank_name VARCHAR(100) NOT NULL,
-        account_number VARCHAR(50) NOT NULL,
-        account_name VARCHAR(100) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )";
-    $conn->exec($createTableSql);
-}
-
-// Xử lý khi form được submit
+// Xử lý khi form được submit (di chuyển lên đầu để tránh lỗi header)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $bankName = $_POST['bank_name'];
-    $accountNumber = $_POST['account_number'];
-    $accountName = $_POST['account_name'];
+    $bankName = $_POST['ten_ngan_hang'];
+    $accountNumber = $_POST['so_tai_khoan'];
+    $accountName = $_POST['ten_tai_khoan'];
+
+    // Kiểm tra xem bảng cau_hinh_thanh_toan đã tồn tại chưa
+    $checkTableSql = "SHOW TABLES LIKE 'cau_hinh_thanh_toan'";
+    $checkTableStmt = $conn->prepare($checkTableSql);
+    $checkTableStmt->execute();
+
+    if ($checkTableStmt->rowCount() == 0) {
+        // Bảng chưa tồn tại, tạo bảng cau_hinh_thanh_toan
+        $createTableSql = "CREATE TABLE cau_hinh_thanh_toan (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ten_ngan_hang VARCHAR(100) NOT NULL,
+            so_tai_khoan VARCHAR(50) NOT NULL,
+            ten_tai_khoan VARCHAR(100) NOT NULL,
+            ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )";
+        $conn->exec($createTableSql);
+    }
 
     // Kiểm tra xem đã có cấu hình thanh toán chưa
-    $checkConfigSql = "SELECT COUNT(*) FROM payment_config";
+    $checkConfigSql = "SELECT COUNT(*) FROM cau_hinh_thanh_toan";
     $checkConfigStmt = $conn->prepare($checkConfigSql);
     $checkConfigStmt->execute();
     $configCount = $checkConfigStmt->fetchColumn();
 
     if ($configCount > 0) {
         // Đã có cấu hình, cập nhật
-        $updateSql = "UPDATE payment_config SET bank_name = ?, account_number = ?, account_name = ?";
+        $updateSql = "UPDATE cau_hinh_thanh_toan SET ten_ngan_hang = ?, so_tai_khoan = ?, ten_tai_khoan = ?";
         $updateStmt = $conn->prepare($updateSql);
         $updateStmt->execute([$bankName, $accountNumber, $accountName]);
     } else {
         // Chưa có cấu hình, thêm mới
-        $insertSql = "INSERT INTO payment_config (bank_name, account_number, account_name) VALUES (?, ?, ?)";
+        $insertSql = "INSERT INTO cau_hinh_thanh_toan (ten_ngan_hang, so_tai_khoan, ten_tai_khoan) VALUES (?, ?, ?)";
         $insertStmt = $conn->prepare($insertSql);
         $insertStmt->execute([$bankName, $accountNumber, $accountName]);
     }
 
     // Lưu thông báo thành công
-    $_SESSION['payment_config_success'] = true;
+    $_SESSION['cau_hinh_thanh_toan_success'] = true;
 
-    // Chuyển hướng để tránh gửi lại form khi refresh
-    header('Location: index.php?req=payment_config');
+    // Sử dụng JavaScript để hiển thị thông báo và reload trang
+    echo '<script>
+        alert("Cấu hình thanh toán đã được lưu thành công!");
+        window.location.href = "index.php?req=cau_hinh_thanh_toan";
+    </script>';
     exit();
 }
 
+// Kiểm tra xem bảng cau_hinh_thanh_toan đã tồn tại chưa
+$checkTableSql = "SHOW TABLES LIKE 'cau_hinh_thanh_toan'";
+$checkTableStmt = $conn->prepare($checkTableSql);
+$checkTableStmt->execute();
+
+if ($checkTableStmt->rowCount() == 0) {
+    // Bảng chưa tồn tại, tạo bảng cau_hinh_thanh_toan
+    $createTableSql = "CREATE TABLE cau_hinh_thanh_toan (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        ten_ngan_hang VARCHAR(100) NOT NULL,
+        so_tai_khoan VARCHAR(50) NOT NULL,
+        ten_tai_khoan VARCHAR(100) NOT NULL,
+        ngay_tao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        ngay_cap_nhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )";
+    $conn->exec($createTableSql);
+}
+
 // Lấy thông tin cấu hình thanh toán hiện tại
-$configSql = "SELECT * FROM payment_config LIMIT 1";
+$configSql = "SELECT * FROM cau_hinh_thanh_toan LIMIT 1";
 $configStmt = $conn->prepare($configSql);
 $configStmt->execute();
 $config = $configStmt->fetch(PDO::FETCH_ASSOC);
 ?>
 
+<!-- Thêm Bootstrap CSS nếu chưa có -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+
 <div class="admin-title">Cấu hình thanh toán</div>
 <hr>
 
-<?php if (isset($_SESSION['payment_config_success'])): ?>
-<div class="alert alert-success">
-    Cấu hình thanh toán đã được cập nhật thành công.
-</div>
-<?php unset($_SESSION['payment_config_success']); ?>
+<?php if (isset($_SESSION['cau_hinh_thanh_toan_success'])): ?>
+    <div class="alert alert-success">
+        Cấu hình thanh toán đã được cập nhật thành công.
+    </div>
+    <?php unset($_SESSION['cau_hinh_thanh_toan_success']); ?>
 <?php endif; ?>
 
 <div class="card">
@@ -86,20 +110,20 @@ $config = $configStmt->fetch(PDO::FETCH_ASSOC);
     <div class="card-body">
         <form method="post" action="">
             <div class="mb-3">
-                <label for="bank_name" class="form-label">Tên ngân hàng</label>
-                <input type="text" class="form-control" id="bank_name" name="bank_name"
-                    value="<?php echo $config ? htmlspecialchars($config['bank_name']) : ''; ?>" required>
+                <label for="ten_ngan_hang" class="form-label">Tên ngân hàng</label>
+                <input type="text" class="form-control" id="ten_ngan_hang" name="ten_ngan_hang"
+                    value="<?php echo $config ? htmlspecialchars($config['ten_ngan_hang']) : ''; ?>" required>
                 <div class="form-text">Nhập tên ngân hàng (VD: VIETCOMBANK, AGRIBANK, TECHCOMBANK, ...)</div>
             </div>
             <div class="mb-3">
-                <label for="account_number" class="form-label">Số tài khoản</label>
-                <input type="text" class="form-control" id="account_number" name="account_number"
-                    value="<?php echo $config ? htmlspecialchars($config['account_number']) : ''; ?>" required>
+                <label for="so_tai_khoan" class="form-label">Số tài khoản</label>
+                <input type="text" class="form-control" id="so_tai_khoan" name="so_tai_khoan"
+                    value="<?php echo $config ? htmlspecialchars($config['so_tai_khoan']) : ''; ?>" required>
             </div>
             <div class="mb-3">
-                <label for="account_name" class="form-label">Tên chủ tài khoản</label>
-                <input type="text" class="form-control" id="account_name" name="account_name"
-                    value="<?php echo $config ? htmlspecialchars($config['account_name']) : ''; ?>" required>
+                <label for="ten_tai_khoan" class="form-label">Tên chủ tài khoản</label>
+                <input type="text" class="form-control" id="ten_tai_khoan" name="ten_tai_khoan"
+                    value="<?php echo $config ? htmlspecialchars($config['ten_tai_khoan']) : ''; ?>" required>
             </div>
             <button type="submit" class="btn btn-primary">Lưu cấu hình</button>
         </form>
@@ -127,7 +151,7 @@ $config = $configStmt->fetch(PDO::FETCH_ASSOC);
         <h5 class="mb-0">Quản lý đơn hàng</h5>
     </div>
     <div class="card-body">
-        <p>Bạn có thể quản lý các đơn hàng và xác nhận thanh toán tại <a href="index.php?req=orders">Quản lý đơn
+        <p>Bạn có thể quản lý các đơn hàng và xác nhận thanh toán tại <a href="index.php?req=don_hang">Quản lý đơn
                 hàng</a>.</p>
     </div>
 </div>

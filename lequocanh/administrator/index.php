@@ -6,6 +6,9 @@ if (!isset($_SESSION['USER']) && !isset($_SESSION['ADMIN'])) {
     header('location:UserLogin.php');
     exit(); // Add exit to prevent further execution
 }
+
+// Tích hợp hệ thống ghi nhật ký truy cập menu
+require_once './elements_LQA/mnhatkyhoatdong/menuAccessLogger.php';
 ?>
 <!DOCTYPE html>
 <html lang="vi">

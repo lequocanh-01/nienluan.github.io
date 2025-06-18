@@ -22,8 +22,8 @@ class NhanVien
     // Lấy tất cả các nhân viên
     public function nhanvienGetAll()
     {
-        $sql = 'SELECT nv.*, u.hoten as ten_user, u.dienthoai as sdt_user 
-                FROM nhanvien nv 
+        $sql = 'SELECT nv.*, u.hoten as ten_user, u.dienthoai as sdt_user, u.username as username_user
+                FROM nhanvien nv
                 LEFT JOIN user u ON nv.iduser = u.iduser';
         $getAll = $this->db->prepare($sql);
         $getAll->setFetchMode(PDO::FETCH_OBJ);
@@ -50,6 +50,14 @@ class NhanVien
         }
 
         return $add->rowCount();
+    }
+
+    /**
+     * Lấy ID của bản ghi vừa thêm vào
+     */
+    public function getLastInsertId()
+    {
+        return $this->db->lastInsertId();
     }
 
     // Xóa nhân viên theo ID
@@ -84,12 +92,12 @@ class NhanVien
 
             // Nếu có iduser, cập nhật cả iduser
             if ($iduser !== null) {
-                $query = "UPDATE nhanvien 
-                        SET tennv = :tenNV, 
-                            sdt = :SDT, 
-                            email = :email, 
-                            luongcb = :luongCB, 
-                            phucap = :phuCap, 
+                $query = "UPDATE nhanvien
+                        SET tennv = :tenNV,
+                            sdt = :SDT,
+                            email = :email,
+                            luongcb = :luongCB,
+                            phucap = :phuCap,
                             chucvu = :chucVu,
                             iduser = :iduser
                         WHERE idnhanvien = :idNhanVien";
@@ -104,12 +112,12 @@ class NhanVien
                 $statement->bindParam(':idNhanVien', $idNhanVien, PDO::PARAM_INT);
                 $statement->bindParam(':iduser', $iduser, PDO::PARAM_INT);
             } else {
-                $query = "UPDATE nhanvien 
-                        SET tennv = :tenNV, 
-                            sdt = :SDT, 
-                            email = :email, 
-                            luongcb = :luongCB, 
-                            phucap = :phuCap, 
+                $query = "UPDATE nhanvien
+                        SET tennv = :tenNV,
+                            sdt = :SDT,
+                            email = :email,
+                            luongcb = :luongCB,
+                            phucap = :phuCap,
                             chucvu = :chucVu,
                             iduser = NULL
                         WHERE idnhanvien = :idNhanVien";
@@ -139,9 +147,9 @@ class NhanVien
     // Lấy thông tin nhân viên theo ID
     public function nhanvienGetById($idNhanVien)
     {
-        $sql = 'SELECT nv.*, u.hoten as ten_user, u.dienthoai as sdt_user 
-                FROM nhanvien nv 
-                LEFT JOIN user u ON nv.iduser = u.iduser 
+        $sql = 'SELECT nv.*, u.hoten as ten_user, u.dienthoai as sdt_user, u.username as username_user
+                FROM nhanvien nv
+                LEFT JOIN user u ON nv.iduser = u.iduser
                 WHERE nv.idNhanVien = ?';
         $data = array($idNhanVien);
 

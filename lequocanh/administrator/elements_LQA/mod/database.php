@@ -6,19 +6,93 @@ class Database
 
   private function __construct()
   {
-    $config = parse_ini_file(__DIR__ . '/config.ini', true);
+    // Kiểm tra file config.ini có tồn tại không
+    $configFile = __DIR__ . '/config.ini';
+    if (!file_exists($configFile)) {
+      error_log("File config.ini không tồn tại tại: $configFile");
+      // Tạo config mặc định
+      $this->createDefaultConfig($configFile);
+    }
 
-    $servername = $config['section']['servername'];
-    $dbname = $config['section']['dbname'];
-    $username = $config['section']['username'];
-    $password = $config['section']['password'];
-    $port = $config['section']['port'];
+    $config = parse_ini_file($configFile, true);
+    if (!$config || !isset($config['section'])) {
+      error_log("Không thể đọc file config.ini hoặc thiếu section");
+      throw new Exception("Lỗi cấu hình database");
+    }
+
+    $servername = $config['section']['servername'] ?? 'localhost';
+    $dbname = $config['section']['dbname'] ?? 'trainingdb';
+    $username = $config['section']['username'] ?? 'root';
+    $password = $config['section']['password'] ?? 'pw';
+    $port = $config['section']['port'] ?? 3306;
+
+    // Thử kết nối với nhiều cấu hình khác nhau
+    $connectionConfigs = [
+      ['host' => $servername, 'port' => $port, 'user' => $username, 'pass' => $password],
+      ['host' => 'mysql', 'port' => 3306, 'user' => 'root', 'pass' => 'pw'],
+      ['host' => 'localhost', 'port' => 3306, 'user' => 'root', 'pass' => 'pw'],
+      ['host' => 'localhost', 'port' => 3306, 'user' => 'root', 'pass' => ''],
+      ['host' => '127.0.0.1', 'port' => 3306, 'user' => 'root', 'pass' => 'pw'],
+      ['host' => '127.0.0.1', 'port' => 3306, 'user' => 'root', 'pass' => '']
+    ];
+
+    $connected = false;
+    foreach ($connectionConfigs as $connConfig) {
+      try {
+        $dsn = "mysql:host={$connConfig['host']};port={$connConfig['port']};dbname=$dbname;charset=utf8mb4";
+        $this->conn = new PDO($dsn, $connConfig['user'], $connConfig['pass']);
+        $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+        // Test connection
+        $this->conn->query("SELECT 1");
+
+        error_log("Kết nối thành công đến MySQL: {$connConfig['host']}:{$connConfig['port']}");
+        $connected = true;
+        break;
+      } catch (PDOException $e) {
+        error_log("Không thể kết nối đến MySQL {$connConfig['host']}:{$connConfig['port']}: " . $e->getMessage());
+        continue;
+      }
+    }
+
+    // Nếu tất cả cấu hình đều thất bại
+    if (!$connected || !$this->conn) {
+      $error_msg = "Không thể kết nối đến cơ sở dữ liệu. Vui lòng kiểm tra:\n";
+      $error_msg .= "1. MySQL server đã được khởi động chưa\n";
+      $error_msg .= "2. Thông tin kết nối trong config.ini có đúng không\n";
+      $error_msg .= "3. Docker containers đã chạy chưa\n";
+      $error_msg .= "4. XAMPP/WAMP MySQL service đã khởi động chưa";
+
+      error_log($error_msg);
+      throw new Exception($error_msg);
+    }
+  }
+
+  /**
+   * Tạo file config mặc định
+   */
+  private function createDefaultConfig($configFile)
+  {
+    $defaultConfig = "[section]\n";
+    $defaultConfig .= "; Cấu hình kết nối database\n";
+    $defaultConfig .= "servername = localhost\n";
+    $defaultConfig .= "port = 3306\n";
+    $defaultConfig .= "dbname = trainingdb\n";
+    $defaultConfig .= "username = root\n";
+    $defaultConfig .= "password = pw\n\n";
+    $defaultConfig .= "[local]\n";
+    $defaultConfig .= "servername = localhost\n";
+    $defaultConfig .= "port = 3306\n";
+    $defaultConfig .= "dbname = trainingdb\n";
+    $defaultConfig .= "username = root\n";
+    $defaultConfig .= "password = pw\n";
 
     try {
-      $this->conn = new PDO("mysql:host=$servername;port=$port;dbname=$dbname;charset=utf8", $username, $password);
-      $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    } catch (PDOException $e) {
-      echo "Connection failed: " . $e->getMessage();
+      file_put_contents($configFile, $defaultConfig);
+      error_log("Đã tạo file config.ini mặc định");
+    } catch (Exception $e) {
+      error_log("Không thể tạo file config.ini: " . $e->getMessage());
     }
   }
 
@@ -78,7 +152,7 @@ class Database
       $this->conn->beginTransaction();
 
       // Chuẩn bị câu lệnh SQL để thêm hàng hóa
-      $sql = "INSERT INTO hang_hoa (ten_hang_hoa, gia_tham_khao, mo_ta, hinh_anh) 
+      $sql = "INSERT INTO hang_hoa (ten_hang_hoa, gia_tham_khao, mo_ta, hinh_anh)
               VALUES (:ten_hang_hoa, :gia_tham_khao, :mo_ta, :hinh_anh)";
 
       $stmt = $this->conn->prepare($sql);

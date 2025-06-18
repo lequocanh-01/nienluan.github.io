@@ -10,101 +10,255 @@ if (file_exists($s)) {
 }
 require_once $f;
 
+// Tìm đường dẫn đúng đến các file cần thiết
+$paths = [
+    'roleCls.php' => [
+        '../../elements_LQA/mod/roleCls.php',
+        './elements_LQA/mod/roleCls.php',
+        './administrator/elements_LQA/mod/roleCls.php'
+    ],
+    'userCls.php' => [
+        '../../elements_LQA/mod/userCls.php',
+        './elements_LQA/mod/userCls.php',
+        './administrator/elements_LQA/mod/userCls.php'
+    ]
+];
+
+foreach ($paths as $file => $filePaths) {
+    foreach ($filePaths as $duong_dan) {
+        if (file_exists($duong_dan)) {
+            require_once $duong_dan;
+            break;
+        }
+    }
+}
+
 class PhanQuyen
 {
     private $db;
+    private $roleManager;
 
     public function __construct()
     {
         $this->db = Database::getInstance()->getConnection();
+        if (class_exists('Role')) {
+            $this->roleManager = new Role();
+        }
     }
 
-    // Kiểm tra xem username có phải là nhân viên không
+    /**
+     * Kiểm tra xem bảng vai_tro đã tồn tại chưa
+     */
+    private function vai_troTableExists()
+    {
+        try {
+            $sql = "SHOW TABLES LIKE 'vai_tro'";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            return $stmt->rowCount() > 0;
+        } catch (PDOException $e) {
+            error_log("Lỗi kiểm tra bảng vai_tro: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Kiểm tra xem username có phải là nhân viên không
+     */
     public function isNhanVien($username)
     {
+        // Kiểm tra trong bảng nhanvien (cách cũ)
         $sql = 'SELECT nv.* FROM nhanvien nv
                 INNER JOIN user u ON nv.iduser = u.iduser
                 WHERE u.username = ?';
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$username]);
+        $isStaffOldWay = $stmt->rowCount() > 0;
 
-        return $stmt->rowCount() > 0;
+        // Kiểm tra trong bảng vai_tro (cách mới)
+        if ($this->vai_troTableExists() && class_exists('Role') && $this->roleManager) {
+            // Lấy user ID từ username
+            $userSql = "SELECT iduser FROM user WHERE username = ?";
+            $userStmt = $this->db->prepare($userSql);
+            $userStmt->execute([$username]);
+            $user = $userStmt->fetch(PDO::FETCH_OBJ);
+
+            if ($user) {
+                $isStaffNewWay = $this->roleManager->userHasRole($user->iduser, 'staff');
+                // Trả về true nếu một trong hai cách kiểm tra cho kết quả là nhân viên
+                return $isStaffOldWay || $isStaffNewWay;
+            }
+        }
+
+        return $isStaffOldWay;
     }
 
-    // Kiểm tra quyền truy cập vào một chức năng cụ thể
+    /**
+     * Kiểm tra xem username có phải là admin không
+     */
+    public function isAdmin($username)
+    {
+        // Ghi log để debug
+        error_log("Kiểm tra quyền admin cho username: $username");
+        error_log("SESSION['ADMIN'] " . (isset($_SESSION['ADMIN']) ? "= '" . $_SESSION['ADMIN'] . "'" : "không tồn tại"));
+
+        // Kiểm tra theo cách cũ - Sửa lỗi: chỉ kiểm tra SESSION['ADMIN'] nếu nó khớp với username hiện tại
+        $isAdminByUsername = ($username === 'admin');
+        $isAdminBySession = (isset($_SESSION['ADMIN']) && $_SESSION['ADMIN'] === $username);
+        $isAdminOldWay = $isAdminByUsername || $isAdminBySession;
+
+        error_log("isAdminByUsername: " . ($isAdminByUsername ? "true" : "false"));
+        error_log("isAdminBySession: " . ($isAdminBySession ? "true" : "false"));
+
+        // Kiểm tra trong bảng vai_tro (cách mới)
+        $isAdminNewWay = false;
+        if ($this->vai_troTableExists() && class_exists('Role') && $this->roleManager) {
+            // Lấy user ID từ username
+            $userSql = "SELECT iduser FROM user WHERE username = ?";
+            $userStmt = $this->db->prepare($userSql);
+            $userStmt->execute([$username]);
+            $user = $userStmt->fetch(PDO::FETCH_OBJ);
+
+            if ($user) {
+                $isAdminNewWay = $this->roleManager->userHasRole($user->iduser, 'admin');
+                error_log("isAdminNewWay (từ bảng vai_tro): " . ($isAdminNewWay ? "true" : "false"));
+                // Trả về true nếu một trong hai cách kiểm tra cho kết quả là admin
+                $result = $isAdminOldWay || $isAdminNewWay;
+                error_log("Kết quả kiểm tra admin: " . ($result ? "true" : "false"));
+                return $result;
+            }
+        }
+
+        error_log("Kết quả kiểm tra admin (không có trong bảng vai_tro): " . ($isAdminOldWay ? "true" : "false"));
+        return $isAdminOldWay;
+    }
+
+    /**
+     * Kiểm tra quyền truy cập vào một chức năng cụ thể
+     */
     public function checkAccess($module, $username)
     {
+        // TÍCH HỢP SECURITY MIDDLEWARE - Chỉ log, không chặn để debug
+        try {
+            require_once __DIR__ . '/securityMiddleware.php';
+            $securityMiddleware = SecurityMiddleware::getInstance();
+
+            // Chỉ log để debug, không chặn truy cập
+            $securityResult = $securityMiddleware->checkStrictAccess($username, $module);
+            error_log("Security middleware result - Module: $module, Username: $username, Result: " . ($securityResult ? 'PASS' : 'FAIL'));
+
+            // Tạm thời không chặn để debug menu
+            // if (!$securityResult) {
+            //     error_log("Security middleware denied access - Module: $module, Username: $username");
+            //     return false;
+            // }
+        } catch (Exception $e) {
+            // Log lỗi nhưng không chặn
+            error_log("Security middleware error: " . $e->getMessage());
+            // return false;
+        }
+
         // Log để debug
         error_log("Kiểm tra quyền truy cập - Module: $module, Username: $username");
 
         // Nếu là Admin thì có quyền truy cập toàn bộ
-        if (isset($_SESSION['ADMIN'])) {
+        if ($this->isAdmin($username)) {
             error_log("User là admin, cho phép truy cập");
+            SecurityLogger::logAccess($username, $module, true, "Admin access granted");
             return true;
         }
 
+        // Nếu là nhân viên - Sửa lỗi: chỉ kiểm tra SESSION['USER'] nếu nó khớp với username hiện tại
+        error_log("SESSION['USER'] " . (isset($_SESSION['USER']) ? "= '" . $_SESSION['USER'] . "'" : "không tồn tại"));
+        $isCurrentUser = isset($_SESSION['USER']) && $_SESSION['USER'] === $username;
+        $isStaff = $this->isNhanVien($username);
+        error_log("isCurrentUser: " . ($isCurrentUser ? "true" : "false") . ", isStaff: " . ($isStaff ? "true" : "false"));
+
+        if ($isCurrentUser && $isStaff) {
+            // Các module cơ bản mà tất cả nhân viên đều có quyền truy cập
+            $basicModules = [
+                'userprofile',
+                'userUpdateProfile',
+                'thongbao'
+            ];
+
+            if (in_array($module, $basicModules)) {
+                return true;
+            }
+
+            // Kiểm tra quyền truy cập dựa trên phần hệ được gán
+            // Tìm đường dẫn đúng đến các file cần thiết
+            $additionalPaths = [
+                'phanHeQuanLyCls.php' => [
+                    '../../elements_LQA/mod/phanHeQuanLyCls.php',
+                    './elements_LQA/mod/phanHeQuanLyCls.php',
+                    './administrator/elements_LQA/mod/phanHeQuanLyCls.php'
+                ],
+                'nhanvienCls.php' => [
+                    '../../elements_LQA/mod/nhanvienCls.php',
+                    './elements_LQA/mod/nhanvienCls.php',
+                    './administrator/elements_LQA/mod/nhanvienCls.php'
+                ]
+            ];
+
+            foreach ($additionalPaths as $file => $filePaths) {
+                foreach ($filePaths as $duong_dan) {
+                    if (file_exists($duong_dan)) {
+                        require_once $duong_dan;
+                        break;
+                    }
+                }
+            }
+
+            // Lấy ID nhân viên từ username
+            $userObj = new user();
+            $userData = $userObj->UserGetbyUsername($username);
+
+            if (!$userData) {
+                error_log("Không tìm thấy thông tin user: $username");
+                return false;
+            }
+
+            $nvObj = new NhanVien();
+            $nhanVienList = $nvObj->nhanvienGetAll();
+            $idNhanVien = null;
+
+            foreach ($nhanVienList as $nv) {
+                if ($nv->iduser == $userData->iduser) {
+                    $idNhanVien = $nv->idNhanVien;
+                    break;
+                }
+            }
+
+            if (!$idNhanVien) {
+                error_log("Không tìm thấy nhân viên liên kết với user: $username");
+                return false;
+            }
+
+            // Kiểm tra quyền truy cập vào module cụ thể
+            $phanHeObj = new PhanHeQuanLy();
+            $hasAccess = $phanHeObj->checkNhanVienHasAccess($idNhanVien, $module);
+
+            error_log("Nhân viên - Module: $module, Cho phép: " . ($hasAccess ? 'Có' : 'Không'));
+            return $hasAccess;
+        }
+
         // Nếu là user thông thường (không phải admin và không phải nhân viên)
-        if (isset($_SESSION['USER']) && !$this->isNhanVien($username)) {
+        $isRegularUser = isset($_SESSION['USER']) && $_SESSION['USER'] === $username;
+        error_log("Kiểm tra user thông thường - isRegularUser: " . ($isRegularUser ? "true" : "false"));
+
+        if ($isRegularUser) {
             // Chỉ cho phép xem hồ sơ cá nhân và các chức năng liên quan đến người dùng
             $userAllowedModules = [
                 'userprofile',
                 'userUpdateProfile',
                 'thongbao',
-                'lichsumuahang'
+                'lichsumuahang',
+                'don_hang'  // Cho phép người dùng xem đơn hàng của mình
             ];
 
             $hasAccess = in_array($module, $userAllowedModules);
             error_log("User thông thường - Module: $module, Cho phép: " . ($hasAccess ? 'Có' : 'Không'));
-            return $hasAccess;
-        }
-
-        // Nếu là nhân viên
-        if (isset($_SESSION['USER']) && $this->isNhanVien($username)) {
-            // Các bảng nhân viên KHÔNG được phép truy cập
-            $restrictedModules = [
-                'userview',
-                'userupdate',
-                'updateuser',  // Các module liên quan đến user
-                'nhanvienview'                          // Module liên quan đến nhân viên
-            ];
-
-            if (in_array($module, $restrictedModules)) {
-                error_log("Nhân viên không được phép truy cập module hạn chế: $module");
-                return false;
-            }
-
-            // Các module được phép truy cập cho nhân viên
-            $allowedModules = [
-                'loaihangview',
-                'hanghoaview',
-                'dongiaview',
-                'thuonghieuview',
-                'donvitinhview',
-                'thuoctinhview',
-                'thuoctinhhhview',
-                'adminGiohangView',
-                'hinhanhview',
-                'mphieunhap',
-                'mchitietphieunhap',
-                'mphieunhapedit',
-                'mchitietphieunhapedit',
-                'mtonkho',
-                'mtonkhoedit',
-                'mphieunhapfixtonkho',
-                'userprofile',
-                'userUpdateProfile',
-                'orders',
-                'payment_config',
-                'thongbao',
-                'lichsumuahang',
-                'baocaoview',
-                'doanhThuView',
-                'sanPhamBanChayView',
-                'loiNhuanView'
-            ];
-
-            $hasAccess = in_array($module, $allowedModules);
-            error_log("Nhân viên - Module: $module, Cho phép: " . ($hasAccess ? 'Có' : 'Không'));
             return $hasAccess;
         }
 

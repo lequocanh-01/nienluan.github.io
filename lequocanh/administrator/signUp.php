@@ -1,8 +1,15 @@
 <?php
 require_once './elements_LQA/mod/userCls.php';
+require_once './elements_LQA/mod/userRoleCls.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Bật hiển thị lỗi để dễ debug
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+
     $user = new user();
+    $userRole = new UserRole();
 
     // Lấy dữ liệu từ form
     $username = $_POST['username'];
@@ -13,27 +20,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $address = $_POST['address'];
     $phone = $_POST['phone'];
 
+    // Kiểm tra username có chứa dấu cách không
+    if (strpos($username, ' ') !== false) {
+        $error = "Tên đăng nhập không được chứa dấu cách!";
+    }
     // Kiểm tra username đã tồn tại chưa
-    if ($user->UserCheckUsername($username)) {
+    else if ($user->UserCheckUsername($username)) {
         $error = "Tên đăng nhập đã tồn tại!";
     } else {
-        // Thực hiện đăng ký sử dụng UserAdd
-        $result = $user->UserAdd(
-            $username,
-            $password,
-            $fullname,
-            $gender,
-            $birthdate,
-            $address,
-            $phone
-        );
+        try {
+            // Thực hiện đăng ký sử dụng UserAdd
+            $result = $user->UserAdd(
+                $username,
+                $password,
+                $fullname,
+                $gender,
+                $birthdate,
+                $address,
+                $phone
+            );
 
-        if ($result) {
-            // Đăng ký thành công, chuyển hướng đến trang đăng nhập
-            header("Location: userLogin.php?register=success");
-            exit();
-        } else {
-            $error = "Có lỗi xảy ra trong quá trình đăng ký!";
+            if ($result) {
+                // Lấy ID của người dùng vừa tạo
+                $db = Database::getInstance()->getConnection();
+                $newUserId = $db->lastInsertId();
+
+                // Ghi log
+                error_log("Đã tạo người dùng mới với ID: $newUserId, Username: $username");
+
+                // Gán vai trò mặc định (customer) cho người dùng mới
+                $roleResult = $userRole->assignDefaultRole($newUserId);
+
+                if ($roleResult) {
+                    error_log("Đã gán vai trò 'customer' cho người dùng $username (ID: $newUserId)");
+                } else {
+                    error_log("Không thể gán vai trò 'customer' cho người dùng $username (ID: $newUserId)");
+                    // Vẫn cho phép đăng ký thành công ngay cả khi không gán được vai trò
+                }
+
+                // Đăng ký thành công, chuyển hướng đến trang đăng nhập
+                header("Location: userLogin.php?register=success");
+                exit();
+            } else {
+                $error = "Có lỗi xảy ra trong quá trình đăng ký!";
+                error_log("Lỗi khi thêm người dùng mới: $username");
+            }
+        } catch (Exception $e) {
+            $error = "Có lỗi xảy ra trong quá trình đăng ký: " . $e->getMessage();
+            error_log("Exception khi đăng ký người dùng: " . $e->getMessage());
         }
     }
 }
@@ -282,6 +316,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-floating">
                 <input type="text" class="form-control" id="username" name="username" placeholder="Tên đăng nhập">
                 <label for="username"><i class="fas fa-user me-2"></i>Tên đăng nhập</label>
+                <div class="form-text text-danger mt-1">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Vui lòng không sử dụng dấu cách trong tên đăng nhập
+                </div>
             </div>
 
             <div class="form-floating">
@@ -334,8 +371,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $('.form-control, .form-select').removeClass('is-invalid');
 
                 // Validate username
-                if ($('#username').val().trim() === '') {
+                const username = $('#username').val().trim();
+                if (username === '') {
                     $('#username').addClass('is-invalid');
+                    isValid = false;
+                } else if (username.includes(' ')) {
+                    $('#username').addClass('is-invalid');
+                    alert('Tên đăng nhập không được chứa dấu cách!');
                     isValid = false;
                 }
 

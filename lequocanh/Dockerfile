@@ -21,7 +21,12 @@ RUN echo "upload_max_filesize = 128M" >> /usr/local/etc/php/php.ini \
     && echo "post_max_size = 128M" >> /usr/local/etc/php/php.ini \
     && echo "max_execution_time = 300" >> /usr/local/etc/php/php.ini \
     && echo "display_errors = On" >> /usr/local/etc/php/php.ini \
-    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/php.ini
+    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/php.ini \
+    && echo "date.timezone = Asia/Ho_Chi_Minh" >> /usr/local/etc/php/php.ini
+
+# Thiết lập múi giờ hệ thống
+RUN ln -snf /usr/share/zoneinfo/Asia/Ho_Chi_Minh /etc/localtime \
+    && echo Asia/Ho_Chi_Minh > /etc/timezone
 
 # Set working directory
 WORKDIR /var/www/html
@@ -72,4 +77,4 @@ RUN sed -i 's!/var/www/html!/var/www/html!g' /etc/apache2/sites-available/000-de
 EXPOSE 80
 
 # Start Apache
-CMD ["apache2-foreground"] 
+CMD ["apache2-foreground"]

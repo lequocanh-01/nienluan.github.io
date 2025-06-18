@@ -1,6 +1,30 @@
 <?php
+session_start();
 require_once '../mod/hanghoaCls.php';
 $hanghoa = new hanghoa();
+
+// Tìm đường dẫn đúng đến nhatKyHoatDongHelper.php
+$nhatKyHelperPaths = [
+    __DIR__ . '/../mnhatkyhoatdong/nhatKyHoatDongHelper.php',
+    __DIR__ . '/../../elements_LQA/mnhatkyhoatdong/nhatKyHoatDongHelper.php',
+    __DIR__ . '/../../../administrator/elements_LQA/mnhatkyhoatdong/nhatKyHoatDongHelper.php'
+];
+
+$foundNhatKyHelper = false;
+foreach ($nhatKyHelperPaths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        $foundNhatKyHelper = true;
+        break;
+    }
+}
+
+if (!$foundNhatKyHelper) {
+    error_log("Không thể tìm thấy file nhatKyHoatDongHelper.php");
+}
+
+// Lấy username từ session
+$username = isset($_SESSION['USER']) ? $_SESSION['USER'] : (isset($_SESSION['ADMIN']) ? $_SESSION['ADMIN'] : '');
 if (isset($_REQUEST['reqact'])) {
     $requestAction = $_REQUEST['reqact'];
     switch ($requestAction) {
@@ -44,6 +68,11 @@ if (isset($_REQUEST['reqact'])) {
                     if (is_numeric($result) && $result > 0) {
                         $log_success = date('Y-m-d H:i:s') . " - Thêm hàng hóa thành công với ID: $result\n";
                         file_put_contents($log_file, $log_success, FILE_APPEND);
+
+                        // Ghi nhật ký thêm mới hàng hóa
+                        if ($foundNhatKyHelper && !empty($username)) {
+                            ghiNhatKyThemMoi($username, 'hàng hóa', $result, "Thêm hàng hóa mới: $tenhanghoa");
+                        }
                     }
                     header('location: ../../index.php?req=hanghoaview&result=ok');
                 } else {
@@ -61,8 +90,18 @@ if (isset($_REQUEST['reqact'])) {
 
         case 'deletehanghoa':
             $idhanghoa = $_REQUEST['idhanghoa'];
-            $hanghoa->HanghoaDelete($idhanghoa);
-            if ($hanghoa) {
+
+            // Lấy thông tin hàng hóa trước khi xóa để ghi nhật ký
+            $hanghoaInfo = $hanghoa->HanghoaGetbyId($idhanghoa);
+            $tenhanghoa = $hanghoaInfo ? $hanghoaInfo->tenhanghoa : "Không xác định";
+
+            $result = $hanghoa->HanghoaDelete($idhanghoa);
+            if ($result) {
+                // Ghi nhật ký xóa hàng hóa
+                if ($foundNhatKyHelper && !empty($username)) {
+                    ghiNhatKyXoa($username, 'hàng hóa', $idhanghoa, "Xóa hàng hóa: $tenhanghoa");
+                }
+
                 header('location: ../../index.php?req=hanghoaview&result=ok');
             } else {
                 header('location: ../../index.php?req=hanghoaview&result=notok');
@@ -101,6 +140,11 @@ if (isset($_REQUEST['reqact'])) {
                 if ($debug_log) {
                     $log_data = date('Y-m-d H:i:s') . " - Update result: " . ($result ? "Success" : "Failed") . "\n";
                     file_put_contents(__DIR__ . '/debug_log.txt', $log_data, FILE_APPEND);
+                }
+
+                // Ghi nhật ký cập nhật hàng hóa
+                if ($result && $foundNhatKyHelper && !empty($username)) {
+                    ghiNhatKyCapNhat($username, 'hàng hóa', $idhanghoa, "Cập nhật hàng hóa: $tenhanghoa");
                 }
 
                 // Verificar si la solicitud es AJAX

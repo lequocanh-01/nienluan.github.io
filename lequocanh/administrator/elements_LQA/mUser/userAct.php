@@ -3,6 +3,27 @@ session_start();
 require '../../elements_LQA/mod/userCls.php';
 require '../../elements_LQA/mod/giohangCls.php';
 
+// Tìm đường dẫn đúng đến nhatKyHoatDongHelper.php
+$nhatKyHelperPaths = [
+    __DIR__ . '/../../elements_LQA/mnhatkyhoatdong/nhatKyHoatDongHelper.php',
+    __DIR__ . '/../mnhatkyhoatdong/nhatKyHoatDongHelper.php',
+    __DIR__ . '/../../mnhatkyhoatdong/nhatKyHoatDongHelper.php',
+    './elements_LQA/mnhatkyhoatdong/nhatKyHoatDongHelper.php'
+];
+
+$foundNhatKyHelper = false;
+foreach ($nhatKyHelperPaths as $path) {
+    if (file_exists($path)) {
+        require_once $path;
+        $foundNhatKyHelper = true;
+        break;
+    }
+}
+
+if (!$foundNhatKyHelper) {
+    error_log("Không thể tìm thấy file nhatKyHoatDongHelper.php");
+}
+
 $requestAction = isset($_REQUEST['reqact']) ? $_REQUEST['reqact'] : '';
 
 if ($requestAction) {
@@ -32,6 +53,12 @@ if ($requestAction) {
             }
 
             $kq = $userObj->UserAdd($username, $password, $hoten, $gioitinh, $ngaysinh, $diachi, $dienthoai);
+
+            // Ghi nhật ký thêm mới người dùng
+            if ($kq && $foundNhatKyHelper) {
+                $currentUser = isset($_SESSION['USER']) ? $_SESSION['USER'] : (isset($_SESSION['ADMIN']) ? $_SESSION['ADMIN'] : '');
+                ghiNhatKyThemMoi($currentUser, 'Khách hàng', $kq, "Thêm khách hàng mới: $hoten ($username)");
+            }
 
             // Kiểm tra nếu là AJAX request
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
@@ -107,6 +134,13 @@ if ($requestAction) {
             }
 
             $kq = $userObj->UserDelete($iduser);
+
+            // Ghi nhật ký xóa người dùng
+            if ($kq && $foundNhatKyHelper) {
+                $currentUser = isset($_SESSION['USER']) ? $_SESSION['USER'] : (isset($_SESSION['ADMIN']) ? $_SESSION['ADMIN'] : '');
+                ghiNhatKyXoa($currentUser, 'Khách hàng', $iduser, "Xóa khách hàng: " . ($user ? $user->hoten : "ID $iduser"));
+            }
+
             if ($kq) {
                 header('location: ../../index.php?req=userview&result=ok');
             } else {
@@ -187,6 +221,12 @@ if ($requestAction) {
 
             $result = $userObj->UserUpdate($username, $password, $hoten, $gioitinh, $ngaysinh, $diachi, $dienthoai, $iduser);
 
+            // Ghi nhật ký cập nhật người dùng
+            if ($result && $foundNhatKyHelper) {
+                $currentUser = isset($_SESSION['USER']) ? $_SESSION['USER'] : (isset($_SESSION['ADMIN']) ? $_SESSION['ADMIN'] : '');
+                ghiNhatKyCapNhat($currentUser, 'Khách hàng', $iduser, "Cập nhật thông tin khách hàng: $hoten ($username)");
+            }
+
             if ($result) {
                 header('location: ../../index.php?req=userview&result=ok');
             } else {
@@ -195,13 +235,78 @@ if ($requestAction) {
             exit();
 
         case 'checklogin':
-            $username = $_REQUEST['username'];
+            $username = trim($_REQUEST['username']); // Loại bỏ khoảng trắng thừa
             $password = $_REQUEST['password'];
+
+            // Ghi log chi tiết để debug
+            error_log("DEBUG LOGIN: Đang thử đăng nhập với username: '$username', password: '$password'");
+
+            // Kiểm tra trực tiếp trong cơ sở dữ liệu
+            $db = Database::getInstance()->getConnection();
+            $sql = "SELECT * FROM user WHERE username = ?";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$username]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($user) {
+                error_log("DEBUG LOGIN: Tìm thấy user trong DB: " . json_encode($user));
+
+                // Kiểm tra mật khẩu
+                if ($user['password'] === $password) {
+                    error_log("DEBUG LOGIN: Mật khẩu khớp");
+
+                    // Kiểm tra setlock
+                    if ($user['setlock'] == 1) {
+                        error_log("DEBUG LOGIN: Tài khoản đã kích hoạt (setlock=1)");
+                    } else {
+                        error_log("DEBUG LOGIN: Tài khoản chưa kích hoạt (setlock=" . $user['setlock'] . ")");
+
+                        // Tự động kích hoạt tài khoản
+                        $update_sql = "UPDATE user SET setlock = 1 WHERE iduser = ?";
+                        $update_stmt = $db->prepare($update_sql);
+                        $update_stmt->execute([$user['iduser']]);
+                        error_log("DEBUG LOGIN: Đã tự động kích hoạt tài khoản");
+                    }
+                } else {
+                    error_log("DEBUG LOGIN: Mật khẩu không khớp. DB: '" . $user['password'] . "', Input: '$password'");
+                }
+            } else {
+                error_log("DEBUG LOGIN: Không tìm thấy user với username: '$username'");
+
+                // Kiểm tra xem có user nào gần giống không
+                $sql_like = "SELECT * FROM user WHERE username LIKE ?";
+                $stmt_like = $db->prepare($sql_like);
+                $stmt_like->execute(['%' . $username . '%']);
+                $similar_users = $stmt_like->fetchAll(PDO::FETCH_ASSOC);
+
+                if (count($similar_users) > 0) {
+                    error_log("DEBUG LOGIN: Tìm thấy các user tương tự: " . json_encode($similar_users));
+                }
+            }
+
             $userObj = new user();
             $kq = $userObj->UserCheckLogin($username, $password);
             if ($kq) {
-                if ($username == 'admin') {
+                // Kiểm tra xem user có phải là admin hoặc manager không
+                $isAdminUser = ($username == 'admin' || strpos($username, 'manager') !== false);
+
+                if ($isAdminUser) {
                     $_SESSION['ADMIN'] = $username;
+                    // Ghi log để debug
+                    error_log("DEBUG LOGIN: Đã thiết lập SESSION['ADMIN'] = '$username' (Admin/Manager)");
+
+                    // Ghi nhật ký đăng nhập
+                    if ($foundNhatKyHelper) {
+                        $result = ghiNhatKyDangNhap($username);
+                        if (!$result) {
+                            error_log("Lỗi khi ghi nhật ký đăng nhập cho user: $username");
+                        } else {
+                            error_log("Đã ghi nhật ký đăng nhập thành công cho user: $username, ID: $result");
+                        }
+                    } else {
+                        error_log("Không tìm thấy file nhatKyHoatDongHelper.php khi đăng nhập");
+                    }
+
                     // Chuyển giỏ hàng từ session sang database
                     $giohang = new GioHang();
                     $giohang->migrateSessionCartToDatabase($username);
@@ -210,30 +315,65 @@ if ($requestAction) {
                     if (isset($_SESSION['redirect_after_login'])) {
                         $redirect_url = $_SESSION['redirect_after_login'];
                         unset($_SESSION['redirect_after_login']);
-                        header('location: ' . $redirect_url);
+                        error_log("DEBUG LOGIN: Admin/Manager - Chuyển hướng đến URL được lưu: $redirect_url");
+                        header('Location: ' . $redirect_url);
                     } else {
-                        header('location: ../../index.php?req=userview&result=ok');
+                        $redirect_url = 'http://' . $_SERVER['HTTP_HOST'] . '/administrator/index.php?req=userview&result=ok';
+                        error_log("DEBUG LOGIN: Admin/Manager - Chuyển hướng đến trang quản trị: $redirect_url");
+                        header('Location: ' . $redirect_url);
                     }
+                    // Đảm bảo dừng thực thi script sau khi chuyển hướng
+                    exit();
                 } else {
                     $_SESSION['USER'] = $username;
+                    // Ghi log để debug
+                    error_log("DEBUG LOGIN: Đã thiết lập SESSION['USER'] = '$username'");
+
+                    // Ghi nhật ký đăng nhập
+                    if ($foundNhatKyHelper) {
+                        $result = ghiNhatKyDangNhap($username);
+                        if (!$result) {
+                            error_log("Lỗi khi ghi nhật ký đăng nhập cho user: $username");
+                        } else {
+                            error_log("Đã ghi nhật ký đăng nhập thành công cho user: $username, ID: $result");
+                        }
+                    } else {
+                        error_log("Không tìm thấy file nhatKyHoatDongHelper.php khi đăng nhập");
+                    }
+
                     // Chuyển giỏ hàng từ session sang database
                     $giohang = new GioHang();
                     $giohang->migrateSessionCartToDatabase($username);
+
+                    // Thiết lập múi giờ Việt Nam
+                    date_default_timezone_set('Asia/Ho_Chi_Minh');
+
                     // Đặt cookie sau khi đăng nhập thành công
-                    $time_login = date('h:i - d/m/Y');
+                    $time_login = date('H:i - d/m/Y');
                     setcookie($username, $time_login, time() + (86400 * 30), '/');
+                    error_log("DEBUG LOGIN: Đã thiết lập cookie cho user '$username'");
 
                     // Kiểm tra xem có URL chuyển hướng sau đăng nhập không
                     if (isset($_SESSION['redirect_after_login'])) {
                         $redirect_url = $_SESSION['redirect_after_login'];
                         unset($_SESSION['redirect_after_login']);
-                        header('location: ' . $redirect_url);
+                        error_log("DEBUG LOGIN: Chuyển hướng đến URL được lưu: $redirect_url");
+                        header('Location: ' . $redirect_url);
                     } else {
-                        header('location: ../../../index.php');
+                        // Sử dụng đường dẫn tuyệt đối
+                        $redirect_url = 'http://' . $_SERVER['HTTP_HOST'] . '/index.php';
+                        error_log("DEBUG LOGIN: Chuyển hướng đến trang chủ: $redirect_url");
+                        header('Location: ' . $redirect_url);
                     }
+                    // Đảm bảo dừng thực thi script sau khi chuyển hướng
+                    exit();
                 }
             } else {
-                header('location: ../../userLogin.php?error=1');
+                error_log("DEBUG LOGIN: Đăng nhập thất bại cho username: '$username'");
+                $redirect_url = 'http://' . $_SERVER['HTTP_HOST'] . '/administrator/userLogin.php?error=1';
+                error_log("DEBUG LOGIN: Chuyển hướng đến trang đăng nhập với thông báo lỗi: $redirect_url");
+                header('Location: ' . $redirect_url);
+                exit();
             }
             break;
 
@@ -241,16 +381,42 @@ if ($requestAction) {
             // Ghi log để debug
             error_log("Đang xử lý đăng xuất...");
 
-            $time_login = date('h:i - d/m/Y');
+            // Thiết lập múi giờ Việt Nam
+            date_default_timezone_set('Asia/Ho_Chi_Minh');
+            $time_login = date('H:i - d/m/Y');
             $namelogin = '';
 
             if (isset($_SESSION['USER'])) {
                 $namelogin = $_SESSION['USER'];
                 error_log("Đăng xuất USER: " . $namelogin);
+
+                // Ghi nhật ký đăng xuất
+                if ($foundNhatKyHelper) {
+                    $result = ghiNhatKyDangXuat($namelogin);
+                    if (!$result) {
+                        error_log("Lỗi khi ghi nhật ký đăng xuất cho user: $namelogin");
+                    } else {
+                        error_log("Đã ghi nhật ký đăng xuất thành công cho user: $namelogin, ID: $result");
+                    }
+                } else {
+                    error_log("Không tìm thấy file nhatKyHoatDongHelper.php khi đăng xuất");
+                }
             }
             if (isset($_SESSION['ADMIN'])) {
                 $namelogin = $_SESSION['ADMIN'];
                 error_log("Đăng xuất ADMIN: " . $namelogin);
+
+                // Ghi nhật ký đăng xuất
+                if ($foundNhatKyHelper) {
+                    $result = ghiNhatKyDangXuat($namelogin);
+                    if (!$result) {
+                        error_log("Lỗi khi ghi nhật ký đăng xuất cho admin: $namelogin");
+                    } else {
+                        error_log("Đã ghi nhật ký đăng xuất thành công cho admin: $namelogin, ID: $result");
+                    }
+                } else {
+                    error_log("Không tìm thấy file nhatKyHoatDongHelper.php khi đăng xuất admin");
+                }
             }
 
             // Chỉnh sửa tên cookie
